@@ -98,13 +98,10 @@ vll djikstra(vector<vpll>& g, int s) {
 
 ```c++
 Point rotatePoint(const Point& p, double angleRadians) {
-    double cosTheta = cos(angleRadians);
-    double sinTheta = sin(angleRadians);
+    double x = p.first * cos(angleRadians) - p.second * sin(angleRadians);
+    double y = p.first * sin(angleRadians) + p.second * cos(angleRadians);
 
-    double xPrime = p.x * cosTheta - p.y * sinTheta;
-    double yPrime = p.x * sinTheta + p.y * cosTheta;
-
-    return {xPrime, yPrime};
+    return {x, y};
 }
 ```
 
