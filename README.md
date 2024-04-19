@@ -107,3 +107,19 @@ Point rotatePoint(const Point& p, double angleRadians) {
     return {xPrime, yPrime};
 }
 ```
+
+# Reta AB contém ponto P
+
+```c++
+bool contains(const Point& A, const Point& B, const Point& P) {
+    auto xmin = min(A.first, B.first);
+    auto xmax = max(A.first, B.first);
+    auto ymin = min(A.second, B.second);
+    auto ymax = max(A.second, B.second);
+
+    if (P.first < xmin || P.first > xmax || P.second < ymin || P.second > ymax)
+        return false;
+
+    return (P.second - A.second)*(B.first - A.first) == (P.first - A.first)*(B.second - A.second);
+}
+```
