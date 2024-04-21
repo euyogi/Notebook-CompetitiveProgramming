@@ -105,30 +105,29 @@ public:
     iota(m_parent.begin(), m_parent.end(), 0);
     }
 
-	ll setOf(ull x) {
-		return m_parent[x] == x ? x : m_parent[x] = setOf(m_parent[x]);
-	}
+    ll setOf(ull x) {
+        return m_parent[x] == x ? x : m_parent[x] = setOf(m_parent[x]);
+    }
 
-	bool sameSet(ull x, ull y) { return setOf(x) == setOf(y); }
+    bool sameSet(ull x, ull y) { return setOf(x) == setOf(y); }
 
-	void mergeSetsOf(ull x, ull y) {
-		ull a = setOf(x);
-		ull b = setOf(y);
+    void mergeSetsOf(ull x, ull y) {
+    ull a = setOf(x);
+    ull b = setOf(y);
 
-		if (a == b) return;
-		if (m_size[a] > m_size[b]) swap(a, b);
+    if (a == b) return;
+    if (m_size[a] > m_size[b]) swap(a, b);
 
-		m_parent[a] = b;
-		m_size[b] += m_size[a];
-		m_size[a] = 0;
-	}
+    m_parent[a] = b;
+    m_size[b] += m_size[a];
+    m_size[a] = 0;
+    }
 
-	size_t size() { return m_parent.size(); }
-	size_t size(ll x) { return m_size[set_of(x)]; }
-	size_t sizeOfSet(ll i) { return m_size[i]; }
+    size_t size() { return m_parent.size(); }
+    size_t sizeOfSet(ll i) { return m_size[i]; }
 
 private:
-	vector<ull> m_parent, m_size;
+    vector<ull> m_parent, m_size;
 };
 ```
 
