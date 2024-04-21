@@ -112,15 +112,15 @@ public:
     bool sameSet(ull x, ull y) { return setOf(x) == setOf(y); }
 
     void mergeSetsOf(ull x, ull y) {
-    ull a = setOf(x);
-    ull b = setOf(y);
+        ull a = setOf(x);
+        ull b = setOf(y);
 
-    if (a == b) return;
-    if (m_size[a] > m_size[b]) swap(a, b);
+        if (a == b) return;
+        if (m_size[a] > m_size[b]) swap(a, b);
 
-    m_parent[a] = b;
-    m_size[b] += m_size[a];
-    m_size[a] = 0;
+        m_parent[a] = b;
+        m_size[b] += m_size[a];
+        m_size[a] = 0;
     }
 
     size_t size() { return m_parent.size(); }
