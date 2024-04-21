@@ -15,8 +15,6 @@ public:
     }
 
 private:
-    vector<ll> m_ts;
-
     ll LSB(ll n) { return n & (-n); }
 
     ll RSQ(ll i) {
@@ -36,6 +34,8 @@ private:
             i += LSB(i);
         }
     }
+
+    vector<ll> m_ts;
 };
 ```
 
