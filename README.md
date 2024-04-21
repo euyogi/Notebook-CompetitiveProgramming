@@ -182,6 +182,7 @@ bool contains(const Point& A, const Point& B, const Point& P) {
     if (P.first < xmin || P.first > xmax || P.second < ymin || P.second > ymax)
         return false;
 
-    return (P.second - A.second)*(B.first - A.first) == (P.first - A.first)*(B.second - A.second);
+    return ((P.second - A.second)*(B.first - A.first) ==
+            (P.first - A.first)*(B.second - A.second));
 }
 ```
