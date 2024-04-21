@@ -102,7 +102,7 @@ um elemento é conseguir saber quantos elementos existem nesse conjunto
 class DSU {
 public:
     DSU(size_t n) : m_parent(n), m_size(n, 1) {
-    iota(m_parent.begin(), m_parent.end(), 0);
+        iota(m_parent.begin(), m_parent.end(), 0);
     }
 
     ll setOf(ull x) {
