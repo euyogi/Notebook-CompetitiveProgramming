@@ -5,35 +5,34 @@ Somar valores em intervalos.
 ```c++
 class BITree {
 public:
-    BITree(int n) : ts(n + 2, 0), N(n) {}
+    BITree(size_t n) : m_ts(n + 1, 0) {}
 
-    ll value_at(int i) { return RSQ(i); }
+    ll valueAt(size_t i) { return RSQ(i); }
 
-    void range_add(int i, int j, ll x) {
+    void rangeAdd(size_t i, size_t j, ll x) {
         add(i, x);
         add(j + 1, -x);
     }
 
 private:
-    vector<ll> ts;
-    int N;
+    vector<ll> m_ts;
 
-    int LSB(int n) { return n & (-n); }
+    ll LSB(ll n) { return n & (-n); }
 
-    ll RSQ(int i) {
+    ll RSQ(ll i) {
         ll sum = 0;
 
         while (i >= 1) {
-            sum += ts[i];
+            sum += m_ts[i];
             i -= LSB(i);
         }
 
         return sum;
     }
 
-    void add(int i, ll x) {
-        while (i <= N) {
-            ts[i] += x;
+    void add(size_t i, ll x) {
+        while (i < m_ts.size()) {
+            m_ts[i] += x;
             i += LSB(i);
         }
     }
@@ -72,7 +71,7 @@ using vll = vector<ll>;
 
 constexpr ll oo = numeric_limits<ll>::max();
 
-vll djikstra(vector<vpll>& g, int s) {
+vll djikstra(const vector<vpll>& g, ll s) {
     vll dists(g.size(), oo);
     priority_queue<pll, vpll, greater<>> pq;
     
@@ -94,7 +93,48 @@ vll djikstra(vector<vpll>& g, int s) {
 }
 ```
 
-# Rotacionar Ponto
+# Disjoint Set Union
+
+Representar conjuntos de elementos, conseguir saber de qual conjunto
+um elemento é conseguir saber quantos elementos existem nesse conjunto
+
+```c++
+class DSU {
+public:
+	DSU(size_t n) : m_parent(n), m_size(n, 1) {
+		iota(m_parent.begin(), m_parent.end(), 0);
+	}
+
+	ll setOf(ull x) {
+		return m_parent[x] == x ? x : m_parent[x] = setOf(m_parent[x]);
+	}
+
+	bool sameSet(ull x, ull y) { return setOf(x) == setOf(y); }
+
+	void mergeSetsOf(ull x, ull y) {
+		ull a = setOf(x);
+		ull b = setOf(y);
+
+		if (a == b) return;
+		if (m_size[a] > m_size[b]) swap(a, b);
+
+		m_parent[a] = b;
+		m_size[b] += m_size[a];
+		m_size[a] = 0;
+	}
+
+	size_t size() { return m_parent.size(); }
+	size_t size(ll x) { return m_size[set_of(x)]; }
+	size_t sizeOfSet(ll i) { return m_size[i]; }
+
+private:
+	vector<ull> m_parent, m_size;
+};
+```
+
+# Geometria
+
+Rotacionar Ponto
 
 ```c++
 Point rotatePoint(const Point& p, double angleRadians) {
@@ -105,7 +145,7 @@ Point rotatePoint(const Point& p, double angleRadians) {
 }
 ```
 
-# Reta AB contém ponto P
+Checar se a reta AB contém o ponto P
 
 ```c++
 bool contains(const Point& A, const Point& B, const Point& P) {
