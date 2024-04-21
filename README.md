@@ -101,9 +101,9 @@ um elemento é conseguir saber quantos elementos existem nesse conjunto
 ```c++
 class DSU {
 public:
-	DSU(size_t n) : m_parent(n), m_size(n, 1) {
-		iota(m_parent.begin(), m_parent.end(), 0);
-	}
+    DSU(size_t n) : m_parent(n), m_size(n, 1) {
+    iota(m_parent.begin(), m_parent.end(), 0);
+    }
 
 	ll setOf(ull x) {
 		return m_parent[x] == x ? x : m_parent[x] = setOf(m_parent[x]);
