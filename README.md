@@ -65,9 +65,9 @@ int main() {
 Medir a menor distância de cada aresta para uma principal
 
 ```c++
-using pll = pair<ll, ll>;
-using vpll = vector<pll>;
-using vll = vector<ll>;
+using pll = pair<long long, long long>;
+using vpll = vector<pair<long long, long long>>;
+using vll = vector<long long>;
 
 constexpr ll oo = numeric_limits<ll>::max();
 
