@@ -1,3 +1,35 @@
+# Template
+
+```c++
+#include <bits/stdc++.h>
+
+using namespace std;
+using ll = long long;
+using ull = unsigned long long;
+using pll = pair<long long, long long>;
+using vll = vector<long long>;
+using vvll = vector<vector<long long>>;
+using vpll = vector<pair<long long, long long>>;
+using Point = pair<long long, long long>;
+
+constexpr ll oo = numeric_limits<ll>::max();
+
+void solve() {
+    return;
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int testes = 1;
+    // cin >> testes;
+
+    while (testes--)
+        solve();
+}
+```
+
 # BIT Tree
 
 Somar valores em intervalos.
@@ -65,12 +97,6 @@ int main() {
 Medir a menor distância de cada aresta para uma principal
 
 ```c++
-using pll = pair<long long, long long>;
-using vpll = vector<pair<long long, long long>>;
-using vll = vector<long long>;
-
-constexpr ll oo = numeric_limits<ll>::max();
-
 vll djikstra(const vector<vpll>& g, ll s) {
     vll dists(g.size(), oo);
     priority_queue<pll, vpll, greater<>> pq;
