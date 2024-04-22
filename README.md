@@ -30,6 +30,16 @@ int main() {
 }
 ```
 
+# Igualdade entre pontos flutuantes
+
+```c++
+template<typename T>
+bool equals(T a, T b) {
+	constexpr double EPS { 1e-9 };
+
+	return std::is_floating_point<T>::value ?  fabs(a - b) < EPS : a == b;
+}
+```
 # BIT Tree
 
 Somar valores em intervalos.
@@ -162,27 +172,99 @@ private:
 Rotacionar Ponto
 
 ```c++
-Point rotatePoint(const Point& p, double angleRadians) {
-    double x = p.first * cos(angleRadians) - p.second * sin(angleRadians);
-    double y = p.first * sin(angleRadians) + p.second * cos(angleRadians);
+Point rotatePoint(const Point& P, double angleRadians) {
+    #define x first
+    #define y second
+
+    double x = P.x * cos(angleRadians) - P.y * sin(angleRadians);
+    double y = P.x * sin(angleRadians) + P.y * cos(angleRadians);
 
     return {x, y};
 }
 ```
 
-Checar se a reta AB contém o ponto P
+Checar orientação do ponto P em relação à reta AB
 
 ```c++
-bool contains(const Point& A, const Point& B, const Point& P) {
-    auto xmin = min(A.first, B.first);
-    auto xmax = max(A.first, B.first);
-    auto ymin = min(A.second, B.second);
-    auto ymax = max(A.second, B.second);
+// D = 0: P pertence a reta
+// D > 0: P à esquerda da reta
+// D < 0: P à direita da reta
+ll D(const Point& A, const Point& B, const Point& P) {
+    #define x first
+    #define y second
 
-    if (P.first < xmin || P.first > xmax || P.second < ymin || P.second > ymax)
-        return false;
-
-    return ((P.second - A.second)*(B.first - A.first) ==
-            (P.first - A.first)*(B.second - A.second));
+    return (A.x * B.y + A.y * P.x + B.x * P.y) - (P.x * B.y + P.y * A.x + B.x * A.y);
 }
+```
+
+Checar ângulo entre as retas AB e CD
+
+```c++
+double angle(const Point& A, const Point& B, const Point& C, const Point& D) {
+    #define x first
+    #define y second
+
+    auto ux = A.x - B.x;
+    auto uy = A.y - B.y;
+
+    auto vx = C.x - D.x;
+    auto vy = C.y - D.y;
+
+    auto num = ux * vx + uy * vy;
+    auto den = hypot(ux, uy) * hypot(vx, vy);
+
+    // Caso especial: se den == 0, algum dos vetores é degenerado: os dois
+    // pontos são iguais. Neste caso, o ângulo não está definido
+
+    return acos(num / den);
+}
+```
+
+# Linha
+
+```c++
+template<typename T>
+class Line {
+public:
+    T a, b, c;
+
+    #define x first
+    #define y second
+
+    Line(const Point& A, const Point& B)
+        : a(A.y - B.y), b (B.x - A.x), c(A.x * B.y - B.x * A.y) {}
+
+    bool operator==(const Line& r) const {
+        auto k = a ? a : b;
+        auto s = r.a ? r.a : r.b;
+
+        return equals(a*s, r.a*k) && equals(b*s, r.b*k) && equals(c*s, r.c*k);
+    }
+
+    bool parallel(const Line& r) const {
+        auto det = a*r.b - b*r.a;
+        return det == 0 and !(*this == r);
+    }
+
+    bool orthogonal(const Line& r) const { return equals(a * r.a + b * r.b, 0); }
+
+    // Distância da reta pro ponto P
+    double distance(const Point& P) const { return fabs(a*P.x + b*P.y + c)/hypot(a, b); }
+
+    Point closest(const Point& P) const { // Ponto da reta mais próximo de P
+        auto den = a*a + b*b;
+
+        auto x = (b*(b*P.x - a*P.y) - a*c)/den;
+        auto y = (a*(-b*P.x + a*P.y) - b*c)/den;
+
+        return { x, y };
+    }
+
+private:
+    bool equals(T a, T b) {
+        constexpr double EPS { 1e-9 };
+
+        return std::is_floating_point<T>::value ?  fabs(a - b) < EPS : a == b;
+    }
+};
 ```
