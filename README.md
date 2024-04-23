@@ -35,9 +35,9 @@ int main() {
 ```c++
 template<typename T>
 bool equals(T a, T b) {
-	constexpr double EPS { 1e-9 };
+    constexpr double EPS { 1e-9 };
 
-	return std::is_floating_point<T>::value ?  fabs(a - b) < EPS : a == b;
+    return std::is_floating_point<T>::value ?  fabs(a - b) < EPS : a == b;
 }
 ```
 # BIT Tree
@@ -232,7 +232,18 @@ public:
     #define y second
 
     Line(const Point& A, const Point& B)
-        : a(A.y - B.y), b (B.x - A.x), c(A.x * B.y - B.x * A.y) {}
+        : a(A.y - B.y), b(B.x - A.x), c(A.x * B.y - B.x * A.y) {
+        if (a < 0 or b < 0) {
+            a *= -1;
+            b *= -1;
+            c *= -1;
+        }
+
+        ll gcd_abc = gcd(a, gcd(b, c));
+        a /= gcd_abc;
+        b /= gcd_abc;
+        c /= gcd_abc;
+    }
 
     bool operator==(const Line& r) const {
         auto k = a ? a : b;
@@ -261,7 +272,7 @@ public:
     }
 
 private:
-    bool equals(T a, T b) {
+    bool equals(T a, T b) const {
         constexpr double EPS { 1e-9 };
 
         return std::is_floating_point<T>::value ?  fabs(a - b) < EPS : a == b;
