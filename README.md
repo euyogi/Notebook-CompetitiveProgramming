@@ -233,7 +233,7 @@ public:
 
     Line(const Point& A, const Point& B)
         : a(A.y - B.y), b(B.x - A.x), c(A.x * B.y - B.x * A.y) {
-        if (a < 0 or b < 0) {
+        if (a < 0 or (a == 0 and b < 0)) {
             a *= -1;
             b *= -1;
             c *= -1;
