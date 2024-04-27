@@ -239,10 +239,18 @@ public:
             c *= -1;
         }
 
-        ll gcd_abc = gcd(a, gcd(b, c));
-        a /= gcd_abc;
-        b /= gcd_abc;
-        c /= gcd_abc;
+        if (std::is_floating_point<T>::value) {
+            auto tmp = a;
+            a /= tmp;
+            b /= tmp;
+            c /= tmp;
+        }
+        else { 
+            ll gcd_abc = gcd(a, gcd(b, c));
+            a /= gcd_abc;
+            b /= gcd_abc;
+            c /= gcd_abc;
+        }
     }
 
     bool operator==(const Line& r) const {
@@ -276,6 +284,60 @@ private:
         constexpr double EPS { 1e-9 };
 
         return std::is_floating_point<T>::value ?  fabs(a - b) < EPS : a == b;
+    }
+};
+```
+
+# Segmento
+
+```c++
+template<typename T>
+class Segment {
+public:
+    Point A, B;
+
+    #define x first
+    #define y second
+
+    Segment(const Point& A, const Point& B) : A(A), B(B) {}
+
+    bool contains(const Point& P) const {
+        auto xmin = min(A.x, B.x);
+        auto xmax = max(A.x, B.x);
+        auto ymin = min(A.y, B.y);
+        auto ymax = max(A.y, B.y);
+
+        if (P.x < xmin || P.x > xmax || P.y < ymin || P.y > ymax)
+            return false;
+
+        return equals((P.y - A.y)*(B.x - A.x), (P.x - A.x)*(B.y - A.y));
+    }
+
+    bool intersect(const Segment& s) const {
+        auto d1 = D(A, B, s.A);
+        auto d2 = D(A, B, s.B);
+
+        if ((equals(d1, 0) && contains(s.A)) || (equals(d2, 0) && contains(s.B)))
+            return true;
+
+        auto d3 = D(s.A, s.B, A);
+        auto d4 = D(s.A, s.B, B);
+
+        if ((equals(d3, 0) && s.contains(A)) || (equals(d4, 0) && s.contains(B)))
+            return true;
+
+        return (d1 * d2 < 0) && (d3 * d4 < 0);
+    }
+
+private:
+    bool equals(T a, T b) const {
+        constexpr double EPS { 1e-9 };
+
+        return std::is_floating_point<T>::value ?  fabs(a - b) < EPS : a == b;
+    }
+
+    ll D(const Point& A, const Point& B, const Point& P) const {
+        return (A.x * B.y + A.y * P.x + B.x * P.y) - (P.x * B.y + P.y * A.x + B.x * A.y);
     }
 };
 ```
