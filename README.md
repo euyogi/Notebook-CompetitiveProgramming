@@ -40,6 +40,20 @@ bool equals(T a, T b) {
     return std::is_floating_point<T>::value ?  fabs(a - b) < EPS : a == b;
 }
 ```
+
+# GCD (Para versões < C++ 17)
+
+```c++
+int gcd_(ll a, ll b) {
+    while (b) {
+        a %= b;
+        swap(a, b);
+    }
+
+    return a;
+}
+```
+
 # BIT Tree
 
 Somar valores em intervalos.
