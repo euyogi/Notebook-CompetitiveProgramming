@@ -27,7 +27,7 @@ int main() {
 }
 ```
 
-# debug.h
+debug.h
 
 ```c++
 #pragma once
