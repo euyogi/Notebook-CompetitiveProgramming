@@ -3,34 +3,48 @@
 ```c++
 #include <bits/stdc++.h>
 
-using namespace std;
-using ll = long long;
-using ull = unsigned long long;
-using pll = pair<long long, long long>;
-using vll = vector<long long>;
-using vvll = vector<vector<long long>>;
-using vpll = vector<pair<long long, long long>>;
-using Point = pair<long long, long long>;
+#ifndef NDEBUG
+#include "debug.h"
+#else
+#define printVec(...)
+#define printMat(...)
+#define printMatE(...)
+#endif
 
+using namespace std; using ll = long long; using ull = unsigned long long; using pll = pair<ll, ll>; using vll = vector<ll>; using vvll = vector<vll>; using vpll = vector<pll>; using Point = pll;
 constexpr ll oo = numeric_limits<ll>::max();
+#define all(vs) vs.begin(), vs.end()
 
-void solve() {
-    return;
+void tomaraQuePasse() {
+    
 }
 
 int main() {
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
-
+    ios::sync_with_stdio(false); cin.tie(nullptr);
     int testes = 1;
-    // cin >> testes;
-
-    while (testes--)
-        solve();
+    // cin >> testes; cin.ignore();
+    while (testes--) tomaraQuePasse();
 }
 ```
 
-# Igualdade entre pontos flutuantes
+# debug.h
+
+```c++
+#pragma once
+
+#define printVec(vs) for (auto v : vs) cout << v << ' '; cout << '\n';
+#define printMat(ms) for (auto l : ms) { for (auto c : l) cout << c; cout << '\n'; };
+#define printMatE(ms) for (auto l : ms) { for (auto c : l) cout << c << ' '; cout << '\n'; };
+```
+
+# Matrizes de direções
+
+```c++
+int ds[4][2] { {1, 0}, {-1, 0}, {0, 1}, {0, -1} };
+int dse[8][2] { {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1} };
+```
+
+# Igualdade flutuante
 
 ```c++
 template<typename T>
