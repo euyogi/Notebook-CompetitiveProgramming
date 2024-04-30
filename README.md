@@ -3,12 +3,10 @@
 ```c++
 #include <bits/stdc++.h>
 
-#ifndef NDEBUG
-#include "debug.h"
+#ifdef DEBUG
+#include "dbg.h"
 #else
-#define printVec(...)
-#define printMat(...)
-#define printMatE(...)
+#define dbg(...)
 #endif
 
 using namespace std; using ll = long long; using ull = unsigned long long; using pll = pair<ll, ll>; using vll = vector<ll>; using vvll = vector<vll>; using vpll = vector<pll>; using Point = pll;
@@ -16,7 +14,7 @@ constexpr ll oo = numeric_limits<ll>::max();
 #define all(vs) vs.begin(), vs.end()
 
 void tomaraQuePasse() {
-    
+
 }
 
 int main() {
@@ -25,16 +23,6 @@ int main() {
     // cin >> testes; cin.ignore();
     while (testes--) tomaraQuePasse();
 }
-```
-
-debug.h
-
-```c++
-#pragma once
-
-#define printVec(vs) for (auto v : vs) cout << v << ' '; cout << '\n';
-#define printMat(ms) for (auto l : ms) { for (auto c : l) cout << c; cout << '\n'; };
-#define printMatE(ms) for (auto l : ms) { for (auto c : l) cout << c << ' '; cout << '\n'; };
 ```
 
 # Matrizes de direções
