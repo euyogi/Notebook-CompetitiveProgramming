@@ -24,11 +24,26 @@ int main() {
 }
 ```
 
-# Matrizes de direções
+# Array de direções
+
+4 direções adjascentes:
 
 ```c++
-int ds[4][2] { {1, 0}, {-1, 0}, {0, 1}, {0, -1} };
-int dse[8][2] { {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1} };
+pll ds[4][2] { {1, 0}, {-1, 0}, {0, 1}, {0, -1} };
+```
+
+8 direções adjascentes:
+
+```c++
+pll ds[8][2] { {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1} };
+```
+
+Loop das direções:
+
+```c++
+for (auto [ix, iy] : ds) {
+    int nx = x + ix, ny = y + iy;
+}
 ```
 
 # Igualdade flutuante
@@ -75,7 +90,7 @@ vll divisors(ll n) {
 
 Somar valores em intervalos.
 
-n = valor máximo do intervalo (1, n)
+n = valor máximo do intervalo (vai ir de 1 até n inclusivo).
 
 ```c++
 class BITree {
@@ -117,7 +132,7 @@ private:
 # Red-Black Tree
 
 Armazenar valores ordenadamente e conseguir acessar
-o índice do primeiro elemento maior ou igual a x
+o índice do primeiro elemento maior ou igual a x.
 
 ```c++
 #include <ext/pb_ds/assoc_container.hpp>
@@ -131,7 +146,7 @@ rb_tree_tag,tree_order_statistics_node_update> set_t;
 
 # Djikstra
 
-Medir a menor distância de cada aresta para uma principal
+Menor distância de cada aresta para uma principal.
 
 ```c++
 vll djikstra(const vector<vpll>& g, ll s) {
@@ -159,17 +174,20 @@ vll djikstra(const vector<vpll>& g, ll s) {
 # Disjoint Set Union
 
 Representar conjuntos de elementos, conseguir saber de qual conjunto
-um elemento é conseguir saber quantos elementos existem nesse conjunto
+um elemento é e conseguir saber quantos elementos existem nesse conjunto.
+Útil também para identificar ciclos.
+
+n = valor máximo dos elementos + 1 (serão criados n conjuntos, do 0 ao n-1)
 
 ```c++
 class DSU {
 public:
-    DSU(size_t n) : m_parent(n), m_size(n, 1) {
-        iota(m_parent.begin(), m_parent.end(), 0);
+    DSU(size_t n) : parent(n), size(n, 1) {
+        iota(parent.begin(), parent.end(), 0);
     }
 
     ll setOf(ull x) {
-        return m_parent[x] == x ? x : m_parent[x] = setOf(m_parent[x]);
+        return parent[x] == x ? x : parent[x] = setOf(parent[x]);
     }
 
     bool sameSet(ull x, ull y) { return setOf(x) == setOf(y); }
@@ -179,18 +197,17 @@ public:
         ull b = setOf(y);
 
         if (a == b) return;
-        if (m_size[a] > m_size[b]) swap(a, b);
+        if (size[a] > size[b]) swap(a, b);
 
-        m_parent[a] = b;
-        m_size[b] += m_size[a];
-        m_size[a] = 0;
+        parent[a] = b;
+        size[b] += size[a];
+        size[a] = 0;
     }
 
-    size_t size() { return m_parent.size(); }
-    size_t sizeOfSet(ll i) { return m_size[i]; }
+    size_t sizeOfSet(ll i) { return size[i]; }
 
 private:
-    vector<ull> m_parent, m_size;
+    vector<ull> parent, size;
 };
 ```
 
@@ -248,6 +265,8 @@ double angle(const Point& A, const Point& B, const Point& C, const Point& D) {
 ```
 
 # Linha
+
+A linha criada terá seus coeficientes normalizados.
 
 ```c++
 template<typename T>
