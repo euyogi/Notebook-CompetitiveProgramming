@@ -38,7 +38,7 @@ template<typename T>
 bool equals(T a, T b) {
     constexpr double EPS { 1e-9 };
 
-    return std::is_floating_point<T>::value ?  fabs(a - b) < EPS : a == b;
+    return std::is_floating_point<T>::value ?  fabs(a-b) < EPS : a == b;
 }
 ```
 
@@ -60,12 +60,11 @@ int gcd_(ll a, ll b) {
 ```c++
 vll divisors(ll n) {
     vll ans {1};
-    for (ll i = 2; i*i <= n; ++i) {
+    for (ll i = 2; i*i <= n; ++i)
         if (n % i == 0) {
             ans.emplace_back(i);
             ans.emplace_back(n/i);
         }
-    }
 
     sort(all(ans)); // Comentar caso ordem não importe
     return ans;
@@ -76,16 +75,18 @@ vll divisors(ll n) {
 
 Somar valores em intervalos.
 
+n = valor máximo do intervalo (1, n)
+
 ```c++
 class BITree {
 public:
-    BITree(size_t n) : m_ts(n + 1, 0) {}
+    BITree(size_t n) : ts(n+1, 0) {}
 
     ll valueAt(size_t i) { return RSQ(i); }
 
     void rangeAdd(size_t i, size_t j, ll x) {
         add(i, x);
-        add(j + 1, -x);
+        add(j+1, -x);
     }
 
 private:
@@ -95,7 +96,7 @@ private:
         ll sum = 0;
 
         while (i >= 1) {
-            sum += m_ts[i];
+            sum += ts[i];
             i -= LSB(i);
         }
 
@@ -103,13 +104,13 @@ private:
     }
 
     void add(size_t i, ll x) {
-        while (i < m_ts.size()) {
-            m_ts[i] += x;
+        while (i < ts.size()) {
+            ts[i] += x;
             i += LSB(i);
         }
     }
 
-    vector<ll> m_ts;
+    vector<ll> ts;
 };
 ```
 
@@ -124,14 +125,8 @@ o índice do primeiro elemento maior ou igual a x
 
 using namespace __gnu_pbds;
 
-typedef tree<ll, null_type, less_equal<ll>,
+typedef tree<ll, null_type, less_equal<>,
 rb_tree_tag,tree_order_statistics_node_update> set_t;
-
-int main() {
-    set_t dist;
-    dist.order_of_key(...);
-    dist.insert(...);
-}
 ```
 
 # Djikstra
@@ -140,7 +135,7 @@ Medir a menor distância de cada aresta para uma principal
 
 ```c++
 vll djikstra(const vector<vpll>& g, ll s) {
-    vll dists(g.size(), oo);
+    vll dists(g.size(), LONG_LONG_MAX);
     priority_queue<pll, vpll, greater<>> pq;
     
     pq.emplace(s, 0);
