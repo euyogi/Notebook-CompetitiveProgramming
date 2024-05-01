@@ -55,6 +55,21 @@ int gcd_(ll a, ll b) {
 }
 ```
 
+# Divisores
+
+```c++
+vll divisores(ll n) {
+    vll ans {1};
+    for (ll i = 2; i*i <= n; ++i) {
+        ans.emplace_back(i);
+        ans.emplace_back(n/i);
+    }
+
+    sort(all(ans)); // Caso a ordem não importe, comente
+    return ans;
+}
+```
+
 # BIT Tree
 
 Somar valores em intervalos.
