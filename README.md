@@ -58,14 +58,16 @@ int gcd_(ll a, ll b) {
 # Divisores
 
 ```c++
-vll divisores(ll n) {
+vll divisors(ll n) {
     vll ans {1};
     for (ll i = 2; i*i <= n; ++i) {
-        ans.emplace_back(i);
-        ans.emplace_back(n/i);
+        if (n % i == 0) {
+            ans.emplace_back(i);
+            ans.emplace_back(n/i);
+        }
     }
 
-    sort(all(ans)); // Caso a ordem não importe, comente
+    sort(all(ans)); // Comentar caso ordem não importe
     return ans;
 }
 ```
