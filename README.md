@@ -10,7 +10,6 @@
 #endif
 
 using namespace std; using ll = long long; using ull = unsigned long long; using pll = pair<ll, ll>; using vll = vector<ll>; using vvll = vector<vll>; using vpll = vector<pll>; using Point = pll;
-constexpr ll oo = numeric_limits<ll>::max();
 #define all(vs) vs.begin(), vs.end()
 
 void tomaraQuePasse() {
