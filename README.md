@@ -90,15 +90,15 @@ vll divisors(ll n) {
 # Base para busca binária (precisa estar ordenado)
 
 ```c++
-auto binarySearch(vll& vs, ll x, size_t l, size_t r) {
+auto binSearch(vll& vs, ll x, size_t l, size_t r) {
     if (l > r) return vs.end();
 
-    size_t meio = (l + r) / 2;
-    if (vs[meio] == x) return vs.begin() + meio;
+    size_t m = (l + r) / 2;
+    if (vs[m] == x) return vs.begin() + m;
 
-    l = (vs[meio] < x ? meio + 1 : l);
-    r = (vs[meio] > x ? meio - 1 : r);
-    return binarySearch(vs, x, l, r);
+    l = (vs[m] < x ? m + 1 : l);
+    r = (vs[m] > x ? m - 1 : r);
+    return binSearch(vs, x, l, r);
 }
 ```
 
