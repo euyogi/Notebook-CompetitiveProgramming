@@ -115,6 +115,10 @@ public:
 
     ll valueAt(size_t i) { return RSQ(i); }
 
+    ll rangeQuery(size_t i, size_t j) {
+        return RSQ(max(i, j)) - RSQ(min(i, j));
+    }
+
     void rangeAdd(size_t i, size_t j, ll x) {
         add(i, x);
         add(j+1, -x);
@@ -193,12 +197,12 @@ Representar conjuntos de elementos, conseguir saber de qual conjunto
 um elemento é e conseguir saber quantos elementos existem nesse conjunto.
 Útil também para identificar ciclos.
 
-n = valor máximo dos elementos + 1 (serão criados n conjuntos, do 0 ao n-1)
+n = valor máximo dos elementos (serão criados n+1 conjuntos, do 0 ao n)
 
 ```c++
 class DSU {
 public:
-    DSU(size_t n) : parent(n), size(n, 1) {
+    DSU(size_t n) : parent(n+1), size(n+1, 1) {
         iota(parent.begin(), parent.end(), 0);
     }
 
