@@ -11,6 +11,7 @@
 
 using namespace std; using ll = long long; using ull = unsigned long long; using pll = pair<ll, ll>; using vll = vector<ll>; using vvll = vector<vll>; using vpll = vector<pll>; using Point = pll;
 #define all(vs) vs.begin(), vs.end()
+#define found(x, xs) xs.find(x) != xs.end()
 
 void tomaraQuePasse() {
 
@@ -83,6 +84,21 @@ vll divisors(ll n) {
 
     sort(all(ans)); // Comentar caso ordem não importe
     return ans;
+}
+```
+
+# Base para busca binária (precisa estar ordenado)
+
+```c++
+auto binarySearch(vll& vs, ll x, size_t l, size_t r) {
+    if (l > r) return vs.end();
+
+    size_t meio = (l + r) / 2;
+    if (vs[meio] == x) return vs.begin() + meio;
+
+    l = (vs[meio] < x ? meio + 1 : l);
+    r = (vs[meio] > x ? meio - 1 : r);
+    return binarySearch(vs, x, l, r);
 }
 ```
 
