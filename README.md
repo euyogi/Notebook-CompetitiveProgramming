@@ -11,7 +11,7 @@
 
 using namespace std; using ll = long long; using ull = unsigned long long; using pll = pair<ll, ll>; using vll = vector<ll>; using vvll = vector<vll>; using vpll = vector<pll>; using Point = pll;
 #define all(vs) vs.begin(), vs.end()
-#define found(x, xs) xs.find(x) != xs.end()
+#define found(x, xs) (xs.find(x) != xs.end())
 
 void tomaraQuePasse() {
 
