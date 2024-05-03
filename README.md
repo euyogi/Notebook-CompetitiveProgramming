@@ -164,30 +164,47 @@ typedef tree<ll, null_type, less_equal<>,
 rb_tree_tag,tree_order_statistics_node_update> set_t;
 ```
 
-# Djikstra
+# Dijkstra
 
-Menor distância de cada aresta para uma principal.
+Menor distância de cada aresta para uma principal e caminho.
+
+Grafo consiste de uma lista de adjacências com pares (vértice, peso)
 
 ```c++
-vll djikstra(const vector<vpll>& g, ll s) {
-    vll dists(g.size(), LONG_LONG_MAX);
+pair<vll, vll> dijkstra(const vector<vpll>& g, ll s) {
+    vll ds(g.size(), LONG_LONG_MAX), pre(g.size(), -1);
     priority_queue<pll, vpll, greater<>> pq;
     
     pq.emplace(s, 0);
-    dists[s] = 0;
+    ds[s] = 0;
     
     while (!pq.empty()) {
         auto [c, t] = pq.top();
         pq.pop();
     
         for (auto [n, w] : g[c])
-            if (t + w < dists[n]) {
+            if (t + w < ds[n]) {
                 pq.emplace(n, t + w);
-                dists[n] = t + w;
+                ds[n] = t + w;
+                pre[n] = c;
             }
     }
     
-    return dists;
+    return { ds, pre };
+}
+```
+
+Pegar caminho: (Não funcionará se o caminho não existe ou se é para o mesmo elemento)
+
+```c++
+vll getPath(const vll& pre, ll s, ll t) {
+    vll p { t };
+    do {
+        p.emplace_back(pre[t]);
+        t = pre[t];
+    } while (t != s);
+    reverse(all(p));
+    return p;
 }
 ```
 
