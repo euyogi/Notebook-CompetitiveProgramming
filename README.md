@@ -25,7 +25,7 @@ int main() {
 }
 ```
 
-# Array de direções
+# Lista de direções
 
 4 direções adjascentes:
 
@@ -58,7 +58,9 @@ bool equals(T a, T b) {
 }
 ```
 
-# GCD (Para versões < C++ 17)
+# GCD
+
+Para versões < C++ 17.
 
 ```c++
 int gcd_(ll a, ll b) {
@@ -87,7 +89,9 @@ vll divisors(ll n) {
 }
 ```
 
-# Base para busca binária (precisa estar ordenado)
+# Base para busca binária
+
+Vetor precisa estar ordenado.
 
 ```c++
 auto binSearch(vll& xs, ll x, size_t l, size_t r) {
@@ -100,6 +104,20 @@ auto binSearch(vll& xs, ll x, size_t l, size_t r) {
     r = (xs[m] > x ? m - 1 : r);
     return binSearch(xs, x, l, r);
 }
+```
+
+# Base para DFS em árvore
+
+Árvore = (Grafo não direcionado, conectado e acíclico).
+
+Note que chamei o grafo de g, e iniciei a dfs no vértice 1.
+
+```c++
+auto dfs = [&](auto&& dfs, ll c, ll p) -> void {
+    // Processa c
+    for (auto n : g[c]) if (n != p)
+            dfs(dfs, n, c);
+}; dfs(dfs, 1, -1);
 ```
 
 # BIT Tree
@@ -166,9 +184,9 @@ rb_tree_tag,tree_order_statistics_node_update> set_t;
 
 # Dijkstra
 
-Menor distância de cada aresta para uma principal e caminho.
+Menor distância de cada aresta para uma principal e respectivo caminho.
 
-Grafo consiste de uma lista de adjacências com pares (vértice, peso)
+Grafo consiste de uma lista de adjacências com pares (vértice, peso).
 
 ```c++
 pair<vll, vll> dijkstra(const vector<vpll>& g, ll s) {
@@ -194,7 +212,7 @@ pair<vll, vll> dijkstra(const vector<vpll>& g, ll s) {
 }
 ```
 
-Pegar caminho: (Não funcionará se o caminho não existe ou se é para o mesmo elemento)
+Pegar caminho: (Não funcionará se o caminho não existe ou se é para o mesmo elemento).
 
 ```c++
 vll getPath(const vll& pre, ll s, ll t) {
@@ -250,7 +268,7 @@ private:
 
 # Geometria
 
-Rotacionar Ponto
+Rotacionar Ponto:
 
 ```c++
 Point rotatePoint(const Point& P, double angleRadians) {
@@ -264,7 +282,7 @@ Point rotatePoint(const Point& P, double angleRadians) {
 }
 ```
 
-Checar orientação do ponto P em relação à reta AB
+Checar orientação do ponto P em relação à reta AB:
 
 ```c++
 // D = 0: P pertence a reta
@@ -278,7 +296,7 @@ ll D(const Point& A, const Point& B, const Point& P) {
 }
 ```
 
-Checar ângulo entre as retas AB e CD
+Checar ângulo entre as retas AB e CD:
 
 ```c++
 double angle(const Point& A, const Point& B, const Point& C, const Point& D) {
