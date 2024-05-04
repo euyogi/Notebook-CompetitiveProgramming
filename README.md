@@ -255,7 +255,7 @@ public:
         size[b] += size[a];
     }
 
-    size_t sizeOfSet(ll i) { return size[i]; }
+    size_t sizeOfSet(ull i) { return size[i]; }
 
 private:
     vector<ull> parent, size;
