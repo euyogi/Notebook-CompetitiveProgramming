@@ -112,6 +112,8 @@ auto binSearch(vll& xs, ll x, size_t l, size_t r) {
 
 Note que chamei o grafo de g, e iniciei a dfs no vértice 1.
 
+Grafo consiste de uma lista de adjacências não ponderada.
+
 ```c++
 auto dfs = [&](auto&& dfs, ll c, ll p) -> void {
     // Processa c
@@ -184,7 +186,7 @@ rb_tree_tag,tree_order_statistics_node_update> set_t;
 
 # Dijkstra
 
-Menor distância de cada aresta para uma principal e respectivo caminho.
+Retorna a menor distância de cada aresta para uma principal e respectivos caminhos.
 
 Grafo consiste de uma lista de adjacências com pares (vértice, peso).
 
@@ -212,7 +214,7 @@ pair<vll, vll> dijkstra(const vector<vpll>& g, ll s) {
 }
 ```
 
-Pegar caminho: (Não funcionará se o caminho não existe ou se é para o mesmo elemento).
+Retorna o caminho: (Não funcionará se o caminho não existe ou se é para o mesmo elemento).
 
 ```c++
 vll getPath(const vll& pre, ll s, ll t) {
@@ -232,7 +234,7 @@ Representar conjuntos de elementos, conseguir saber de qual conjunto
 um elemento é e conseguir saber quantos elementos existem nesse conjunto.
 Útil também para identificar ciclos.
 
-n = valor máximo dos elementos (serão criados n+1 conjuntos, do 0 ao n)
+n = valor máximo dos elementos (serão criados n+1 conjuntos, do 0 ao n).
 
 ```c++
 class DSU {
@@ -264,8 +266,26 @@ private:
 
 # Kruskal
 
+Retorna a árvore de extensão mínima (mst) e a soma dos pesos de todas suas arestas.
+
+Grafo consiste de uma lista de arestas com triplas (peso, a, b).
+
 ```c++
-...
+pair<vector<tuple<ll, ll, ll>>, ll> kruskal(vector<tuple<ll, int, int>>& edges, int n) {
+    DSU dsu(n);
+    vector<tuple<ll, ll, ll>> mst;
+    ll ws_sum = 0;
+
+    sort(all(edges));
+    for (auto [w, a, b] : edges)
+        if (!dsu.sameSet(a, b)) {
+            mst.emplace_back(w, a, b);
+            dsu.mergeSetsOf(a, b);
+            ws_sum += w;
+        }
+
+    return { mst, ws_sum };
+}
 ```
 
 # Geometria
