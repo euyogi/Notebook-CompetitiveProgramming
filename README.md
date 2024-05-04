@@ -238,7 +238,7 @@ n = valor máximo dos elementos (serão criados n+1 conjuntos, do 0 ao n)
 class DSU {
 public:
     DSU(size_t n) : parent(n+1), size(n+1, 1) {
-        iota(parent.begin(), parent.end(), 0);
+        iota(all(parent), 0);
     }
 
     ll setOf(ull x) {
@@ -248,15 +248,11 @@ public:
     bool sameSet(ull x, ull y) { return setOf(x) == setOf(y); }
 
     void mergeSetsOf(ull x, ull y) {
-        ull a = setOf(x);
-        ull b = setOf(y);
-
+        ull a = setOf(x), b = setOf(y);
         if (a == b) return;
         if (size[a] > size[b]) swap(a, b);
-
         parent[a] = b;
         size[b] += size[a];
-        size[a] = 0;
     }
 
     size_t sizeOfSet(ll i) { return size[i]; }
@@ -264,6 +260,12 @@ public:
 private:
     vector<ull> parent, size;
 };
+```
+
+# Kruskal
+
+```c++
+...
 ```
 
 # Geometria
