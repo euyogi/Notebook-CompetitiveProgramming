@@ -268,10 +268,12 @@ private:
 
 Retorna a árvore de extensão mínima (mst) e a soma dos pesos de todas suas arestas.
 
+O Grafo precisa ser conectado.
+
 Grafo consiste de uma lista de arestas com triplas (peso, a, b).
 
 ```c++
-pair<vector<tuple<ll, ll, ll>>, ll> kruskal(vector<tuple<ll, int, int>>& edges, int n) {
+pair<vector<tuple<ll, ll, ll>>, ll> kruskal(vector<tuple<ll, ll, ll>>& edges, int n) {
     DSU dsu(n);
     vector<tuple<ll, ll, ll>> mst;
     ll ws_sum = 0;
