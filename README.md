@@ -131,43 +131,40 @@ Somar valores em intervalos.
 n = valor máximo do intervalo (vai ir de 1 até n inclusivo).
 
 ```c++
-class BITree {
+class BIT {
 public:
-    BITree(size_t n) : ts(n+1, 0) {}
-
-    ll valueAt(size_t i) { return RSQ(i); }
+    BIT(size_t n) : bt1(n+1), bt2(n+1) {}
 
     ll rangeQuery(size_t i, size_t j) {
-        return RSQ(max(i, j)) - RSQ(min(i, j));
+    	return rsq(j, bt1) * j       - rsq(j, bt2) -
+    	      (rsq(i-1, bt1) * (i-1) - rsq(i-1, bt2));
     }
 
     void rangeAdd(size_t i, size_t j, ll x) {
-        add(i, x);
-        add(j+1, -x);
+    	add(i, x, bt1);         add(j+1, -x, bt1);
+    	add(i, x * (i-1), bt2); add(j + 1, -x * j, bt2);
     }
 
 private:
-    ll LSB(ll n) { return n & (-n); }
-
-    ll RSQ(ll i) {
+    ll rsq(ll i, vll& bt) {
         ll sum = 0;
 
         while (i >= 1) {
-            sum += ts[i];
-            i -= LSB(i);
+            sum += bt[i];
+            i -= i & (-i);
         }
 
         return sum;
     }
 
-    void add(size_t i, ll x) {
-        while (i < ts.size()) {
-            ts[i] += x;
-            i += LSB(i);
-        }
+    void add(size_t i, ll x, vll& bt) {
+        while (i < bt.size()) {
+            bt[i] += x;
+            i += i & (-i);
+    	}
     }
 
-    vector<ll> ts;
+    vll bt1, bt2;
 };
 ```
 
