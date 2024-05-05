@@ -93,6 +93,8 @@ vll divisors(ll n) {
 
 Vetor precisa estar ordenado.
 
+Se em vez de retornar ```xs.end()```, retornar ```l```, teremos o equivalente a um upper_bound.
+
 ```c++
 auto binSearch(vll& xs, ll x, size_t l, size_t r) {
     if (l > r) return xs.end();
