@@ -124,6 +124,8 @@ auto dfs = [&](auto&& dfs, ll c, ll p) -> void {
 }; dfs(dfs, 1, -1);
 ```
 
+DFS em grafos que não sejam árvores será necessário uma forma de guardar os nós visitados para não voltar neles.
+
 # BIT Tree
 
 Somar valores em intervalos.
