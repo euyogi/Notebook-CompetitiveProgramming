@@ -119,8 +119,8 @@ Grafo consiste de uma lista de adjacências não ponderada.
 ```c++
 auto dfs = [&](auto&& dfs, ll c, ll p) -> void {
     // Processa c
-    for (auto n : g[c]) if (n != p)
-            dfs(dfs, n, c);
+    for (auto _n : g[c]) if (_n != p)
+            dfs(dfs, _n, c);
 }; dfs(dfs, 1, -1);
 ```
 
