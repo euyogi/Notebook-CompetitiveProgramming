@@ -58,19 +58,12 @@ bool equals(T a, T b) {
 }
 ```
 
-# GCD
+# Bitwise
 
-Para versões < C++ 17.
+Fatos que podem ajudar:
 
 ```c++
-int gcd_(ll a, ll b) {
-    while (b) {
-        a %= b;
-        swap(a, b);
-    }
-
-    return a;
-}
+a + b = (a&b) + (a|b);
 ```
 
 # Divisores
