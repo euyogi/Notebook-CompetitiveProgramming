@@ -6,9 +6,9 @@
 #include <bits/stdc++.h>
 
 #ifdef DEBUG
-#include "dbg.h"
+    #include "dbg.h"
 #else
-#define dbg(...)
+    #define dbg(...)
 #endif
 
 using namespace std; using ll = long long; using ull = unsigned long long; using pll = pair<ll, ll>; using vll = vector<ll>; using vvll = vector<vll>; using vpll = vector<pll>; using Point = pll;
@@ -27,101 +27,28 @@ int main() {
 }
 ```
 
-## Travessias
+## Utils
 
 ### 4 direções adjascentes:
 
 ```c++
-pll ds[] { {1, 0}, {-1, 0}, {0, 1}, {0, -1} };
+vpll ds { {1, 0}, {-1, 0}, {0, 1}, {0, -1} };
 ```
 
 ### 8 direções adjascentes:
 
 ```c++
-pll ds[] { {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1} };
+vpll ds { {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1} };
 ```
 
 ### Loop das direções:
 
 ```c++
 for (auto [ox, oy] : ds) {
-    int nx = x + ox, ny = y + oy;
+    ll nx = x + ox, ny = y + oy;
     // processing
 }
 ```
-
-### Base para DFS em árvores:
-
-Parâmetros:
-
-* `dfs`: própria função
-* `u`: vértice atual
-* `p`: vértice anterior
-
-```c++
-auto dfs = [&](auto&& dfs, ll u, ll p) -> void {
-    // processing
-    for (auto v : g[u]) if (v != p)
-        dfs(dfs, v, u);
-}; dfs(dfs, 1, -1);
-```
-
-### Base para DFS em grafos:
-
-Parâmetros:
-
-* `dfs`: própria função
-* `u`: vértice atual
-
-```c++
-vector<bool> vs(g.size());
-auto dfs = [&](auto&& dfs, ll u) -> void {
-    vs[u] = true;
-    // processing
-    for (auto v : g[u]) if (!vs[v])
-        dfs(dfs, v);
-}; dfs(dfs, 1);
-```
-
-### Dijkstra
-
-Parâmetros:
-
-* `g`: grafo
-* `s`: vértice inicial (menores distâncias em relação à ele)
-
-Retorna: Vetor com as menores distâncias de cada aresta para `s` e vetor de trajetos
-
-```c++
-pair<vll, vll> dijkstra(const vector<vpll>& g, ll s) {
-    vll ds(g.size(), LONG_LONG_MAX), pre(g.size(), -1);
-    priority_queue<pll, vpll, greater<>> pq;
-    pq.emplace(0, s);
-    ds[s] = 0;
-    while (!pq.empty()) {
-        auto [t, u] = pq.top(); pq.pop();
-        for (auto [w, v] : g[u])
-            if (t + w < ds[v]) {
-                pq.emplace(v, t + w);
-                ds[v] = t + w;
-                pre[v] = u;
-            }
-    }
-    return { ds, pre };
-}
-
-vll getPath(const vll& pre, ll s, ll u) {
-    vll p { u };
-    do {
-        p.emplace_back(pre[u]);
-        u = pre[u];
-    } while (u != s);
-    reverse(all(p));
-    return p;
-}
-```
-
-## Utils
 
 ### Igualdade flutuante:
 
@@ -134,87 +61,6 @@ bool equals(T a, T b) {
 ```
 
 ### Fato: `a + b = (a & b) + (a | b)`
-
-## Matemática
-
-### Divisores:
-
-Retorna: Vetor ordenado com todos os divisores de `x`
-
-```c++
-vll divisors(ll x) {
-    vll ds {1};
-    for (ll i = 2; i * i <= x; ++i)
-        if (x % i == 0) {
-            ds.emplace_back(i);
-            ds.emplace_back(x / i);
-        }
-    sort(all(ds));
-    return ds;
-}
-```
-
-### Fatoração:
-
-Retorna: Vetor com cada fator primo de `x`
-
-```c++
-vll factor(ll x) {
-    vll fs;
-    for (ll i = 2; i * i <= x; ++i)
-        while (x % i == 0) {
-            fs.emplace_back(i);
-            x /= i;
-        }
-    if (x > 1) fs.emplace_back(x);
-    return fs;
-}
-```
-
-### N Primos:
-
-Retorna: Vetor com todos os primos no intervalo `[1,n]`
-
-```c++
-vll sieve(ll n) {
-    vll ps;
-    vector<bool> is_composite(n);
-    for (int i = 2; i < n; ++i) {
-        if (!is_composite[i]) ps.emplace_back (i);
-        for (int j = 0; j < ps.size() and i * ps[j] < n; ++j) {
-            is_composite[i * ps[j]] = true;
-            if (i % ps[j] == 0) break;
-        }
-    }
-    return ps;
-}
-```
-
-## Buscas
-
-### Base para busca binária
-
-Paramêtros:
-
-* `xs`: vetor ordenado alvo
-* `x`: elemento alvo
-* `l`: índice de início
-* `r`: índice de fim
-
-Retorna: Iterador para `x` se encontrado, se não `xs.end()`
-
-Pode ser útil em vez de retornar ```xs.end()```, retornar ```l```
-
-```c++
-auto binSearch(vll& xs, ll x, size_t l, size_t r) {
-    if (l > r) return xs.end();
-    size_t m = (l + r) / 2;
-    if (xs[m] == x) return xs.begin() + m;
-    l = (xs[m] < x ? m + 1 : l);
-    r = (xs[m] > x ? m - 1 : r);
-    return binSearch(xs, x, l, r);
-}
-```
 
 ## Estruturas
 
@@ -282,119 +128,6 @@ typedef tree<ll, null_type, less_equal<>,
 rb_tree_tag,tree_order_statistics_node_update> rb;
 ```
 
-### Disjoint Set Union
-
-Parâmetros:
-
-* `n`: intervalo máximo para operações `[1,n]`
-
-Métodos:
-
-* `mergeSetsOf(x, y)`: combina os conjuntos que contém `x` e `y`
-* `sameSet(x, y)`: retorna verdadeiro se `x` e `y` estão contidos no mesmo conjunto, falso caso contrário
-* `setOf(x)`: retorna o representante do conjunto que contém `x`
-* `sizeOfSet(s)`: retorna quantos elementos estão contidos no conjunto representado por `s`
-
-```c++
-class DSU {
-public:
-    DSU(size_t n) : parent(n + 1), size(n + 1, 1) {
-        iota(all(parent), 0);
-    }
-
-    void mergeSetsOf(ull x, ull y) {
-        ull a = setOf(x), b = setOf(y);
-        if (a == b) return;
-        if (size[a] > size[b]) swap(a, b);
-        parent[a] = b;
-        size[b] += size[a];
-    }
-    
-    bool sameSet(ull x, ull y) { return setOf(x) == setOf(y); }
-    
-    ll setOf(ull x) {
-        return parent[x] == x ? x : parent[x] = setOf(parent[x]);
-    }
-
-    size_t sizeOfSet(ull s) { return size[s]; }
-
-private:
-    vector<ull> parent, size;
-};
-```
-
-## Algoritmos
-
-### Kruskal
-
-Parâmetros:
-
-* `edges`: grafo representado por vetor de arestas `(peso, u, v)`
-* `n`: quantidade máxima de vértices
-
-Retorna: Vetor com a árvore de extensão mínima (mst) representado por vetor de arestas
-e a soma total de suas arestas
-
-O Grafo precisa ser conectado.
-
-```c++
-pair<vector<tuple<ll, ll, ll>>, ll> kruskal(vector<tuple<ll, ll, ll>>& edges, int n) {
-    DSU dsu(n);
-    vector<tuple<ll, ll, ll>> mst;
-    ll edges_sum = 0;
-    sort(all(edges));
-    for (auto [w, u, v] : edges)
-        if (!dsu.sameSet(u, v)) {
-            mst.emplace_back(w, u, v);
-            dsu.mergeSetsOf(u, v);
-            edges_sum += w;
-        }
-    return { mst, edges_sum };
-}
-```
-
-## Geometria
-
-### Rotacionar Ponto:
-
-Parâmetros:
-
-* `P`: ponto
-* `radians`: ângulo em radianos
-
-Retorna: Ponto rotacionado
-
-```c++
-Point rotatePoint(const Point& P, double radians) {
-    #define x first
-    #define y second
-    double x = P.x * cos(radians) - P.y * sin(radians);
-    double y = P.x * sin(radians) + P.y * cos(radians);
-    return {x, y};
-}
-```
-
-### Orientação de ponto
-
-Parâmetros:
-
-* `A` e `B`: pontos pertencentes à reta
-* `P`: ponto que queremos checar orientação
-
-Retorna:
-
-* `D`: valor que representa a orientação
-
-```c++
-// D = 0: P in line
-// D > 0: P at left
-// D < 0: P at right
-ll D(const Point& A, const Point& B, const Point& P) {
-    #define x first
-    #define y second
-    return (A.x * B.y + A.y * P.x + B.x * P.y) - (P.x * B.y + P.y * A.x + B.x * A.y);
-}
-```
 ### Reta
 
 Parâmetros:
@@ -497,4 +230,263 @@ private:
         return (A.x * B.y + A.y * P.x + B.x * P.y) - (P.x * B.y + P.y * A.x + B.x * A.y);
     }
 };
+```
+
+### Disjoint Set Union
+
+Parâmetros:
+
+* `n`: intervalo máximo para operações `[1,n]`
+
+Métodos:
+
+* `mergeSetsOf(x, y)`: combina os conjuntos que contém `x` e `y`
+* `sameSet(x, y)`: retorna verdadeiro se `x` e `y` estão contidos no mesmo conjunto, falso caso contrário
+* `setOf(x)`: retorna o representante do conjunto que contém `x`
+* `sizeOfSet(s)`: retorna quantos elementos estão contidos no conjunto representado por `s`
+
+```c++
+class DSU {
+public:
+    DSU(size_t n) : parent(n + 1), size(n + 1, 1) {
+        iota(all(parent), 0);
+    }
+
+    void mergeSetsOf(ull x, ull y) {
+        ull a = setOf(x), b = setOf(y);
+        if (a == b) return;
+        if (size[a] > size[b]) swap(a, b);
+        parent[a] = b;
+        size[b] += size[a];
+    }
+    
+    bool sameSet(ull x, ull y) { return setOf(x) == setOf(y); }
+    
+    ll setOf(ull x) {
+        return parent[x] == x ? x : parent[x] = setOf(parent[x]);
+    }
+
+    size_t sizeOfSet(ull s) { return size[s]; }
+
+private:
+    vector<ull> parent, size;
+};
+```
+
+## Algoritmos
+
+### Kruskal
+
+Parâmetros:
+
+* `edges`: grafo representado por vetor de arestas `(peso, u, v)`
+* `n`: quantidade máxima de vértices
+
+Retorna: Vetor com a árvore de extensão mínima (mst) representado por vetor de arestas
+e a soma total de suas arestas
+
+O Grafo precisa ser conectado.
+
+```c++
+pair<vector<tuple<ll, ll, ll>>, ll> kruskal(vector<tuple<ll, ll, ll>>& edges, int n) {
+    DSU dsu(n);
+    vector<tuple<ll, ll, ll>> mst;
+    ll edges_sum = 0;
+    sort(all(edges));
+    for (auto [w, u, v] : edges)
+        if (!dsu.sameSet(u, v)) {
+            mst.emplace_back(w, u, v);
+            dsu.mergeSetsOf(u, v);
+            edges_sum += w;
+        }
+    return { mst, edges_sum };
+}
+```
+
+### Base para busca binária
+
+Parâmetros:
+
+* `xs`: vetor ordenado alvo
+* `x`: elemento alvo
+* `l`: índice de início
+* `r`: índice de fim
+
+Retorna: Índice de `x` se encontrado, se não `-1`
+
+Pode ser útil em vez de retornar ```-1```, retornar ```l```
+
+```c++
+ll binSearch(vpll& xs, ll x, ll l, ll r) {
+    if (l > r) return -1;
+    ll m = l + (r - l) / 2;
+    if (xs[m].first == x) return m;
+    l = (xs[m].first < x ? m + 1 : l);
+    r = (xs[m].first > x ? m - 1 : r);
+    return binSearch(xs, x, l, r);
+}
+```
+
+### Base para DFS em árvores:
+
+Parâmetros:
+
+* `dfs`: própria função
+* `u`: vértice atual
+* `p`: vértice anterior
+
+```c++
+auto dfs = [&](auto&& dfs, ll u, ll p) -> void {
+    // processing
+    for (auto v : g[u]) if (v != p)
+        dfs(dfs, v, u);
+}; dfs(dfs, 1, -1);
+```
+
+### Base para DFS em grafos:
+
+Parâmetros:
+
+* `dfs`: própria função
+* `u`: vértice atual
+
+```c++
+vector<bool> vs(g.size());
+auto dfs = [&](auto&& dfs, ll u) -> void {
+    vs[u] = true;
+    // processing
+    for (auto v : g[u]) if (!vs[v])
+        dfs(dfs, v);
+}; dfs(dfs, 1);
+```
+
+### Dijkstra
+
+Parâmetros:
+
+* `g`: grafo
+* `s`: vértice inicial (menores distâncias em relação à ele)
+
+Retorna: Vetor com as menores distâncias de cada aresta para `s` e vetor de trajetos
+
+```c++
+pair<vll, vll> dijkstra(const vector<vpll>& g, ll s) {
+    vll ds(g.size(), LONG_LONG_MAX), pre(g.size(), -1);
+    priority_queue<pll, vpll, greater<>> pq;
+    pq.emplace(0, s); ds[s] = 0;
+    while (!pq.empty()) {
+        auto [t, u] = pq.top(); pq.pop();
+        for (auto [w, v] : g[u])
+            if (t + w < ds[v]) {
+                pq.emplace(v, t + w);
+                ds[v] = t + w;
+                pre[v] = u;
+            }
+    }
+    return { ds, pre };
+}
+
+vll getPath(const vll& pre, ll s, ll u) {
+    vll p { u };
+    do {
+        p.emplace_back(pre[u]);
+        u = pre[u];
+    } while (u != s);
+    reverse(all(p));
+    return p;
+}
+```
+
+### Divisores:
+
+Retorna: Vetor ordenado com todos os divisores de `x`
+
+```c++
+vll divisors(ll x) {
+    vll ds {1};
+    for (ll i = 2; i * i <= x; ++i)
+        if (x % i == 0) {
+            ds.emplace_back(i);
+            ds.emplace_back(x / i);
+        }
+    sort(all(ds));
+    return ds;
+}
+```
+
+### Fatoração:
+
+Retorna: Vetor com cada fator primo de `x`
+
+```c++
+vll factor(ll x) {
+    vll fs;
+    for (ll i = 2; i * i <= x; ++i)
+        while (x % i == 0) {
+            fs.emplace_back(i);
+            x /= i;
+        }
+    if (x > 1) fs.emplace_back(x);
+    return fs;
+}
+```
+
+### N Primos:
+
+Retorna: Vetor com todos os primos no intervalo `[1,n]`
+
+```c++
+vll sieve(ll n) {
+    vll ps;
+    vector<bool> is_composite(n);
+    for (int i = 2; i < n; ++i) {
+        if (!is_composite[i]) ps.emplace_back (i);
+        for (int j = 0; j < ps.size() and i * ps[j] < n; ++j) {
+            is_composite[i * ps[j]] = true;
+            if (i % ps[j] == 0) break;
+        }
+    }
+    return ps;
+}
+```
+
+### Rotacionar Ponto:
+
+Parâmetros:
+
+* `P`: ponto
+* `radians`: ângulo em radianos
+
+Retorna: Ponto rotacionado
+
+```c++
+Point rotatePoint(const Point& P, double radians) {
+    #define x first
+    #define y second
+    double x = P.x * cos(radians) - P.y * sin(radians);
+    double y = P.x * sin(radians) + P.y * cos(radians);
+    return {x, y};
+}
+```
+
+### Orientação de ponto
+
+Parâmetros:
+
+* `A` e `B`: pontos pertencentes à reta
+* `P`: ponto que queremos checar orientação
+
+Retorna:
+
+* `D`: valor que representa a orientação
+
+```c++
+// D = 0: P in line
+// D > 0: P at left
+// D < 0: P at right
+ll D(const Point& A, const Point& B, const Point& P) {
+    #define x first
+    #define y second
+    return (A.x * B.y + A.y * P.x + B.x * P.y) - (P.x * B.y + P.y * A.x + B.x * A.y);
+}
 ```
