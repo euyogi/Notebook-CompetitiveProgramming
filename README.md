@@ -160,14 +160,14 @@ Retorna: Vetor com cada fator primo de `x`
 
 ```c++
 vll factor(ll x) {
-	vll fs;
-	for (ll i = 2; i * i <= x; ++i)
-		while (x % i == 0) {
-			fs.emplace_back(i);
-			x /= i;
-		}
-	if (x > 1) fs.emplace_back(x);
-	return fs;
+    vll fs;
+    for (ll i = 2; i * i <= x; ++i)
+        while (x % i == 0) {
+            fs.emplace_back(i);
+            x /= i;
+        }
+    if (x > 1) fs.emplace_back(x);
+    return fs;
 }
 ```
 
