@@ -70,15 +70,48 @@ a + b = (a&b) + (a|b);
 
 ```c++
 vll divisors(ll n) {
-    vll ans {1};
+    vll ds {1};
     for (ll i = 2; i*i <= n; ++i)
         if (n % i == 0) {
-            ans.emplace_back(i);
-            ans.emplace_back(n/i);
+            ds.emplace_back(i);
+            ds.emplace_back(n/i);
         }
 
-    sort(all(ans)); // Comentar caso ordem não importe
-    return ans;
+    sort(all(ds)); // Comentar caso ordem não importe
+    return ds;
+}
+```
+
+# Fatoração
+
+```c++
+vll factor(ll n) {
+	vll fs;
+	for (ll i = 2; i * i <= n; ++i)
+		while (n % i == 0) {
+			fs.emplace_back(i);
+			n /= i;
+		}
+
+	if (n > 1) fs.emplace_back(n);
+	return fs;
+}
+```
+
+# N Primos
+
+```c++
+vll sieve(ll n) {
+    vll ps;
+    vector<bool> is_composite(n);
+    for (int i = 2; i < n; ++i) {
+        if (!is_composite[i]) ps.emplace_back (i);
+        for (int j = 0; j < ps.size() and i * ps[j] < n; ++j) {
+            is_composite[i * ps[j]] = true;
+            if (i % ps[j] == 0) break;
+        }
+    }
+    return ps;
 }
 ```
 
