@@ -55,14 +55,14 @@ for (auto [ox, oy] : ds) {
 Parâmetros:
 
 * `dfs`: própria função
-* `c`: vértice atual
+* `u`: vértice atual
 * `p`: vértice anterior
 
 ```c++
-auto dfs = [&](auto&& dfs, ll c, ll p) -> void {
+auto dfs = [&](auto&& dfs, ll u, ll p) -> void {
     // processing
-    for (auto _n : g[c]) if (_n != p)
-        dfs(dfs, _n, c);
+    for (auto v : g[u]) if (v != p)
+        dfs(dfs, v, u);
 }; dfs(dfs, 1, -1);
 ```
 
@@ -71,15 +71,15 @@ auto dfs = [&](auto&& dfs, ll c, ll p) -> void {
 Parâmetros:
 
 * `dfs`: própria função
-* `c`: vértice atual
+* `u`: vértice atual
 
 ```c++
 vector<bool> vs(g.size());
-auto dfs = [&](auto&& dfs, ll c) -> void {
-    vs[_n] = true;
-    // processamento
-    for (auto _n : g[c]) if (!vs[_n])
-        dfs(dfs, _n, c);
+auto dfs = [&](auto&& dfs, ll u) -> void {
+    vs[u] = true;
+    // processing
+    for (auto v : g[u]) if (!vs[v])
+        dfs(dfs, v);
 }; dfs(dfs, 1);
 ```
 
@@ -96,15 +96,15 @@ Retorna: Vetor com as menores distâncias de cada aresta para `s` e vetor de tra
 pair<vll, vll> dijkstra(const vector<vpll>& g, ll s) {
     vll ds(g.size(), LONG_LONG_MAX), pre(g.size(), -1);
     priority_queue<pll, vpll, greater<>> pq;
-    pq.emplace(s, 0);
+    pq.emplace(0, s);
     ds[s] = 0;
     while (!pq.empty()) {
-        auto [c, t] = pq.top(); pq.pop();
-        for (auto [n, w] : g[c])
-            if (t + w < ds[n]) {
-                pq.emplace(n, t + w);
-                ds[n] = t + w;
-                pre[n] = c;
+        auto [t, u] = pq.top(); pq.pop();
+        for (auto [w, v] : g[u])
+            if (t + w < ds[v]) {
+                pq.emplace(v, t + w);
+                ds[v] = t + w;
+                pre[v] = u;
             }
     }
     return { ds, pre };
@@ -114,7 +114,7 @@ vll getPath(const vll& pre, ll s, ll u) {
     vll p { u };
     do {
         p.emplace_back(pre[u]);
-        t = pre[u];
+        u = pre[u];
     } while (u != s);
     reverse(all(p));
     return p;
@@ -343,10 +343,10 @@ pair<vector<tuple<ll, ll, ll>>, ll> kruskal(vector<tuple<ll, ll, ll>>& edges, in
     vector<tuple<ll, ll, ll>> mst;
     ll edges_sum = 0;
     sort(all(edges));
-    for (auto [w, a, b] : edges)
-        if (!dsu.sameSet(a, b)) {
-            mst.emplace_back(w, a, b);
-            dsu.mergeSetsOf(a, b);
+    for (auto [w, u, v] : edges)
+        if (!dsu.sameSet(u, v)) {
+            mst.emplace_back(w, u, v);
+            dsu.mergeSetsOf(u, v);
             edges_sum += w;
         }
     return { mst, edges_sum };
