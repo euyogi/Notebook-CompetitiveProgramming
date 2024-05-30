@@ -1,4 +1,6 @@
-# Template
+# Notebook
+
+## Main template
 
 ```c++
 #include <bits/stdc++.h>
@@ -19,86 +21,159 @@ void tomaraQuePasse() {
 
 int main() {
     ios::sync_with_stdio(false); cin.tie(nullptr);
-    int testes = 1;
-    // cin >> testes; cin.ignore();
-    while (testes--) tomaraQuePasse();
+    int tests = 1;
+    // cin >> tests; cin.ignore();
+    while (tests--) tomaraQuePasse();
 }
 ```
 
-# Lista de direções
+## Travessias
 
-4 direções adjascentes:
+### 4 direções adjascentes:
 
 ```c++
-pll ds[4] { {1, 0}, {-1, 0}, {0, 1}, {0, -1} };
+pll ds[] { {1, 0}, {-1, 0}, {0, 1}, {0, -1} };
 ```
 
-8 direções adjascentes:
+### 8 direções adjascentes:
 
 ```c++
-pll ds[8] { {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1} };
+pll ds[] { {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1} };
 ```
 
-Loop das direções:
+### Loop das direções:
 
 ```c++
-for (auto [ix, iy] : ds) {
-    int nx = x + ix, ny = y + iy;
+for (auto [ox, oy] : ds) {
+    int nx = x + ox, ny = y + oy;
+    // processing
 }
 ```
 
-# Igualdade flutuante
+### Base para DFS em árvores:
+
+Parâmetros:
+
+* `dfs`: própria função
+* `c`: vértice atual
+* `p`: vértice anterior
+
+```c++
+auto dfs = [&](auto&& dfs, ll c, ll p) -> void {
+    // processing
+    for (auto _n : g[c]) if (_n != p)
+        dfs(dfs, _n, c);
+}; dfs(dfs, 1, -1);
+```
+
+### Base para DFS em grafos:
+
+Parâmetros:
+
+* `dfs`: própria função
+* `c`: vértice atual
+
+```c++
+vector<bool> vs(g.size());
+auto dfs = [&](auto&& dfs, ll c) -> void {
+    vs[_n] = true;
+    // processamento
+    for (auto _n : g[c]) if (!vs[_n])
+        dfs(dfs, _n, c);
+}; dfs(dfs, 1);
+```
+
+### Dijkstra
+
+Parâmetros:
+
+* `g`: grafo
+* `s`: vértice inicial (menores distâncias em relação à ele)
+
+Retorna: Vetor com as menores distâncias de cada aresta para `s` e vetor de trajetos
+
+```c++
+pair<vll, vll> dijkstra(const vector<vpll>& g, ll s) {
+    vll ds(g.size(), LONG_LONG_MAX), pre(g.size(), -1);
+    priority_queue<pll, vpll, greater<>> pq;
+    pq.emplace(s, 0);
+    ds[s] = 0;
+    while (!pq.empty()) {
+        auto [c, t] = pq.top(); pq.pop();
+        for (auto [n, w] : g[c])
+            if (t + w < ds[n]) {
+                pq.emplace(n, t + w);
+                ds[n] = t + w;
+                pre[n] = c;
+            }
+    }
+    return { ds, pre };
+}
+
+vll getPath(const vll& pre, ll s, ll u) {
+    vll p { u };
+    do {
+        p.emplace_back(pre[u]);
+        t = pre[u];
+    } while (u != s);
+    reverse(all(p));
+    return p;
+}
+```
+
+## Utils
+
+### Igualdade flutuante:
 
 ```c++
 template<typename T>
 bool equals(T a, T b) {
     constexpr double EPS { 1e-9 };
-
-    return std::is_floating_point<T>::value ?  fabs(a-b) < EPS : a == b;
+    return std::is_floating_point<T>::value ?  fabs(a - b) < EPS : a == b;
 }
 ```
 
-# Bitwise
+### Fato: `a + b = (a & b) + (a | b)`
 
-Fatos que podem ajudar:
+## Matemática
 
-```c++
-a + b = (a&b) + (a|b);
-```
+### Divisores:
 
-# Divisores
+Retorna: Vetor ordenado com todos os divisores de `x`
 
 ```c++
-vll divisors(ll n) {
+vll divisors(ll x) {
     vll ds {1};
-    for (ll i = 2; i*i <= n; ++i)
-        if (n % i == 0) {
+    for (ll i = 2; i * i <= x; ++i)
+        if (x % i == 0) {
             ds.emplace_back(i);
-            ds.emplace_back(n/i);
+            ds.emplace_back(x / i);
         }
-
-    sort(all(ds)); // Comentar caso ordem não importe
+    sort(all(ds));
     return ds;
 }
 ```
 
-# Fatoração
+### Fatoração:
+
+Retorna: Vetor com cada fator primo de `x`
 
 ```c++
-vll factor(ll n) {
+vll factor(ll x) {
 	vll fs;
-	for (ll i = 2; i * i <= n; ++i)
-		while (n % i == 0) {
+	for (ll i = 2; i * i <= x; ++i)
+		while (x % i == 0) {
 			fs.emplace_back(i);
-			n /= i;
+			x /= i;
 		}
-
-	if (n > 1) fs.emplace_back(n);
+	if (x > 1) fs.emplace_back(x);
 	return fs;
 }
 ```
 
-# N Primos
+### N Primos:
+
+Retorna: Vetor com todos os primos no intervalo `[1,n]`
 
 ```c++
 vll sieve(ll n) {
@@ -115,91 +190,87 @@ vll sieve(ll n) {
 }
 ```
 
-# Base para busca binária
+## Buscas
 
-Vetor precisa estar ordenado.
+### Base para busca binária
 
-Se em vez de retornar ```xs.end()```, retornar ```l```, teremos o equivalente a um upper_bound.
+Paramêtros:
+
+* `xs`: vetor ordenado alvo
+* `x`: elemento alvo
+* `l`: índice de início
+* `r`: índice de fim
+
+Retorna: Iterador para `x` se encontrado, se não `xs.end()`
+
+Pode ser útil em vez de retornar ```xs.end()```, retornar ```l```
 
 ```c++
 auto binSearch(vll& xs, ll x, size_t l, size_t r) {
     if (l > r) return xs.end();
-
     size_t m = (l + r) / 2;
     if (xs[m] == x) return xs.begin() + m;
-
     l = (xs[m] < x ? m + 1 : l);
     r = (xs[m] > x ? m - 1 : r);
     return binSearch(xs, x, l, r);
 }
 ```
 
-# Base para DFS em árvore
+## Estruturas
 
-Árvore = (Grafo não direcionado, conectado e acíclico).
+### BIT Tree
 
-Note que chamei o grafo de g, e iniciei a dfs no vértice 1.
+Parâmetros:
 
-Grafo consiste de uma lista de adjacências não ponderada.
+* `n`: intervalo máximo para as operações `[1,n]`
 
-```c++
-auto dfs = [&](auto&& dfs, ll c, ll p) -> void {
-    // Processa c
-    for (auto _n : g[c]) if (_n != p)
-            dfs(dfs, _n, c);
-}; dfs(dfs, 1, -1);
-```
+Métodos:
 
-DFS em grafos que não sejam árvores será necessário uma forma de guardar os nós visitados para não voltar neles.
-
-# BIT Tree
-
-Somar valores em intervalos.
-
-n = valor máximo do intervalo (vai ir de 1 até n inclusivo).
+* `rangeAdd(i, j, x)`: soma `x` em cada elemento no intervalo `[i, j]`
+* `rangeQuery(i, j)`: retorna a soma do intervalo `[i,j]`
 
 ```c++
 class BIT {
 public:
     BIT(size_t n) : bt1(n+1), bt2(n+1) {}
 
-    ll rangeQuery(size_t i, size_t j) {
-    	return rsq(j, bt1) * j       - rsq(j, bt2) -
-    	      (rsq(i-1, bt1) * (i-1) - rsq(i-1, bt2));
-    }
-
     void rangeAdd(size_t i, size_t j, ll x) {
-    	add(i, x, bt1);         add(j+1, -x, bt1);
-    	add(i, x * (i-1), bt2); add(j + 1, -x * j, bt2);
+    	add(i, x, bt1);           add(j + 1, -x, bt1);
+    	add(i, x * (i - 1), bt2); add(j + 1, -x * j, bt2);
+    }
+    
+    ll rangeQuery(size_t i, size_t j) {
+    	return rsq(j, bt1) * j           - rsq(j, bt2) -
+    	      (rsq(i - 1, bt1) * (i - 1) - rsq(i - 1, bt2));
     }
 
 private:
-    ll rsq(ll i, vll& bt) {
-        ll sum = 0;
-
-        while (i >= 1) {
-            sum += bt[i];
-            i -= i & (-i);
-        }
-
-        return sum;
-    }
-
     void add(size_t i, ll x, vll& bt) {
         while (i < bt.size()) {
             bt[i] += x;
             i += i & (-i);
     	}
     }
+    
+    ll rsq(ll i, vll& bt) {
+        ll sum = 0;
+        while (i >= 1) {
+            sum += bt[i];
+            i -= i & (-i);
+        }
+        return sum;
+    }
 
     vll bt1, bt2;
 };
 ```
 
-# Red-Black Tree
+### Red-Black Tree
 
-Armazenar valores ordenadamente e conseguir acessar
-o índice do primeiro elemento maior ou igual a x.
+Métodos:
+
+* `insert(x)`: insere elemento `x`
+* `order_of_key(x)`: retorna quantos elementos existem menor que `x`
 
 ```c++
 #include <ext/pb_ds/assoc_container.hpp>
@@ -208,73 +279,28 @@ o índice do primeiro elemento maior ou igual a x.
 using namespace __gnu_pbds;
 
 typedef tree<ll, null_type, less_equal<>,
-rb_tree_tag,tree_order_statistics_node_update> set_t;
+rb_tree_tag,tree_order_statistics_node_update> rb;
 ```
 
-# Dijkstra
+### Disjoint Set Union
 
-Retorna a menor distância de cada aresta para uma principal e respectivos caminhos.
+Parâmetros:
 
-Grafo consiste de uma lista de adjacências com pares (vértice, peso).
+* `n`: intervalo máximo para operações `[1,n]`
 
-```c++
-pair<vll, vll> dijkstra(const vector<vpll>& g, ll s) {
-    vll ds(g.size(), LONG_LONG_MAX), pre(g.size(), -1);
-    priority_queue<pll, vpll, greater<>> pq;
-    
-    pq.emplace(s, 0);
-    ds[s] = 0;
-    
-    while (!pq.empty()) {
-        auto [c, t] = pq.top();
-        pq.pop();
-    
-        for (auto [n, w] : g[c])
-            if (t + w < ds[n]) {
-                pq.emplace(n, t + w);
-                ds[n] = t + w;
-                pre[n] = c;
-            }
-    }
-    
-    return { ds, pre };
-}
-```
+Métodos:
 
-Retorna o caminho: (Não funcionará se o caminho não existe ou se é para o mesmo elemento).
-
-```c++
-vll getPath(const vll& pre, ll s, ll t) {
-    vll p { t };
-    do {
-        p.emplace_back(pre[t]);
-        t = pre[t];
-    } while (t != s);
-    reverse(all(p));
-    return p;
-}
-```
-
-# Disjoint Set Union
-
-Representar conjuntos de elementos, conseguir saber de qual conjunto
-um elemento é e conseguir saber quantos elementos existem nesse conjunto.
-Útil também para identificar ciclos.
-
-n = valor máximo dos elementos (serão criados n+1 conjuntos, do 0 ao n).
+* `mergeSetsOf(x, y)`: combina os conjuntos que contém `x` e `y`
+* `sameSet(x, y)`: retorna verdadeiro se `x` e `y` estão contidos no mesmo conjunto, falso caso contrário
+* `setOf(x)`: retorna o representante do conjunto que contém `x`
+* `sizeOfSet(s)`: retorna quantos elementos estão contidos no conjunto representado por `s`
 
 ```c++
 class DSU {
 public:
-    DSU(size_t n) : parent(n+1), size(n+1, 1) {
+    DSU(size_t n) : parent(n + 1), size(n + 1, 1) {
         iota(all(parent), 0);
     }
-
-    ll setOf(ull x) {
-        return parent[x] == x ? x : parent[x] = setOf(parent[x]);
-    }
-
-    bool sameSet(ull x, ull y) { return setOf(x) == setOf(y); }
 
     void mergeSetsOf(ull x, ull y) {
         ull a = setOf(x), b = setOf(y);
@@ -283,173 +309,164 @@ public:
         parent[a] = b;
         size[b] += size[a];
     }
+    
+    bool sameSet(ull x, ull y) { return setOf(x) == setOf(y); }
+    
+    ll setOf(ull x) {
+        return parent[x] == x ? x : parent[x] = setOf(parent[x]);
+    }
 
-    size_t sizeOfSet(ull i) { return size[i]; }
+    size_t sizeOfSet(ull s) { return size[s]; }
 
 private:
     vector<ull> parent, size;
 };
 ```
 
-# Kruskal
+## Algoritmos
 
-Retorna a árvore de extensão mínima (mst) e a soma dos pesos de todas suas arestas.
+### Kruskal
+
+Parâmetros:
+
+* `edges`: grafo representado por vetor de arestas `(peso, u, v)`
+* `n`: quantidade máxima de vértices
+
+Retorna: Vetor com a árvore de extensão mínima (mst) representado por vetor de arestas
+e a soma total de suas arestas
 
 O Grafo precisa ser conectado.
-
-Grafo consiste de uma lista de arestas com triplas (peso, a, b).
 
 ```c++
 pair<vector<tuple<ll, ll, ll>>, ll> kruskal(vector<tuple<ll, ll, ll>>& edges, int n) {
     DSU dsu(n);
     vector<tuple<ll, ll, ll>> mst;
-    ll ws_sum = 0;
-
+    ll edges_sum = 0;
     sort(all(edges));
     for (auto [w, a, b] : edges)
         if (!dsu.sameSet(a, b)) {
             mst.emplace_back(w, a, b);
             dsu.mergeSetsOf(a, b);
-            ws_sum += w;
+            edges_sum += w;
         }
-
-    return { mst, ws_sum };
+    return { mst, edges_sum };
 }
 ```
 
-# Geometria
+## Geometria
 
-Rotacionar Ponto:
+### Rotacionar Ponto:
+
+Parâmetros:
+
+* `P`: ponto
+* `radians`: ângulo em radianos
+
+Retorna: Ponto rotacionado
 
 ```c++
-Point rotatePoint(const Point& P, double angleRadians) {
+Point rotatePoint(const Point& P, double radians) {
     #define x first
     #define y second
-
-    double x = P.x * cos(angleRadians) - P.y * sin(angleRadians);
-    double y = P.x * sin(angleRadians) + P.y * cos(angleRadians);
-
+    double x = P.x * cos(radians) - P.y * sin(radians);
+    double y = P.x * sin(radians) + P.y * cos(radians);
     return {x, y};
 }
 ```
 
-Checar orientação do ponto P em relação à reta AB:
+### Orientação de ponto
+
+Parâmetros:
+
+* `A` e `B`: pontos pertencentes à reta
+* `P`: ponto que queremos checar orientação
+
+Retorna:
+
+* `D`: valor que representa a orientação
 
 ```c++
-// D = 0: P pertence a reta
-// D > 0: P à esquerda da reta
-// D < 0: P à direita da reta
+// D = 0: P in line
+// D > 0: P at left
+// D < 0: P at right
 ll D(const Point& A, const Point& B, const Point& P) {
     #define x first
     #define y second
-
     return (A.x * B.y + A.y * P.x + B.x * P.y) - (P.x * B.y + P.y * A.x + B.x * A.y);
 }
 ```
+### Reta
 
-Checar ângulo entre as retas AB e CD:
+Parâmetros:
 
-```c++
-double angle(const Point& A, const Point& B, const Point& C, const Point& D) {
-    #define x first
-    #define y second
+* `A` e `B`: pontos pertencentes à reta
 
-    auto ux = A.x - B.x;
-    auto uy = A.y - B.y;
+Métodos:
 
-    auto vx = C.x - D.x;
-    auto vy = C.y - D.y;
-
-    auto num = ux * vx + uy * vy;
-    auto den = hypot(ux, uy) * hypot(vx, vy);
-
-    // Caso especial: se den == 0, algum dos vetores é degenerado: os dois
-    // pontos são iguais. Neste caso, o ângulo não está definido
-
-    return acos(num / den);
-}
-```
-
-# Linha
-
-A linha criada terá seus coeficientes normalizados.
+* `parallel(r)`: Retorna verdadeiro se as retas são paralelas, falso caso contrário
+* `orthogonal(r)`: Retorna verdadeiro se as retas são perpendiculares, falso caso contrário
+* `distance(P)`: Retorna a distância entre a reta e o ponto `P`
+* `closest(P)`: Retorna o ponto na reta mais do ponto `P`
 
 ```c++
 template<typename T>
 class Line {
 public:
-    T a, b, c;
-
     #define x first
     #define y second
+    T a, b, c;
 
     Line(const Point& A, const Point& B)
         : a(A.y - B.y), b(B.x - A.x), c(A.x * B.y - B.x * A.y) {
         if (a < 0 or (a == 0 and b < 0)) {
-            a *= -1;
-            b *= -1;
-            c *= -1;
+            a *= -1; b *= -1; c *= -1;
         }
-
-        if (std::is_floating_point<T>::value) {
-            auto tmp = a;
-            a /= tmp;
-            b /= tmp;
-            c /= tmp;
-        }
-        else { 
-            ll gcd_abc = gcd(a, gcd(b, c));
-            a /= gcd_abc;
-            b /= gcd_abc;
-            c /= gcd_abc;
-        }
+        ll gcd_abc = gcd(a, gcd(b, c));
+        a /= gcd_abc; b /= gcd_abc; c /= gcd_abc;
     }
 
     bool operator==(const Line& r) const {
         auto k = a ? a : b;
         auto s = r.a ? r.a : r.b;
-
-        return equals(a*s, r.a*k) && equals(b*s, r.b*k) && equals(c*s, r.c*k);
+        return (a * s == r.a * k) && (b * s == r.b * k) && (c * s == r.c * k);
     }
 
     bool parallel(const Line& r) const {
-        auto det = a*r.b - b*r.a;
+        auto det = a * r.b - b * r.a;
         return det == 0 and !(*this == r);
     }
 
-    bool orthogonal(const Line& r) const { return equals(a * r.a + b * r.b, 0); }
+    bool orthogonal(const Line& r) const { return (a * r.a + b * r.b == 0); }
 
-    // Distância da reta pro ponto P
-    double distance(const Point& P) const { return fabs(a*P.x + b*P.y + c)/hypot(a, b); }
+    // distance from line to P
+    double distance(const Point& P) const { return fabs(a * P.x + b * P.y + c)/hypot(a, b); }
 
-    Point closest(const Point& P) const { // Ponto da reta mais próximo de P
-        auto den = a*a + b*b;
-
-        auto x = (b*(b*P.x - a*P.y) - a*c)/den;
-        auto y = (a*(-b*P.x + a*P.y) - b*c)/den;
-
+    Point closest(const Point& P) const { // closest line point to P
+        auto den = a * a + b * b;
+        auto x = (b *  (b * P.x - a * P.y) - a * c)/den;
+        auto y = (a * (-b * P.x + a * P.y) - b * c)/den;
         return { x, y };
-    }
-
-private:
-    bool equals(T a, T b) const {
-        constexpr double EPS { 1e-9 };
-
-        return std::is_floating_point<T>::value ?  fabs(a - b) < EPS : a == b;
     }
 };
 ```
 
-# Segmento
+### Segmento
+
+Parâmetros:
+
+* `A` e `B`: pontos extremos do segmento
+
+Métodos:
+
+* `contains(P)`: Retorna verdadeiro se a reta contém o ponto `P`, falso caso contrário
+* `intersect(r)`: Retorna verdadeiro se os segmentos se intersectam, falso caso contrário
 
 ```c++
-template<typename T>
 class Segment {
 public:
-    Point A, B;
-
     #define x first
     #define y second
+    Point A, B;
 
     Segment(const Point& A, const Point& B) : A(A), B(B) {}
 
@@ -458,36 +475,24 @@ public:
         auto xmax = max(A.x, B.x);
         auto ymin = min(A.y, B.y);
         auto ymax = max(A.y, B.y);
-
         if (P.x < xmin || P.x > xmax || P.y < ymin || P.y > ymax)
             return false;
-
-        return equals((P.y - A.y)*(B.x - A.x), (P.x - A.x)*(B.y - A.y));
+        return (P.y - A.y)*(B.x - A.x) == (P.x - A.x)*(B.y - A.y);
     }
 
-    bool intersect(const Segment& s) const {
-        auto d1 = D(A, B, s.A);
-        auto d2 = D(A, B, s.B);
-
-        if ((equals(d1, 0) && contains(s.A)) || (equals(d2, 0) && contains(s.B)))
+    bool intersect(const Segment& r) const {
+        auto d1 = D(A, B, r.A);
+        auto d2 = D(A, B, r.B);
+        if (((d1 == 0) && contains(r.A)) || ((d2 == 0) && contains(r.B)))
             return true;
-
-        auto d3 = D(s.A, s.B, A);
-        auto d4 = D(s.A, s.B, B);
-
-        if ((equals(d3, 0) && s.contains(A)) || (equals(d4, 0) && s.contains(B)))
+        auto d3 = D(r.A, r.B, A);
+        auto d4 = D(r.A, r.B, B);
+        if (((d3 == 0) && r.contains(A)) || ((d4 == 0) && r.contains(B)))
             return true;
-
         return (d1 * d2 < 0) && (d3 * d4 < 0);
     }
 
 private:
-    bool equals(T a, T b) const {
-        constexpr double EPS { 1e-9 };
-
-        return std::is_floating_point<T>::value ?  fabs(a - b) < EPS : a == b;
-    }
-
     ll D(const Point& A, const Point& B, const Point& P) const {
         return (A.x * B.y + A.y * P.x + B.x * P.y) - (P.x * B.y + P.y * A.x + B.x * A.y);
     }
