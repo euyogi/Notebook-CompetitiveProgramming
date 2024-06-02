@@ -15,15 +15,17 @@ using namespace std; using ll = long long; using ull = unsigned long long; using
 #define all(vs) vs.begin(), vs.end()
 #define found(x, xs) (xs.find(x) != xs.end())
 
-void tomaraQuePasse() {
-
+void solve() {
+    
 }
 
 int main() {
     ios::sync_with_stdio(false); cin.tie(nullptr);
     int tests = 1;
     // cin >> tests; cin.ignore();
-    while (tests--) tomaraQuePasse();
+    while (tests--) {
+        solve();
+    }
 }
 ```
 
@@ -124,8 +126,8 @@ Métodos:
 
 using namespace __gnu_pbds;
 
-typedef tree<ll, null_type, less_equal<>,
-rb_tree_tag,tree_order_statistics_node_update> rb;
+typedef tree<ll, null_type, less<>,
+rb_tree_tag, tree_order_statistics_node_update> RBT;
 ```
 
 ### Reta
