@@ -6,12 +6,19 @@
 #include <bits/stdc++.h>
 
 #ifdef DEBUG
-    #include "dbg.h"
+#include "dbg.h"
 #else
-    #define dbg(...)
+#define dbg(...)
 #endif
 
-using namespace std; using ll = long long; using ull = unsigned long long; using pll = pair<ll, ll>; using vll = vector<ll>; using vvll = vector<vll>; using vpll = vector<pll>; using Point = pll;
+using namespace std;
+using ll = long long;
+using vll = vector<ll>;
+using vvll = vector<vll>;
+using pll = pair<ll, ll>;
+using vpll = vector<pll>;
+using vvpll = vector<vpll>;
+using Point = pll;
 #define all(vs) vs.begin(), vs.end()
 #define found(x, xs) (xs.find(x) != xs.end())
 
@@ -20,12 +27,10 @@ void solve() {
 }
 
 int main() {
-    ios::sync_with_stdio(false); cin.tie(nullptr);
-    int tests = 1;
-    // cin >> tests; cin.ignore();
-    while (tests--) {
-        solve();
-    }
+    cin.tie(nullptr)->sync_with_stdio(false);
+    ll _ts = 1;
+    // cin >> _ts; cin.ignore();
+    while (_ts--) { solve(); }
 }
 ```
 
