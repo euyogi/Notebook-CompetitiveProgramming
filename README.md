@@ -70,96 +70,6 @@ bool equals(T a, T b) {
 
 ## Estruturas
 
-### BIT Tree
-
-Parâmetros:
-
-* `n`: intervalo máximo para as operações `[1, n]`
-
-Métodos:
-
-* `rangeAdd(i, j, x)`: soma `x` em cada elemento no intervalo `[i, j]`
-* `rangeQuery(i, j)`: retorna a soma do intervalo `[i, j]`
-
-```c++
-class BIT {
-public:
-    BIT(size_t n) : bt1(n+1), bt2(n+1) {}
-
-    void rangeAdd(size_t i, size_t j, ll x) {
-    	add(i, x, bt1);           add(j + 1, -x, bt1);
-    	add(i, x * (i - 1), bt2); add(j + 1, -x * j, bt2);
-    }
-    
-    ll rangeQuery(size_t i, size_t j) {
-    	return rsq(j, bt1) * j           - rsq(j, bt2) -
-    	      (rsq(i - 1, bt1) * (i - 1) - rsq(i - 1, bt2));
-    }
-
-private:
-    void add(size_t i, ll x, vll& bt) {
-        for (; i < bt.size(); i += i & -i)
-            bt[i] += x;
-    }
-    
-    ll rsq(size_t i, vll& bt) {
-        ll sum = 0;
-        for (; i >= 1 i -= i & -i)
-            sum += bt[i];
-        return sum;
-    }
-
-    vll bt1, bt2;
-};
-```
-
-### BIT Tree (Simples)
-
-Parâmetros:
-
-* `n`: intervalo máximo para as operações `[1, n]`
-
-Métodos:
-
-* `add(i, x)`: soma `x` em cada elemento no intervalo `[1, i]`
-* `rsq(i)`: retorna a soma do intervalo `[1, i]`
-
-```c++
-struct BIT {
-    vll bt
-    BIT(size_t n) : bt1(n+1), bt2(n+1) {}
-    
-    void add(size_t i, ll x) {
-        for (; i < bt.size(); i += i & -i)
-            bt[i] += x;
-    }
-    
-    ll rsq(size_t i) {
-        ll sum = 0;
-        for (; i >= 1; i -= i & -i)
-            sum += bt[i];
-        return sum;
-    }
-};
-```
-
-### Red-Black Tree
-
-Métodos:
-
-* `insert(x)`: insere elemento `x`
-* `order_of_key(x)`: retorna quantos elementos existem menor que `x`
-
-```c++
-#include <ext/pb_ds/assoc_container.hpp>
-#include <ext/pb_ds/tree_policy.hpp>
-
-using namespace __gnu_pbds;
-
-typedef tree<ll, null_type, less<>,
-rb_tree_tag, tree_order_statistics_node_update> RBT;
-```
-
 ### Reta
 
 Parâmetros:
@@ -262,6 +172,96 @@ private:
         return (A.x * B.y + A.y * P.x + B.x * P.y) - (P.x * B.y + P.y * A.x + B.x * A.y);
     }
 };
+```
+
+### BIT Tree
+
+Parâmetros:
+
+* `n`: intervalo máximo para as operações `[1, n]`
+
+Métodos:
+
+* `rangeAdd(i, j, x)`: soma `x` em cada elemento no intervalo `[i, j]`
+* `rangeQuery(i, j)`: retorna a soma do intervalo `[i, j]`
+
+```c++
+class BIT {
+public:
+    BIT(size_t n) : bt1(n+1), bt2(n+1) {}
+
+    void rangeAdd(size_t i, size_t j, ll x) {
+    	add(i, x, bt1);           add(j + 1, -x, bt1);
+    	add(i, x * (i - 1), bt2); add(j + 1, -x * j, bt2);
+    }
+    
+    ll rangeQuery(size_t i, size_t j) {
+    	return rsq(j, bt1) * j           - rsq(j, bt2) -
+    	      (rsq(i - 1, bt1) * (i - 1) - rsq(i - 1, bt2));
+    }
+
+private:
+    void add(size_t i, ll x, vll& bt) {
+        for (; i < bt.size(); i += i & -i)
+            bt[i] += x;
+    }
+    
+    ll rsq(size_t i, vll& bt) {
+        ll sum = 0;
+        for (; i >= 1 i -= i & -i)
+            sum += bt[i];
+        return sum;
+    }
+
+    vll bt1, bt2;
+};
+```
+
+### BIT Tree (Simples)
+
+Parâmetros:
+
+* `n`: intervalo máximo para as operações `[1, n]`
+
+Métodos:
+
+* `add(i, x)`: soma `x` em cada elemento no intervalo `[1, i]`
+* `rsq(i)`: retorna a soma do intervalo `[1, i]`
+
+```c++
+struct BIT {
+    vll bt
+    BIT(size_t n) : bt1(n+1), bt2(n+1) {}
+    
+    void add(size_t i, ll x) {
+        for (; i < bt.size(); i += i & -i)
+            bt[i] += x;
+    }
+    
+    ll rsq(size_t i) {
+        ll sum = 0;
+        for (; i >= 1; i -= i & -i)
+            sum += bt[i];
+        return sum;
+    }
+};
+```
+
+### Red-Black Tree
+
+Métodos:
+
+* `insert(x)`: insere elemento `x`
+* `order_of_key(x)`: retorna quantos elementos existem menor que `x`
+
+```c++
+#include <ext/pb_ds/assoc_container.hpp>
+#include <ext/pb_ds/tree_policy.hpp>
+
+using namespace __gnu_pbds;
+
+typedef tree<ll, null_type, less<>,
+rb_tree_tag, tree_order_statistics_node_update> RBT;
 ```
 
 ### Disjoint Set Union
