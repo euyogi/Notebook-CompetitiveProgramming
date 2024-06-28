@@ -25,7 +25,7 @@ void solve() {
     
 }
 
-int main() {
+signed main() {
     cin.tie(nullptr)->sync_with_stdio(false);
     ll _ts = 1;
     // cin >> _ts; cin.ignore();
