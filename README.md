@@ -18,8 +18,7 @@ using vvll = vector<vll>;
 using pll = pair<ll, ll>;
 using vpll = vector<pll>;
 using vvpll = vector<vpll>;
-using Point = pll;
-#define all(vs) vs.begin(), vs.end()
+#define all(xs) xs.begin(), xs.end()
 #define found(x, xs) (xs.find(x) != xs.end())
 
 void solve() {
@@ -75,12 +74,12 @@ bool equals(T a, T b) {
 
 Parâmetros:
 
-* `n`: intervalo máximo para as operações `[1,n]`
+* `n`: intervalo máximo para as operações `[1, n]`
 
 Métodos:
 
 * `rangeAdd(i, j, x)`: soma `x` em cada elemento no intervalo `[i, j]`
-* `rangeQuery(i, j)`: retorna a soma do intervalo `[i,j]`
+* `rangeQuery(i, j)`: retorna a soma do intervalo `[i, j]`
 
 ```c++
 class BIT {
@@ -99,22 +98,48 @@ public:
 
 private:
     void add(size_t i, ll x, vll& bt) {
-        while (i < bt.size()) {
+        for (; i < bt.size(); i += i & -i)
             bt[i] += x;
-            i += i & (-i);
-    	}
     }
     
-    ll rsq(ll i, vll& bt) {
+    ll rsq(size_t i, vll& bt) {
         ll sum = 0;
-        while (i >= 1) {
+        for (; i >= 1 i -= i & -i)
             sum += bt[i];
-            i -= i & (-i);
-        }
         return sum;
     }
 
     vll bt1, bt2;
+};
+```
+
+### BIT Tree (Simples)
+
+Parâmetros:
+
+* `n`: intervalo máximo para as operações `[1, n]`
+
+Métodos:
+
+* `add(i, x)`: soma `x` em cada elemento no intervalo `[1, i]`
+* `rsq(i)`: retorna a soma do intervalo `[1, i]`
+
+```c++
+struct BIT {
+    vll bt
+    BIT(size_t n) : bt1(n+1), bt2(n+1) {}
+    
+    void add(size_t i, ll x) {
+        for (; i < bt.size(); i += i & -i)
+            bt[i] += x;
+    }
+    
+    ll rsq(size_t i) {
+        ll sum = 0;
+        for (; i >= 1; i -= i & -i)
+            sum += bt[i];
+        return sum;
+    }
 };
 ```
 
@@ -277,6 +302,38 @@ public:
 
 private:
     vector<ull> parent, size;
+};
+```
+
+### Disjoint Set Union (Simples)
+
+Parâmetros:
+
+* `n`: intervalo máximo para operações `[1, n]`
+
+Métodos:
+
+* `merge(x, y)`: combina os conjuntos que contém `x` e `y`
+* `find(x)`: retorna o representante do conjunto que contém `x`
+
+```c++
+struct DSU {
+    vector<ull> parent, size;
+    DSU(size_t n) : parent(n + 1), size(n + 1, 1) {
+        iota(all(parent), 0);
+    }
+
+    void merge(ull x, ull y) {
+        ull a = setOf(x), b = setOf(y);
+        if (a == b) return;
+        if (size[a] > size[b]) swap(a, b);
+        parent[a] = b;
+        size[b] += size[a];
+    }
+    
+    ll find(ull x) {
+        return parent[x] == x ? x : parent[x] = find(parent[x]);
+    }
 };
 ```
 
