@@ -260,7 +260,8 @@ Métodos:
 
 using namespace __gnu_pbds;
 
-typedef tree<ll, null_type, less<>,
+// if less<>, then unique elements
+typedef tree<ll, null_type, less_equal<>,
 rb_tree_tag, tree_order_statistics_node_update> RBT;
 ```
 
