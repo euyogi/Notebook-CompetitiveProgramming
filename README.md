@@ -462,6 +462,40 @@ vll getPath(const vll& pre, ll s, ll u) {
 }
 ```
 
+### Binary Lifting:
+
+Parâmetros:
+
+* `n`: quantidade de elementos
+* `x`: elemento alvo
+* `k`: ordem do ancestral
+
+Retorna: `k` ancestral do elemento `x`
+
+```c++
+vector<vector<int>> parent;
+const int LOG = 31; // aproximate log of n + 1
+
+void populate(int n) {
+    parent.resize(n + 1, vector<int>(LOG));
+
+    // initialize known relationships
+
+    for (int i = 1; i < LOG; ++i)
+        for (int j = 1; j < parent.size(); ++j)
+            parent[j][i] = parent[ parent[j][i - 1] ][i - 1];
+}
+
+// only call after populate
+int kth_ancestor(int x, int k) {
+    int at = x;
+    for (int j = 0; j < LOG; j++)
+        if (k & 1 << j)
+            at = parent[at][j];
+    return at;
+}
+```
+
 ### Divisores:
 
 Retorna: Vetor ordenado com todos os divisores de `x`
