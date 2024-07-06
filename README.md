@@ -113,7 +113,6 @@ Métodos:
 * `closest(P)`: Retorna o ponto na reta mais do ponto `P`
 
 ```c++
-template<typename T>
 class Line {
 public:
     #define x first
@@ -348,16 +347,16 @@ Métodos:
 
 ```c++
 struct DSU {
-    vector<ull> parent, size;
-    DSU(size_t n) : parent(n + 1), size(n + 1, 1) {
+    vector<ll> parent, size;
+    DSU(ll n) : parent(n + 1), size(n + 1, 1) {
         iota(all(parent), 0);
     }
 
-    ll find(ull x) {
+    ll find(ll x) {
         return parent[x] == x ? x : parent[x] = find(parent[x]);
     }
     
-    void merge(ull x, ull y) {
+    void merge(ll x, ll y) {
         ull a = find(x), b = find(y);
         if (a == b) return;
         if (size[a] > size[b]) swap(a, b);
@@ -609,7 +608,7 @@ Parâmetros:
 Retorna: Ponto rotacionado
 
 ```c++
-Point rotatePoint(const pll& P, double radians) {
+pll rotatePoint(const pll& P, double radians) {
     #define x first
     #define y second
     double x = P.x * cos(radians) - P.y * sin(radians);
