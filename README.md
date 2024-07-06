@@ -89,9 +89,9 @@ class Line {
 public:
     #define x first
     #define y second
-    T a, b, c;
+    ll a, b, c;
 
-    Line(const Point& A, const Point& B)
+    Line(const pll& A, const pll& B)
         : a(A.y - B.y), b(B.x - A.x), c(A.x * B.y - B.x * A.y) {
         if (a < 0 or (a == 0 and b < 0)) {
             a *= -1; b *= -1; c *= -1;
@@ -116,7 +116,7 @@ public:
     // distance from line to P
     double distance(const Point& P) const { return fabs(a * P.x + b * P.y + c)/hypot(a, b); }
 
-    Point closest(const Point& P) const { // closest line point to P
+    pll closest(const Point& P) const { // closest line point to P
         auto den = a * a + b * b;
         auto x = (b *  (b * P.x - a * P.y) - a * c)/den;
         auto y = (a * (-b * P.x + a * P.y) - b * c)/den;
@@ -141,11 +141,11 @@ class Segment {
 public:
     #define x first
     #define y second
-    Point A, B;
+    pll A, B;
 
-    Segment(const Point& A, const Point& B) : A(A), B(B) {}
+    Segment(const pll& A, const pll& B) : A(A), B(B) {}
 
-    bool contains(const Point& P) const {
+    bool contains(const pll& P) const {
         auto xmin = min(A.x, B.x);
         auto xmax = max(A.x, B.x);
         auto ymin = min(A.y, B.y);
@@ -168,7 +168,7 @@ public:
     }
 
 private:
-    ll D(const Point& A, const Point& B, const Point& P) const {
+    ll D(const pll& A, const pll& B, const pll& P) const {
         return (A.x * B.y + A.y * P.x + B.x * P.y) - (P.x * B.y + P.y * A.x + B.x * A.y);
     }
 };
@@ -231,14 +231,14 @@ Métodos:
 ```c++
 struct BIT {
     vll bt
-    BIT(size_t n) : bt1(n+1), bt2(n+1) {}
+    BIT(size_t n) : bt(n+1) {}
     
-    void add(size_t i, ll x) {
+    void add(ll i, ll x) {
         for (; i < bt.size(); i += i & -i)
             bt[i] += x;
     }
     
-    ll rsq(size_t i) {
+    ll rsq(ll i) {
         ll sum = 0;
         for (; i >= 1; i -= i & -i)
             sum += bt[i];
@@ -269,7 +269,7 @@ rb_tree_tag, tree_order_statistics_node_update> RBT;
 
 Parâmetros:
 
-* `n`: intervalo máximo para operações `[1,n]`
+* `n`: intervalo máximo para operações `[1, n]`
 
 Métodos:
 
@@ -285,6 +285,10 @@ public:
         iota(all(parent), 0);
     }
 
+    ll setOf(ull x) {
+        return parent[x] == x ? x : parent[x] = setOf(parent[x]);
+    }
+    
     void mergeSetsOf(ull x, ull y) {
         ull a = setOf(x), b = setOf(y);
         if (a == b) return;
@@ -295,10 +299,6 @@ public:
     
     bool sameSet(ull x, ull y) { return setOf(x) == setOf(y); }
     
-    ll setOf(ull x) {
-        return parent[x] == x ? x : parent[x] = setOf(parent[x]);
-    }
-
     size_t sizeOfSet(ull s) { return size[s]; }
 
 private:
@@ -324,16 +324,16 @@ struct DSU {
         iota(all(parent), 0);
     }
 
+    ll find(ull x) {
+        return parent[x] == x ? x : parent[x] = find(parent[x]);
+    }
+    
     void merge(ull x, ull y) {
-        ull a = setOf(x), b = setOf(y);
+        ull a = find(x), b = find(y);
         if (a == b) return;
         if (size[a] > size[b]) swap(a, b);
         parent[a] = b;
         size[b] += size[a];
-    }
-    
-    ll find(ull x) {
-        return parent[x] == x ? x : parent[x] = find(parent[x]);
     }
 };
 ```
@@ -386,8 +386,8 @@ ll binSearch(vpll& xs, ll x, ll l, ll r) {
     if (l > r) return -1;
     ll m = l + (r - l) / 2;
     if (xs[m].first == x) return m;
-    l = (xs[m].first < x ? m + 1 : l);
-    r = (xs[m].first > x ? m - 1 : r);
+    if (xs[m].first < x) l = m + 1;
+    else r = m - 1;
     return binSearch(xs, x, l, r);
 }
 ```
@@ -396,15 +396,15 @@ ll binSearch(vpll& xs, ll x, ll l, ll r) {
 
 Parâmetros:
 
-* `dfs`: própria função
+* `self`: própria função
 * `u`: vértice atual
 * `p`: vértice anterior
 
 ```c++
-auto dfs = [&](auto&& dfs, ll u, ll p) -> void {
+auto dfs = [&](auto&& self, ll u, ll p) -> void {
     // processing
     for (auto v : g[u]) if (v != p)
-        dfs(dfs, v, u);
+        self(self, v, u);
 }; dfs(dfs, 1, -1);
 ```
 
@@ -412,16 +412,16 @@ auto dfs = [&](auto&& dfs, ll u, ll p) -> void {
 
 Parâmetros:
 
-* `dfs`: própria função
+* `self`: própria função
 * `u`: vértice atual
 
 ```c++
 vector<bool> vs(g.size());
-auto dfs = [&](auto&& dfs, ll u) -> void {
+auto dfs = [&](auto&& self, ll u) -> void {
     vs[u] = true;
     // processing
     for (auto v : g[u]) if (!vs[v])
-        dfs(dfs, v);
+        self(self, v);
 }; dfs(dfs, 1);
 ```
 
@@ -553,7 +553,7 @@ vll factor(ll x) {
 
 ### N Primos:
 
-Retorna: Vetor com todos os primos no intervalo `[1,n]`
+Retorna: Vetor com todos os primos no intervalo `[1, n]`
 
 ```c++
 vll sieve(ll n) {
@@ -596,9 +596,7 @@ Parâmetros:
 * `A` e `B`: pontos pertencentes à reta
 * `P`: ponto que queremos checar orientação
 
-Retorna:
-
-* `D`: valor que representa a orientação
+Retorna: Valor que representa a orientação
 
 ```c++
 // D = 0: P in line
