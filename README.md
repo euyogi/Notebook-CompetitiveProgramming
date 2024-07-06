@@ -1,5 +1,34 @@
 # Notebook
 
+## Sumário
+
+* Template
+* Utils
+  * Direções adjascentes
+  * Igualdade flutuante
+  * Fatos
+* Estruturas
+  * Reta
+  * Segmento
+  * Círculo *
+  * BIT Tree
+  * Red-Black Tree
+  * Segment Tree *
+  * Disjoint Set Union
+* Algoritmos
+  * Kruskal (Árvore Geradora Mínima)
+  * Busca binária
+  * DFS
+  * BFS *
+  * Dijkstra
+  * Binary Lifting
+  * Menor Ancestral Comum *
+  * Divisores
+  * Fatoração
+  * Crivo de Eratóstenes
+  * Rotação de Ponto
+  * Orientação de Ponto
+
 ## Main template
 
 ```c++
@@ -38,13 +67,13 @@ signed main() {
 ### 4 direções adjascentes:
 
 ```c++
-vpll ds { {1, 0}, {-1, 0}, {0, 1}, {0, -1} };
+vpll ds { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
 ```
 
 ### 8 direções adjascentes:
 
 ```c++
-vpll ds { {1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1} };
+vpll ds { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 }, { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, -1 } };
 ```
 
 ### Loop das direções:
@@ -116,7 +145,7 @@ public:
     // distance from line to P
     double distance(const Point& P) const { return fabs(a * P.x + b * P.y + c)/hypot(a, b); }
 
-    pll closest(const Point& P) const { // closest line point to P
+    pll closest(const pll& P) const { // closest line point to P
         auto den = a * a + b * b;
         auto x = (b *  (b * P.x - a * P.y) - a * c)/den;
         auto y = (a * (-b * P.x + a * P.y) - b * c)/den;
@@ -347,7 +376,7 @@ Parâmetros:
 * `edges`: grafo representado por vetor de arestas `(peso, u, v)`
 * `n`: quantidade máxima de vértices
 
-Retorna: Vetor com a árvore de extensão mínima (mst) representado por vetor de arestas
+Retorna: Vetor com a árvore geradora mínima (mst) representado por vetor de arestas
 e a soma total de suas arestas
 
 O Grafo precisa ser conectado.
@@ -368,7 +397,7 @@ pair<vector<tuple<ll, ll, ll>>, ll> kruskal(vector<tuple<ll, ll, ll>>& edges, in
 }
 ```
 
-### Base para busca binária
+### Busca binária
 
 Parâmetros:
 
@@ -392,7 +421,7 @@ ll binSearch(vpll& xs, ll x, ll l, ll r) {
 }
 ```
 
-### Base para DFS em árvores:
+### DFS em árvores:
 
 Parâmetros:
 
@@ -408,7 +437,7 @@ auto dfs = [&](auto&& self, ll u, ll p) -> void {
 }; dfs(dfs, 1, -1);
 ```
 
-### Base para DFS em grafos:
+### DFS em grafos:
 
 Parâmetros:
 
@@ -551,7 +580,7 @@ vll factor(ll x) {
 }
 ```
 
-### N Primos:
+### Crivo de Eratóstenes:
 
 Retorna: Vetor com todos os primos no intervalo `[1, n]`
 
@@ -570,7 +599,7 @@ vll sieve(ll n) {
 }
 ```
 
-### Rotacionar Ponto:
+### Rotação de Ponto:
 
 Parâmetros:
 
@@ -580,7 +609,7 @@ Parâmetros:
 Retorna: Ponto rotacionado
 
 ```c++
-Point rotatePoint(const Point& P, double radians) {
+Point rotatePoint(const pll& P, double radians) {
     #define x first
     #define y second
     double x = P.x * cos(radians) - P.y * sin(radians);
@@ -602,7 +631,7 @@ Retorna: Valor que representa a orientação
 // D = 0: P in line
 // D > 0: P at left
 // D < 0: P at right
-ll D(const Point& A, const Point& B, const Point& P) {
+ll D(const pll& A, const pll& B, const pll& P) {
     #define x first
     #define y second
     return (A.x * B.y + A.y * P.x + B.x * P.y) - (P.x * B.y + P.y * A.x + B.x * A.y);
