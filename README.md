@@ -487,12 +487,33 @@ void populate(int n) {
 }
 
 // only call after populate
-int kth_ancestor(int x, int k) {
+int kthAncestor(int x, int k) {
     int at = x;
     for (int j = 0; j < LOG; j++)
         if (k & 1 << j)
             at = parent[at][j];
     return at;
+}
+```
+
+Caso queiramos a quantidade de ancestrais de `x`:
+
+```c++
+vector<vector<int>> parent;
+vector<int> depth;
+const int LOG = 31; // aproximate log of n + 1
+
+void populate(int n) {
+    parent.resize(n + 1, vector<int>(LOG));
+
+    // initialize known relationships
+
+    // necessary that parent[j] <= j
+    for (int j = 1; j < parent.size(); ++j) {
+        if (j > 1) depth = depth[parent[j][0]];
+        for (int i = 1; i < LOG; ++i)
+            parent[j][i] = parent[ parent[j][i - 1] ][i - 1];
+    }
 }
 ```
 
