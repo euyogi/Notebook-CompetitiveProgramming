@@ -10,7 +10,7 @@
 * Estruturas
   * Reta
   * Segmento
-  * Círculo *
+  * Círculo
   * BIT Tree
   * Red-Black Tree
   * Segment Tree *
@@ -26,8 +26,12 @@
   * Divisores
   * Fatoração
   * Crivo de Eratóstenes
-  * Rotação de Ponto
-  * Orientação de Ponto
+  * Distância entre pontos
+  * Rotação de ponto
+  * Orientação de ponto
+  * Ângulo entre segmentos
+  * Ponto contido em segmento
+  * Mediatriz
 
 ## Main template
 
@@ -64,19 +68,19 @@ signed main() {
 
 ## Utils
 
-### 4 direções adjascentes:
+### 4 direções adjascentes
 
 ```c++
 vpll ds { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
 ```
 
-### 8 direções adjascentes:
+### 8 direções adjascentes
 
 ```c++
 vpll ds { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 }, { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, -1 } };
 ```
 
-### Loop das direções:
+### Loop das direções
 
 ```c++
 for (auto [ox, oy] : ds) {
@@ -85,17 +89,16 @@ for (auto [ox, oy] : ds) {
 }
 ```
 
-### Igualdade flutuante:
+### Igualdade flutuante
 
 ```c++
-template<typename T>
-bool equals(T a, T b) {
-    constexpr double EPS { 1e-9 };
-    return std::is_floating_point<T>::value ?  fabs(a - b) < EPS : a == b;
-}
+template<typename T, typename S>
+bool equals(T a, S b) { return abs(a - b) < 1e-9L; }
 ```
 
-### Fato: `a + b = (a & b) + (a | b)`
+### Fatos
+
+`a + b = (a & b) + (a | b)`
 
 ## Estruturas
 
@@ -103,52 +106,72 @@ bool equals(T a, T b) {
 
 Parâmetros:
 
-* `A` e `B`: pontos pertencentes à reta
+* `P`: ponto contido na reta
+* `Q`: ponto contido na reta
 
 Métodos:
 
-* `parallel(r)`: Retorna verdadeiro se as retas são paralelas, falso caso contrário
-* `orthogonal(r)`: Retorna verdadeiro se as retas são perpendiculares, falso caso contrário
-* `distance(P)`: Retorna a distância entre a reta e o ponto `P`
-* `closest(P)`: Retorna o ponto na reta mais do ponto `P`
+* `normalizeReal()`: normaliza os coeficientes (reais) da reta
+* `normalize()`: normaliza os coeficientes (inteiros) da reta
+* `contains(P)`: retorna verdadeiro se `P` está contido na reta, falso caso contrário
+* `parallel(r)`: retorna verdadeiro se a reta é paralela a `r`, falso caso contrário
+* `orthogonal(r)`: retorna verdadeiro se a reta é perpendicular a `r`, falso caso contrário
+* `intersection(r)`: retorna par de coordenadas do ponto de interseção
+* `distance(P)`: retorna a distância de `P` à reta
+* `closest(P)`: retorna par de coordenadas do ponto mais próximo de `P` pertencente à reta
 
 ```c++
-class Line {
-public:
-    #define x first
-    #define y second
-    ll a, b, c;
+template<typename T>
+struct Line {
+    T a, b, c;
 
-    Line(const pll& A, const pll& B)
-        : a(A.y - B.y), b(B.x - A.x), c(A.x * B.y - B.x * A.y) {
-        if (a < 0 or (a == 0 and b < 0)) {
-            a *= -1; b *= -1; c *= -1;
-        }
-        ll gcd_abc = gcd(a, gcd(b, c));
-        a /= gcd_abc; b /= gcd_abc; c /= gcd_abc;
+    Line(const pair<T, T>& P, const pair<T, T>& Q) : a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y) {}
+
+    void normalizeReal() { b /= a, c /= a, a /= a; }
+
+    void normalize() {
+        if (a < 0 or (a == 0 and b < 0))
+            a *= -1, b *= -1, c *= -1;
+        T gcd_abc = gcd(a, gcd(b, c));
+        a /= gcd_abc, b /= gcd_abc, c /= gcd_abc;
     }
 
-    bool operator==(const Line& r) const {
-        auto k = a ? a : b;
-        auto s = r.a ? r.a : r.b;
-        return (a * s == r.a * k) && (b * s == r.b * k) && (c * s == r.c * k);
-    }
+    bool contains(const pair<T, T>& P) const { return equals(a * P.x + b * P.y + c, 0); }
 
     bool parallel(const Line& r) const {
-        auto det = a * r.b - b * r.a;
-        return det == 0 and !(*this == r);
+        T det = a * r.b - b * r.a;
+        return equals(det, 0) and !(*this == r);
     }
 
-    bool orthogonal(const Line& r) const { return (a * r.a + b * r.b == 0); }
+    bool orthogonal(const Line& r) const { return equals(a * r.a + b * r.b, 0); }
 
-    // distance from line to P
-    double distance(const Point& P) const { return fabs(a * P.x + b * P.y + c)/hypot(a, b); }
+    pair<long double, long double> intersection(const Line& r) {
+        long double det = r.a * b - r.b * a;
 
-    pll closest(const pll& P) const { // closest line point to P
-        auto den = a * a + b * b;
-        auto x = (b *  (b * P.x - a * P.y) - a * c)/den;
-        auto y = (a * (-b * P.x + a * P.y) - b * c)/den;
+        // same or parallel
+        if (equals(det, 0))
+            return {};
+
+        auto x = (-r.c * b + c * r.b) / det;
+        auto y = (-c * r.a + r.c * a) / det;
         return { x, y };
+    }
+    
+    // distance from P to line
+    long double distance(const pair<T, T>& P) const { return abs(a * P.x + b * P.y + c) / hypot(a, b); }
+
+    // closest point in line to P
+    pair<long double, long double> closest(const pair<T, T>& P) const {
+        long double den = a * a + b * b;
+        auto x = (b * (b * P.x - a * P.y) - a * c) / den;
+        auto y = (a * (-b * P.x + a * P.y) - b * c) / den;
+        return { x, y };
+    }
+    
+    bool operator==(const Line& r) const {
+        T k = a ? a : b;
+        T s = r.a ? r.a : r.b;
+        return equals(a * s, r.a * k) and equals(b * s, r.b * k) and equals(c * s, r.c * k);
     }
 };
 ```
@@ -157,47 +180,167 @@ public:
 
 Parâmetros:
 
-* `A` e `B`: pontos extremos do segmento
+* `P`: ponto extremo do segmento
+* `Q`: ponto extremo do segmento
 
 Métodos:
 
-* `contains(P)`: Retorna verdadeiro se a reta contém o ponto `P`, falso caso contrário
-* `intersect(r)`: Retorna verdadeiro se os segmentos se intersectam, falso caso contrário
+* `contains(P)`: retorna verdadeiro se `P` está contido no segmento, falso caso contrário
+* `intersect(r)`: retorna verdadeiro se `r` intersecta com o segmento, falso caso contrário
+* `closest(P)`: retorna par de coordenadas do ponto mais próximo de `P` pertencente ao segmento
 
 ```c++
-class Segment {
-public:
-    #define x first
-    #define y second
-    pll A, B;
+template<typename T>
+struct Segment {
+    pair<T, T> A, B;
 
-    Segment(const pll& A, const pll& B) : A(A), B(B) {}
-
-    bool contains(const pll& P) const {
-        auto xmin = min(A.x, B.x);
-        auto xmax = max(A.x, B.x);
-        auto ymin = min(A.y, B.y);
-        auto ymax = max(A.y, B.y);
-        if (P.x < xmin || P.x > xmax || P.y < ymin || P.y > ymax)
-            return false;
-        return (P.y - A.y)*(B.x - A.x) == (P.x - A.x)*(B.y - A.y);
+    Segment(const pair<T, T>& P, const pair<T, T>& Q) : A(P), B(Q) {}
+    
+    bool contains(const pair<T, T>& P) const {
+        auto dAB = dist(A, B), dAP = dist(A, P), dPB = dist(P, B);
+        return equals(dAP + dPB, dAB);
     }
 
     bool intersect(const Segment& r) const {
-        auto d1 = D(A, B, r.A);
-        auto d2 = D(A, B, r.B);
-        if (((d1 == 0) && contains(r.A)) || ((d2 == 0) && contains(r.B)))
+        auto d1 = D(A, B, r.A), d2 = D(A, B, r.B);
+
+        if ((equals(d1, 0) and contains(r.A)) or (equals(d2, 0) and contains(r.B)))
             return true;
-        auto d3 = D(r.A, r.B, A);
-        auto d4 = D(r.A, r.B, B);
-        if (((d3 == 0) && r.contains(A)) || ((d4 == 0) && r.contains(B)))
+
+        auto d3 = D(r.A, r.B, A), d4 = D(r.A, r.B, B);
+
+        if ((equals(d3, 0) and r.contains(A)) or (equals(d4, 0) and r.contains(B)))
             return true;
-        return (d1 * d2 < 0) && (d3 * d4 < 0);
+
+        return (d1 * d2 < 0) and (d3 * d4 < 0);
     }
 
-private:
-    ll D(const pll& A, const pll& B, const pll& P) const {
-        return (A.x * B.y + A.y * P.x + B.x * P.y) - (P.x * B.y + P.y * A.x + B.x * A.y);
+    // closest point in segment to P
+    pair<T, T> closest(const pair<T, T>& P) {
+        Line<T> r(A, B);
+        auto Q = r.closest(P);
+
+        if (this->contains(Q))
+            return Q;
+
+        auto distA = dist(A, P), distB = dist(B, P);
+
+        if (distA <= distB)
+            return A;
+
+        return B;
+    }
+};
+```
+### Círculo
+
+Parâmetros:
+
+* `P`: ponto central
+* `r`: raio
+
+Métodos:
+
+* `area()`: retorna área
+* `perimeter()`: retorna perímetro
+* `arc(radians)`: retorna comprimento do arco
+* `chord(radians)`: retorna comprimento da corda
+* `sector(radians)`: retorna área do setor
+* `segment(radians)`: retorna área do segmento
+* `position(P)`: retorna valor que representa a posição do ponto
+* `intersection(c)`: retorna par de coordenadas dos pontos de interseção com círculo
+* `intersection(P, Q)`: retorna par de coordenadas dos pontos de interseção com reta `PQ`
+
+```c++
+enum PointPosition { IN, ON, OUT };
+
+template<typename T>
+struct Circle {
+    pair<T, T> C;
+    T r;
+
+    Circle(const pair<T, T>& P, T r) : C(P), r(r) {}
+
+    long double area() const { return M_PI * r * r; }
+    long double perimeter() const { return 2.0L * M_PI * r; }
+    long double arc(double radians) const { return radians * r; }
+    long double chord(double radians) const { return 2.0L * r * sin(radians / 2.0L); }
+    long double sector(double radians) const { return (radians * r * r) / 2.0L; }
+
+    long double segment(double radians) const {
+        auto c = chord(radians);
+        auto s = (r + r + c) / 2.0L;
+        auto t = sqrt(s) * sqrt(s - r) * sqrt(s - r) * sqrt(s - c);
+        return sector(radians) - t;
+    }
+
+    PointPosition position(const pair<T, T>& P) const {
+        auto d = dist(P, C);
+        return equals(d, r) ? ON : (d < r ? IN : OUT);
+    }
+
+    std::vector<pair<T, T>> intersection(const Circle& c) const {
+        auto d = dist(c.C, C);
+
+        // no intersection
+        if (d > c.r + r or d < abs(c.r - r))
+            return {};
+
+        // same
+        if (equals(d, 0) and equals(c.r, r))
+            return {};
+
+        long double a = (c.r * c.r - r * r + d * d) / (2.0L * d);
+        auto h = sqrt(c.r * c.r - a * a);
+
+        long double x = c.C.x + (a / d) * (C.x - c.C.x);
+        long double y = c.C.y + (a / d) * (C.y - c.C.y);
+
+        pair<long double, long double> P(x, y);
+
+        x = P.x + (h / d) * (C.y - c.C.y);
+        y = P.y - (h / d) * (C.x - c.C.x);
+
+        pair<long double, long double> P1(x, y);
+
+        x = P.x - (h / d) * (C.y - c.C.y);
+        y = P.y + (h / d) * (C.x - c.C.x);
+
+        pair<long double, long double> P2(x, y);
+
+        return P1 == P2 ? std::vector<pair<T, T>> { P1 } : std::vector<pair<T, T>> { P1, P2 };
+    }
+
+    std::vector<pair<T, T>> intersection(const pair<T, T>& P, const pair<T, T>& Q) {
+        auto a = pow(Q.x - P.x, 2) + pow(Q.y - P.y, 2);
+        auto b = 2 * ((Q.x - P.x) * (P.x - C.x) + (Q.y - P.y) * (P.y - C.y));
+        auto d = pow(C.x, 2) + pow(C.y, 2) + pow(P.x, 2)
+                 + pow(P.y, 2) + 2 * (C.x * P.x + C.y * P.y);
+        auto D = b * b - 4 * a * d + r * r;
+
+        if (D < 0)
+            return {};
+        if (equals(D, 0)) {
+            long double u = -b / (2.0L * a);
+            auto x = P.x + u * (Q.x - P.x);
+            auto y = P.y + u * (Q.y - P.y);
+            return { { x, y } };
+        }
+
+        long double u = (-b + sqrt(D)) / (2.0L * a);
+        auto x = P.x + u * (Q.x - P.x);
+        auto y = P.y + u * (Q.y - P.y);
+
+        pair<long double, long double> P1(x, y);
+
+        u = (-b - sqrt(D)) / (2.0L * a);
+
+        x = P.x + u * (Q.x - P.x);
+        y = P.y + u * (Q.y - P.y);
+
+        pair<long double, long double> P2(x, y);
+
+        return { P1, P2 };
     }
 };
 ```
@@ -420,7 +563,7 @@ ll binSearch(vpll& xs, ll x, ll l, ll r) {
 }
 ```
 
-### DFS em árvores:
+### DFS em árvores
 
 Parâmetros:
 
@@ -436,7 +579,7 @@ auto dfs = [&](auto&& self, ll u, ll p) -> void {
 }; dfs(dfs, 1, -1);
 ```
 
-### DFS em grafos:
+### DFS em grafos
 
 Parâmetros:
 
@@ -490,7 +633,7 @@ vll getPath(const vll& pre, ll s, ll u) {
 }
 ```
 
-### Binary Lifting:
+### Binary Lifting
 
 Parâmetros:
 
@@ -598,41 +741,92 @@ vll sieve(ll n) {
 }
 ```
 
-### Rotação de Ponto:
+### Distância entre pontos
 
-Parâmetros:
-
-* `P`: ponto
-* `radians`: ângulo em radianos
-
-Retorna: Ponto rotacionado
+Retorna: Distância entre os pontos `P` e `Q`
 
 ```c++
-pll rotatePoint(const pll& P, double radians) {
-    #define x first
-    #define y second
-    double x = P.x * cos(radians) - P.y * sin(radians);
-    double y = P.x * sin(radians) + P.y * cos(radians);
-    return {x, y};
+template<typename T>
+long double dist(const pair<T, T>& P, const pair<T, T>& Q) { 
+    return hypot(P.x - Q.x, P.y - Q.y);
+}
+```
+
+### Rotação de ponto
+
+Retorna: Par de coordenadas do ponto rotacionado
+
+```c++
+template<typename T>
+pair<long double, long double> rotate(const pair<T, T>& P, long double radians) {
+    auto x = cos(radians) * P.x - sin(radians) * P.y;
+    auto y = sin(radians) * P.x + cos(radians) * P.y;
+    return { x, y };
 }
 ```
 
 ### Orientação de ponto
 
-Parâmetros:
-
-* `A` e `B`: pontos pertencentes à reta
-* `P`: ponto que queremos checar orientação
-
-Retorna: Valor que representa a orientação
+Retorna: Valor que representa a orientação do ponto
 
 ```c++
 // D = 0: P in line
 // D > 0: P at left
 // D < 0: P at right
-ll D(const pll& A, const pll& B, const pll& P) {
-    #define x first
-    #define y second
+template<typename T>
+T D(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
     return (A.x * B.y + A.y * P.x + B.x * P.y) - (P.x * B.y + P.y * A.x + B.x * A.y);
+}
+```
+
+### Ângulo entre segmentos
+
+Retorna: Ângulo entre segmentos
+
+```c++
+// smallest angle between segments PQ and RS
+template<typename T>
+long double angle(const pair<T, T>& P, const pair<T, T>& Q, const pair<T, T>& R, const pair<T, T>& S) {
+    T ux = P.x - Q.x, uy = P.y - Q.y;
+    T vx = R.x - S.x, vy = R.y - S.y;
+    T num = ux * vx + uy * vy;
+
+    // degenerate segment: den = 0
+    auto den = hypot(ux, uy) * hypot(vx, vy);
+    return acos(num / den);
+}
+```
+
+### Ponto contido em segmento
+
+Retorna: Verdadeiro se o ponto está contido no segmento, falso caso contrário
+
+```c++
+// P in segment AB
+template<typename T>
+bool contains(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
+    auto xmin = min(A.x, B.x), xmax = max(A.x, B.x);
+    auto ymin = min(A.y, B.y), ymax = max(A.y, B.y);
+
+    if (P.x < xmin || P.x > xmax || P.y < ymin || P.y > ymax)
+        return false;
+
+    return equals((P.y - A.y) * (B.x - A.x), (P.x - A.x) * (B.y - A.y));
+}
+```
+
+### Mediatriz
+
+Retorna: Reta mediatriz ao segmento `PQ`
+
+```c++
+// mediatriz
+template<typename T>
+Line<T> perpendicularBisector(const pair<T, T>& P, const pair<T, T>& Q) {
+    auto a = 2 * (Q.x - P.x);
+    auto b = 2 * (Q.y - P.y);
+    auto c = (P.x * P.x + P.y * P.y) - (Q.x * Q.x + Q.y * Q.y);
+
+    return { a, b, c };
 }
 ```
