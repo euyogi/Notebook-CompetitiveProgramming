@@ -1,6 +1,6 @@
 # Notebook
 
-## Sumário
+# Sumário
 
 * Template
 * Utils
@@ -8,34 +8,40 @@
   * Igualdade flutuante
   * Fatos
 * Estruturas
-  * Reta
-  * Segmento
-  * Círculo
-  * Triângulo *
-  * BIT Tree
-  * Red-Black Tree
-  * Segment Tree *
-  * Disjoint Set Union
+  * Geometria
+    * Reta
+    * Segmento
+    * Círculo
+    * Triângulo *
+  * Árvores
+    * BIT Tree
+    * Red-Black Tree
+    * Segment Tree *
+    * Disjoint Set Union
 * Algoritmos
-  * Kruskal (Árvore Geradora Mínima)
-  * Busca binária
-  * DFS
-  * BFS *
-  * Dijkstra
-  * Binary Lifting
-  * Menor Ancestral Comum (LCA)
-  * Sparse Table *
-  * Divisores
-  * Fatoração
-  * Crivo de Eratóstenes
-  * Distância entre pontos
-  * Rotação de ponto
-  * Orientação de ponto
-  * Ângulo entre segmentos
-  * Ponto contido em segmento
-  * Mediatriz
+  * Grafos
+    * Kruskal (Árvore Geradora Mínima)
+    * DFS
+    * BFS *
+    * Dijkstra
+    * Binary Lifting
+    * Menor Ancestral Comum (LCA)
+    * Sparse Table *
+  * Outros
+    * Busca binária
+  * Matemática
+    * Divisores
+    * Fatoração
+    * Crivo de Eratóstenes
+  * Geometria
+    * Distância entre pontos
+    * Rotação de ponto
+    * Orientação de ponto
+    * Ângulo entre segmentos
+    * Ponto contido em segmento
+    * Mediatriz
 
-## Main template
+# Main template
 
 ```c++
 #include <bits/stdc++.h>
@@ -68,7 +74,7 @@ signed main() {
 }
 ```
 
-## Utils
+# Utils
 
 ### 4 direções adjascentes
 
@@ -102,7 +108,9 @@ bool equals(T a, S b) { return abs(a - b) < 1e-9L; }
 
 * `a + b = (a & b) + (a | b)`
 
-## Estruturas
+# Estruturas
+
+## Geometria
 
 ### Reta
 
@@ -318,6 +326,8 @@ struct Circle {
 };
 ```
 
+## Árvores
+
 ### BIT Tree
 
 Parâmetros:
@@ -482,7 +492,9 @@ struct DSU {
 };
 ```
 
-## Algoritmos
+# Algoritmos
+
+## Grafos
 
 ### Kruskal
 
@@ -509,30 +521,6 @@ pair<vector<tuple<ll, ll, ll>>, ll> kruskal(vector<tuple<ll, ll, ll>>& edges, in
             edges_sum += w;
         }
     return { mst, edges_sum };
-}
-```
-
-### Busca binária
-
-Parâmetros:
-
-* `xs`: vetor ordenado alvo
-* `x`: elemento alvo
-* `l`: índice de início
-* `r`: índice de fim
-
-Retorna: Índice de `x` se encontrado, se não `-1`
-
-Pode ser útil em vez de retornar ```-1```, retornar ```l```
-
-```c++
-ll binSearch(vpll& xs, ll x, ll l, ll r) {
-    if (l > r) return -1;
-    ll m = l + (r - l) / 2;
-    if (xs[m].first == x) return m;
-    if (xs[m].first < x) l = m + 1;
-    else r = m - 1;
-    return binSearch(xs, x, l, r);
 }
 ```
 
@@ -677,6 +665,34 @@ int LCA(int u, int v) {
 }
 ```
 
+## Outros
+
+### Busca binária
+
+Parâmetros:
+
+* `xs`: vetor ordenado alvo
+* `x`: elemento alvo
+* `l`: índice de início
+* `r`: índice de fim
+
+Retorna: Índice de `x` se encontrado, se não `-1`
+
+Pode ser útil em vez de retornar ```-1```, retornar ```l```
+
+```c++
+ll binSearch(vpll& xs, ll x, ll l, ll r) {
+    if (l > r) return -1;
+    ll m = l + (r - l) / 2;
+    if (xs[m].first == x) return m;
+    if (xs[m].first < x) l = m + 1;
+    else r = m - 1;
+    return binSearch(xs, x, l, r);
+}
+```
+
+## Matemática
+
 ### Divisores:
 
 Retorna: Vetor ordenado com todos os divisores de `x`
@@ -729,6 +745,8 @@ vll sieve(ll n) {
     return ps;
 }
 ```
+
+## Geometria
 
 ### Distância entre pontos
 
