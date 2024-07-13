@@ -23,7 +23,7 @@
   * BFS *
   * Dijkstra
   * Binary Lifting
-  * Menor Ancestral Comum (LCA)*
+  * Menor Ancestral Comum (LCA)
   * Sparse Table *
   * Divisores
   * Fatoração
@@ -610,54 +610,70 @@ vll getPath(const vll& pre, ll s, ll u) {
 
 Parâmetros:
 
-* `n`: quantidade de elementos
-* `x`: elemento alvo
+* `n`: quantidade de vértices/elementos
+* `x`: vértice/elemento alvo
 * `k`: ordem do ancestral
 
-Retorna: `k` ancestral do elemento `x`
+Retorna: `k` ancestral do vértice/elemento `x`
 
 ```c++
+const int LOG = 31; // aproximate log of n, + 1
+
 vector<vector<int>> parent;
-const int LOG = 31; // aproximate log of n + 1
+vector<int> depth;
 
-void populate(int n) {
+// if isn't a graph delete parameter g
+void populate(int n, vector<vector<int>>& g) {
     parent.resize(n + 1, vector<int>(LOG));
+    depth.resize(n + 1);
 
-    // initialize known relationships
+    // initialize know relationships (e.g.: dfs if it's a graph)
 
-    for (int i = 1; i < LOG; ++i)
-        for (int j = 1; j < parent.size(); ++j)
+    // parent[1][0] = 1;
+    // auto dfs = [&](auto&& self, int u, int p) -> void {
+    //     for (ll v : g[u]) if (v != p) {
+    //         parent[v][0] = u;
+    //         depth[v] = depth[u] + 1;
+    //         self(self, v, u);
+    //     }
+    // }; dfs(dfs, 1, -1);
+
+    for (ll i = 1; i < LOG; ++i)
+        for (ll j = 1; j <= n; ++j)
             parent[j][i] = parent[ parent[j][i - 1] ][i - 1];
 }
 
-// only call after populate
-int kthAncestor(int x, int k) {
-    int at = x;
-    for (int j = 0; j < LOG; j++)
-        if (k & 1 << j)
-            at = parent[at][j];
-    return at;
+int kthAncestor(int u, int k) {
+    // if (k > depth[u]) return -1; // no kth ancestor
+    for (int i = 0; i < LOG; ++i)
+        if (k & (1 << i))
+            u = parent[u][i];
+    return u;
 }
 ```
 
-Caso queiramos a quantidade de ancestrais de `x`:
+### Menor Ancestral Comum (LCA)
+
+Parâmetros:
+
+* `u`: primeiro vértice/elemento
+* `v`: segundo vértice/elemento
+
+Retorna: Menor ancestral comum entre `u` e `v`
+
 
 ```c++
-vector<vector<int>> parent;
-vector<int> depth;
-const int LOG = 31; // aproximate log of n + 1
-
-void populate(int n) {
-    parent.resize(n + 1, vector<int>(LOG));
-
-    // initialize known relationships
-
-    // necessary that parent[j] <= j
-    for (int j = 1; j < parent.size(); ++j) {
-        if (j > 1) depth = depth[parent[j][0]];
-        for (int i = 1; i < LOG; ++i)
-            parent[j][i] = parent[ parent[j][i - 1] ][i - 1];
-    }
+int LCA(int u, int v) {
+    if (depth[u] < depth[v]) swap(u, v);
+    int k = depth[u] - depth[v];
+    u = kthAncestor(u, k);
+    if (u == v) return u;
+    for (int i = LOG - 1; i >= 0; --i)
+        if (parent[u][i] != parent[v][i]) {
+            u = parent[u][i];
+            v = parent[v][i];
+        }
+    return parent[u][0];
 }
 ```
 
