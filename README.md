@@ -11,6 +11,7 @@
   * Reta
   * Segmento
   * Círculo
+  * Triângulo *
   * BIT Tree
   * Red-Black Tree
   * Segment Tree *
@@ -22,7 +23,8 @@
   * BFS *
   * Dijkstra
   * Binary Lifting
-  * Menor Ancestral Comum *
+  * Menor Ancestral Comum (LCA)*
+  * Sparse Table *
   * Divisores
   * Fatoração
   * Crivo de Eratóstenes
@@ -38,7 +40,7 @@
 ```c++
 #include <bits/stdc++.h>
 
-#ifdef DEBUG
+#ifdef LOCAL
 #include "dbg.h"
 #else
 #define dbg(...)
@@ -98,7 +100,7 @@ bool equals(T a, S b) { return abs(a - b) < 1e-9L; }
 
 ### Fatos
 
-`a + b = (a & b) + (a | b)`
+* `a + b = (a & b) + (a | b)`
 
 ## Estruturas
 
@@ -203,11 +205,10 @@ struct Segment {
 
     bool intersect(const Segment& r) const {
         auto d1 = D(A, B, r.A), d2 = D(A, B, r.B);
+        auto d3 = D(r.A, r.B, A), d4 = D(r.A, r.B, B);
 
         if ((equals(d1, 0) and contains(r.A)) or (equals(d2, 0) and contains(r.B)))
             return true;
-
-        auto d3 = D(r.A, r.B, A), d4 = D(r.A, r.B, B);
 
         if ((equals(d3, 0) and r.contains(A)) or (equals(d4, 0) and r.contains(B)))
             return true;
@@ -219,15 +220,9 @@ struct Segment {
     pair<T, T> closest(const pair<T, T>& P) {
         Line<T> r(A, B);
         auto Q = r.closest(P);
-
-        if (this->contains(Q))
-            return Q;
-
         auto distA = dist(A, P), distB = dist(B, P);
-
-        if (distA <= distB)
-            return A;
-
+        if (this->contains(Q)) return Q;
+        if (distA <= distB) return A;
         return B;
     }
 };
@@ -282,12 +277,9 @@ struct Circle {
     vector<pair<T, T>> intersection(const Circle& c) const {
         auto d = dist(c.C, C);
 
-        // no intersection
-        if (d > c.r + r or d < abs(c.r - r))
-            return {};
-
-        // same
-        if (equals(d, 0) and equals(c.r, r))
+        // no intersection or same
+        if (d > c.r + r or d < abs(c.r - r) or
+                (equals(d, 0) and equals(c.r, r)))
             return {};
 
         long double a = (c.r * c.r - r * r + d * d) / (2.0L * d);
@@ -296,29 +288,23 @@ struct Circle {
         long double x = c.C.x + (a / d) * (C.x - c.C.x);
         long double y = c.C.y + (a / d) * (C.y - c.C.y);
 
-        pair<long double, long double> P(x, y);
+        pair<long double, long double> P1, P2;
+        P1.x = x + (h / d) * (C.y - c.C.y);
+        P1.y = y - (h / d) * (C.x - c.C.x);
+        P2.x = x - (h / d) * (C.y - c.C.y);
+        P2.y = y + (h / d) * (C.x - c.C.x);
 
-        x = P.x + (h / d) * (C.y - c.C.y);
-        y = P.y - (h / d) * (C.x - c.C.x);
-
-        pair<long double, long double> P1(x, y);
-
-        x = P.x - (h / d) * (C.y - c.C.y);
-        y = P.y + (h / d) * (C.x - c.C.x);
-
-        pair<long double, long double> P2(x, y);
-
-        return P1 == P2 ? std::vector<pair<T, T>> { P1 } : std::vector<pair<T, T>> { P1, P2 };
+        return P1 == P2 ? vector<pair<T, T>> { P1 } : vector<pair<T, T>> { P1, P2 };
     }
 
-    // circle on origin
+    // circle at origin
     vector<pair<T, T>> intersection(const pair<T, T>& P, const pair<T, T>& Q) {
         T a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y);
 
         long double x0 = -a * c / (a * a + b * b), y0 = -b * c / (a * a + b * b);
         if (c * c > r * r * (a * a + b * b) + 1e-9L)
             return {};
-        if (abs(c * c - r * r * (a * a + b * b)) < 1e-9L)
+        if (equals(c * c, r * r * (a * a + b * b)))
             return { { x0, y0 } };
 
         long double d = r * r - c * c / (a * a + b * b);
@@ -593,17 +579,17 @@ Parâmetros:
 Retorna: Vetor com as menores distâncias de cada aresta para `s` e vetor de trajetos
 
 ```c++
-pair<vll, vll> dijkstra(const vector<vpll>& g, ll s) {
+pair<vll, vll> dijkstra(const vvpll& g, ll s) {
     vll ds(g.size(), LONG_LONG_MAX), pre(g.size(), -1);
     priority_queue<pll, vpll, greater<>> pq;
     pq.emplace(0, s); ds[s] = 0;
     while (!pq.empty()) {
         auto [t, u] = pq.top(); pq.pop();
-        for (auto [w, v] : g[u])
+        if (ds[v] != LONG_LONG_MAX) continue;
+        for (auto& [w, v] : g[u])
             if (t + w < ds[v]) {
+                ds[v] = t + w, pre[v] = u;
                 pq.emplace(v, t + w);
-                ds[v] = t + w;
-                pre[v] = u;
             }
     }
     return { ds, pre };
