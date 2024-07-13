@@ -279,7 +279,7 @@ struct Circle {
         return equals(d, r) ? ON : (d < r ? IN : OUT);
     }
 
-    std::vector<pair<T, T>> intersection(const Circle& c) const {
+    vector<pair<T, T>> intersection(const Circle& c) const {
         auto d = dist(c.C, C);
 
         // no intersection
@@ -311,36 +311,23 @@ struct Circle {
         return P1 == P2 ? std::vector<pair<T, T>> { P1 } : std::vector<pair<T, T>> { P1, P2 };
     }
 
-    std::vector<pair<T, T>> intersection(const pair<T, T>& P, const pair<T, T>& Q) {
-        auto a = pow(Q.x - P.x, 2) + pow(Q.y - P.y, 2);
-        auto b = 2 * ((Q.x - P.x) * (P.x - C.x) + (Q.y - P.y) * (P.y - C.y));
-        auto d = pow(C.x, 2) + pow(C.y, 2) + pow(P.x, 2)
-                 + pow(P.y, 2) + 2 * (C.x * P.x + C.y * P.y);
-        auto D = b * b - 4 * a * d + r * r;
+    // circle on origin
+    vector<pair<T, T>> intersection(const pair<T, T>& P, const pair<T, T>& Q) {
+        T a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y);
 
-        if (D < 0)
+        long double x0 = -a * c / (a * a + b * b), y0 = -b * c / (a * a + b * b);
+        if (c * c > r * r * (a * a + b * b) + 1e-9L)
             return {};
-        if (equals(D, 0)) {
-            long double u = -b / (2.0L * a);
-            auto x = P.x + u * (Q.x - P.x);
-            auto y = P.y + u * (Q.y - P.y);
-            return { { x, y } };
-        }
+        if (abs(c * c - r * r * (a * a + b * b)) < 1e-9L)
+            return { { x0, y0 } };
 
-        long double u = (-b + sqrt(D)) / (2.0L * a);
-        auto x = P.x + u * (Q.x - P.x);
-        auto y = P.y + u * (Q.y - P.y);
-
-        pair<long double, long double> P1(x, y);
-
-        u = (-b - sqrt(D)) / (2.0L * a);
-
-        x = P.x + u * (Q.x - P.x);
-        y = P.y + u * (Q.y - P.y);
-
-        pair<long double, long double> P2(x, y);
-
-        return { P1, P2 };
+        long double d = r * r - c * c / (a * a + b * b);
+        long double mult = sqrt(d / (a * a + b * b));
+        long double ax = x0 + b * mult;
+        long double bx = x0 - b * mult;
+        long double ay = y0 - a * mult;
+        long double by = y0 + a * mult;
+        return { { ax, ay }, { bx, by } };
     }
 };
 ```
