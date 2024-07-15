@@ -419,6 +419,49 @@ typedef tree<ll, null_type, less_equal<>,
 rb_tree_tag, tree_order_statistics_node_update> RBT;
 ```
 
+### Segment Tree (Simples)
+
+Parâmetros:
+
+* `n`: intervalo máximo para operações `[0, n)`
+
+Métodos:
+
+* `set(i, x)`: altera o valor no índice `i` para `x`
+* `query(i, j)`: retorna o resultado definido para o intervalo `[i, j]`
+
+```c++
+template<typename T>
+class SegTree {
+public:
+    SegTree(ll n) : n(n) {
+        while (__builtin_popcount(n) != 1) ++n;
+        seg.resize(2 * n, DEF);
+    }
+
+    void set(ll i, ll x, bool leaf = true) {
+        if (leaf) i += n, seg[i] = x;
+        else if (i == 0) return;
+        // change accordingly
+        else seg[i] = seg[i * 2] + seg[i * 2 + 1];
+        set(i >> 1, x, false);
+    }
+
+    T query(ll i, ll j, ll l = 0, ll r = 0, ll node = 0) {
+        if (not node) return query(i, j, 0, n - 1, 1);
+        if (i <= l and r <= j) return seg[node];
+        if (j < l or i > r) return DEF;
+        ll m = l + (r - l) / 2;
+        // change accordingly
+        return query(i, j, l, m, node * 2) + query(i, j, m + 1, r, node * 2 + 1);
+    }
+
+private:
+    const T DEF = 0; // change accordingly
+    vector<T> seg;
+    ll n;
+};
+```
 ### Disjoint Set Union
 
 Parâmetros:
