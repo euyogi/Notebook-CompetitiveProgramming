@@ -439,7 +439,7 @@ public:
         seg.resize(2 * n, DEF);
     }
 
-    void set(ll i, ll x, bool leaf = true) {
+    void set(ll i, T x, bool leaf = true) {
         if (leaf) i += n, seg[i] = x;
         else if (i == 0) return;
         // change accordingly
