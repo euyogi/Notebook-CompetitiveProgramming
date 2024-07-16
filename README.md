@@ -427,33 +427,40 @@ Parâmetros:
 
 Métodos:
 
-* `set(i, x)`: altera o valor no índice `i` para `x`
-* `query(i, j)`: retorna o resultado definido para o intervalo `[i, j]`
+* `setQuery(i, j, x, l, r, node)`: super função (set/query).
+  `i` e `j` é o intervalo da nossa ação. `x` é um argumento
+  opcional que é passado somente quando queremos setar um valor.
+  `l` e `r` é o intervalo que o nó representa. `node` é o nó
+  atual. esses três últimos argumentos não são passados nunca.
+  se passamos `x` (set) não deve-se utilizar o valor retornado,
+  caso contrário (query), retorna valor correspondente à
+  funcionalidade codificada de acordo com o tipo passado como
+  template
 
 ```c++
 template<typename T>
 class SegTree {
 public:
-    SegTree(ll n) : n(n) {
+    SegTree(ll n) {
         while (__builtin_popcount(n) != 1) ++n;
+        (*this).n = n;
         seg.resize(2 * n, DEF);
     }
 
-    void set(ll i, T x, bool leaf = true) {
-        if (leaf) i += n, seg[i] = x;
-        else if (i == 0) return;
-        // change accordingly
-        else seg[i] = seg[i * 2] + seg[i * 2 + 1];
-        set(i >> 1, x, false);
-    }
-
-    T query(ll i, ll j, ll l = 0, ll r = 0, ll node = 0) {
-        if (not node) return query(i, j, 0, n - 1, 1);
-        if (i <= l and r <= j) return seg[node];
+    T setQuery(ll i, ll j, T x = -LONG_LONG_MAX, ll l = 0, ll r = 0, ll node = 0) {
+        if (not node) r = n - 1, node = 1;
+        if (i <= l and r <= j) {
+            // change accordingly
+            if (x != -LONG_LONG_MAX) seg[node] = x;
+            return seg[node];
+        }
         if (j < l or i > r) return DEF;
         ll m = l + (r - l) / 2;
         // change accordingly
-        return query(i, j, l, m, node * 2) + query(i, j, m + 1, r, node * 2 + 1);
+        ll sum = (setQuery(i, j, x, l, m, node * 2) +
+                  setQuery(i, j, x, m + 1, r, node * 2 + 1));
+        seg[node] = (seg[2 * node] + seg[2 * node + 1]);
+        return sum;
     }
 
 private:
