@@ -16,13 +16,13 @@
   * Árvores
     * BIT Tree
     * Red-Black Tree
-    * Segment Tree *
+    * Segment Tree
     * Disjoint Set Union
 * Algoritmos
   * Grafos
     * Kruskal (Árvore Geradora Mínima)
     * DFS
-    * BFS *
+    * BFS 0/1
     * Dijkstra
     * Binary Lifting
     * Menor Ancestral Comum (LCA)
@@ -63,7 +63,7 @@ using vvpll = vector<vpll>;
 #define found(x, xs) (xs.find(x) != xs.end())
 
 void solve() {
-    
+
 }
 
 signed main() {
@@ -166,7 +166,7 @@ struct Line {
         auto y = (-c * r.a + r.c * a) / det;
         return { x, y };
     }
-    
+
     // distance from P to line
     long double distance(const pair<T, T>& P) const { return abs(a * P.x + b * P.y + c) / hypot(a, b); }
 
@@ -177,7 +177,7 @@ struct Line {
         auto y = (a * (-b * P.x + a * P.y) - b * c) / den;
         return { x, y };
     }
-    
+
     bool operator==(const Line& r) const {
         T k = a ? a : b;
         T s = r.a ? r.a : r.b;
@@ -205,7 +205,7 @@ struct Segment {
     pair<T, T> A, B;
 
     Segment(const pair<T, T>& P, const pair<T, T>& Q) : A(P), B(Q) {}
-    
+
     bool contains(const pair<T, T>& P) const {
         auto dAB = dist(A, B), dAP = dist(A, P), dPB = dist(P, B);
         return equals(dAP + dPB, dAB);
@@ -348,7 +348,7 @@ public:
     	add(i, x, bt1);           add(j + 1, -x, bt1);
     	add(i, x * (i - 1), bt2); add(j + 1, -x * j, bt2);
     }
-    
+
     ll rangeQuery(size_t i, size_t j) {
     	return rsq(j, bt1) * j           - rsq(j, bt2) -
     	      (rsq(i - 1, bt1) * (i - 1) - rsq(i - 1, bt2));
@@ -356,14 +356,12 @@ public:
 
 private:
     void add(size_t i, ll x, vll& bt) {
-        for (; i < bt.size(); i += i & -i)
-            bt[i] += x;
+        for (; i < bt.size(); i += i & -i) bt[i] += x;
     }
-    
+
     ll rsq(size_t i, vll& bt) {
         ll sum = 0;
-        for (; i >= 1 i -= i & -i)
-            sum += bt[i];
+        for (; i >= 1 i -= i & -i) sum += bt[i];
         return sum;
     }
 
@@ -379,19 +377,19 @@ Parâmetros:
 
 Métodos:
 
-* `add(i, x)`: soma `x` em cada elemento no intervalo `[1, i]`
+* `add(i, x)`: soma `x` no índice `i`
 * `rsq(i)`: retorna a soma do intervalo `[1, i]`
 
 ```c++
 struct BIT {
     vll bt
     BIT(size_t n) : bt(n+1) {}
-    
+
     void add(ll i, ll x) {
         for (; i < bt.size(); i += i & -i)
             bt[i] += x;
     }
-    
+
     ll rsq(ll i) {
         ll sum = 0;
         for (; i >= 1; i -= i & -i)
@@ -492,17 +490,16 @@ public:
     ll setOf(ull x) {
         return parent[x] == x ? x : parent[x] = setOf(parent[x]);
     }
-    
+
     void mergeSetsOf(ull x, ull y) {
         ull a = setOf(x), b = setOf(y);
-        if (a == b) return;
         if (size[a] > size[b]) swap(a, b);
         parent[a] = b;
-        size[b] += size[a];
+        if (a != b) size[b] += size[a];
     }
-    
+
     bool sameSet(ull x, ull y) { return setOf(x) == setOf(y); }
-    
+
     size_t sizeOfSet(ull s) { return size[s]; }
 
 private:
@@ -531,13 +528,12 @@ struct DSU {
     ll find(ll x) {
         return parent[x] == x ? x : parent[x] = find(parent[x]);
     }
-    
+
     void merge(ll x, ll y) {
         ull a = find(x), b = find(y);
-        if (a == b) return;
         if (size[a] > size[b]) swap(a, b);
         parent[a] = b;
-        size[b] += size[a];
+        if (a != b) size[b] += size[a];
     }
 };
 ```
@@ -605,6 +601,33 @@ auto dfs = [&](auto&& self, ll u) -> void {
     for (auto v : g[u]) if (!vs[v])
         self(self, v);
 }; dfs(dfs, 1);
+```
+
+### BFS 0/1
+
+Parâmetros:
+
+* `g`: grafo
+* `s`: vértice inicial (menores distâncias em relação à ele)
+
+Retorna: Vetor com as menores distâncias de cada aresta para `s`
+
+```c++
+vll bfs01(const vvpll& g, ll s) {
+    vll ds(g.size(), LONG_LONG_MAX);
+    deque<ll> dq;
+    dq.emplace(s); ds[s] = 0;
+    while (!dq.empty()) {
+        ll u = pq.front(); pq.pop();
+        for (ll v : g[u])
+            if (ds[u] + w < ds[v]) {
+                ds[v] = ds[u] + w;
+                if (w == 1) dq.emplace_back(v)
+                else dq.emplace_front(v);
+            }
+    }
+    return ds;
+}
 ```
 
 ### Dijkstra
@@ -731,11 +754,11 @@ Retorna: Índice de `x` se encontrado, se não `-1`
 Pode ser útil em vez de retornar ```-1```, retornar ```l```
 
 ```c++
-ll binSearch(vpll& xs, ll x, ll l, ll r) {
+ll binSearch(vll& xs, ll x, ll l, ll r) {
     if (l > r) return -1;
     ll m = l + (r - l) / 2;
-    if (xs[m].first == x) return m;
-    if (xs[m].first < x) l = m + 1;
+    if (xs[m] == x) return m;
+    if (xs[m] < x) l = m + 1;
     else r = m - 1;
     return binSearch(xs, x, l, r);
 }
@@ -804,7 +827,7 @@ Retorna: Distância entre os pontos `P` e `Q`
 
 ```c++
 template<typename T>
-long double dist(const pair<T, T>& P, const pair<T, T>& Q) { 
+long double dist(const pair<T, T>& P, const pair<T, T>& Q) {
     return hypot(P.x - Q.x, P.y - Q.y);
 }
 ```
