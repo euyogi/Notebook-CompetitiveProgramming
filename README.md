@@ -12,7 +12,7 @@
     * Reta
     * Segmento
     * Círculo
-    * Triângulo *
+    * Triângulo
   * Árvores
     * BIT Tree
     * Red-Black Tree
@@ -112,6 +112,9 @@ bool equals(T a, S b) { return abs(a - b) < 1e-9L; }
 
 ## Geometria
 
+Provavelmente vai ser necessário definir `x` como `first` e `y`
+como `second` e utilizar as funções `dist()` e `equals()`
+
 ### Reta
 
 Parâmetros:
@@ -126,9 +129,9 @@ Métodos:
 * `contains(P)`: retorna verdadeiro se `P` está contido na reta, falso caso contrário
 * `parallel(r)`: retorna verdadeiro se a reta é paralela a `r`, falso caso contrário
 * `orthogonal(r)`: retorna verdadeiro se a reta é perpendicular a `r`, falso caso contrário
-* `intersection(r)`: retorna par de coordenadas do ponto de interseção
+* `intersection(r)`: retorna ponto de interseção
 * `distance(P)`: retorna a distância de `P` à reta
-* `closest(P)`: retorna par de coordenadas do ponto mais próximo de `P` pertencente à reta
+* `closest(P)`: retorna ponto mais próximo de `P` pertencente à reta
 
 ```c++
 template<typename T>
@@ -159,8 +162,7 @@ struct Line {
         long double det = r.a * b - r.b * a;
 
         // same or parallel
-        if (equals(det, 0))
-            return {};
+        if (equals(det, 0)) return {};
 
         auto x = (-r.c * b + c * r.b) / det;
         auto y = (-c * r.a + r.c * a) / det;
@@ -197,7 +199,7 @@ Métodos:
 
 * `contains(P)`: retorna verdadeiro se `P` está contido no segmento, falso caso contrário
 * `intersect(r)`: retorna verdadeiro se `r` intersecta com o segmento, falso caso contrário
-* `closest(P)`: retorna par de coordenadas do ponto mais próximo de `P` pertencente ao segmento
+* `closest(P)`: retorna ponto mais próximo de `P` pertencente ao segmento
 
 ```c++
 template<typename T>
@@ -251,8 +253,8 @@ Métodos:
 * `sector(radians)`: retorna área do setor
 * `segment(radians)`: retorna área do segmento
 * `position(P)`: retorna valor que representa a posição do ponto
-* `intersection(c)`: retorna par de coordenadas dos pontos de interseção com círculo
-* `intersection(P, Q)`: retorna par de coordenadas dos pontos de interseção com reta `PQ`
+* `intersection(c)`: retorna pontos de interseção com círculo
+* `intersection(P, Q)`: retorna pontos de interseção com reta `PQ`
 
 ```c++
 enum PointPosition { IN, ON, OUT };
@@ -290,38 +292,128 @@ struct Circle {
                 (equals(d, 0) and equals(c.r, r)))
             return {};
 
-        long double a = (c.r * c.r - r * r + d * d) / (2.0L * d);
+        auto a = (c.r * c.r - r * r + d * d) / (2.0L * d);
         auto h = sqrt(c.r * c.r - a * a);
-
-        long double x = c.C.x + (a / d) * (C.x - c.C.x);
-        long double y = c.C.y + (a / d) * (C.y - c.C.y);
-
+        auto x = c.C.x + (a / d) * (C.x - c.C.x);
+        auto y = c.C.y + (a / d) * (C.y - c.C.y);
         pair<long double, long double> P1, P2;
         P1.x = x + (h / d) * (C.y - c.C.y);
         P1.y = y - (h / d) * (C.x - c.C.x);
         P2.x = x - (h / d) * (C.y - c.C.y);
         P2.y = y + (h / d) * (C.x - c.C.x);
-
         return P1 == P2 ? vector<pair<T, T>> { P1 } : vector<pair<T, T>> { P1, P2 };
     }
 
     // circle at origin
     vector<pair<T, T>> intersection(const pair<T, T>& P, const pair<T, T>& Q) {
-        T a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y);
-
-        long double x0 = -a * c / (a * a + b * b), y0 = -b * c / (a * a + b * b);
-        if (c * c > r * r * (a * a + b * b) + 1e-9L)
-            return {};
-        if (equals(c * c, r * r * (a * a + b * b)))
-            return { { x0, y0 } };
-
-        long double d = r * r - c * c / (a * a + b * b);
-        long double mult = sqrt(d / (a * a + b * b));
-        long double ax = x0 + b * mult;
-        long double bx = x0 - b * mult;
-        long double ay = y0 - a * mult;
-        long double by = y0 + a * mult;
+        long double a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y);
+        auto x0 = -a * c / (a*a + b*b), y0 = -b * c / (a*a + b*b);
+        if (c*c > r*r * (a*a + b*b) + 1e-9L) return {};
+        if (equals(c*c, r*r * (a*a + b*b))) return { { x0, y0 } };
+        auto d = r*r - c*c / (a*a + b*b);
+        auto mult = sqrt(d / (a*a + b*b));
+        auto ax = x0 + b * mult;
+        auto bx = x0 - b * mult;
+        auto ay = y0 - a * mult;
+        auto by = y0 + a * mult;
         return { { ax, ay }, { bx, by } };
+    }
+};
+```
+
+### Triângulo
+
+Parâmetros:
+
+* `P`: primeiro ponto
+* `Q`: segundo ponto
+* `R`: terceiro ponto
+
+Métodos:
+
+* `area()`: retorna área
+* `perimeter()`: retorna perímetro
+* `sidesClassification()`: retorna valor que representa a classificação do triângulo
+* `anglesClassification()`: retorna valor que representa a classificação do triângulo
+* `barycenter()`: retorna ponto de interseção entre as medianas
+* `circumradius`: retorna valor do raio da circunferência circunscrita
+* `circumcenter`: retorna ponto de interseção entre as as retas perpendiculares que interceptam nos pontos médios
+* `inradius()`: retorna valor do raio da circunferência inscrita
+* `incenter(c)`: retorna ponto de interseção entre as bissetrizes
+* `orthocenter(P, Q)`: retorna ponto de interseção entre as alturas
+
+```c++
+enum Class { EQUILATERAL, ISOSCELES, SCALENE };
+enum Angles { RIGHT, ACUTE, OBTUSE };
+
+template <typename T>
+struct Triangle {
+    pair<T, T> A, B, C;
+    T a, b, c;
+
+    Triangle(pair<T, T> P, pair<T, T> Q, pair<T, T> R)
+        : A(P), B(Q), C(R), a(dist(A, B)), b(dist(B, C)), c(dist(C, A)) {}
+
+    T area() const {
+        T det = (A.x * B.y + A.y * C.x + B.x * C.y) -
+                (C.x * B.y + C.y * A.x + B.x * A.y);
+        if (is_floating_point_v<T>) return 0.5L * abs(det);
+        return abs(det);
+    }
+
+    long double perimeter() const { return a + b + c; }
+
+    Class sidesClassification() const {
+        if (equals(a, b) and equals(b, c)) return EQUILATERAL;
+        if (equals(a, b) or equals(a, c) or equals(b, c)) return ISOSCELES;
+        return SCALENE;
+    }
+
+    Angles anglesClassification() const {
+        auto alpha = acos((a * a - b * b - c * c) / (-2.0L * b * c));
+        auto beta = acos((b * b - a * a - c * c) / (-2.0L * a * c));
+        auto gamma = acos((c * c - a * a - b * b) / (-2.0L * a * b));
+        auto right = M_PI / 2.0L;
+        if (equals(alpha, right) || equals(beta, right) || equals(gamma, right)) return RIGHT;
+        if (alpha > right || beta > right || gamma > right) return OBTUSE;
+        return ACUTE;
+    }
+
+    pair<long double, long double> barycenter() const {
+        auto x = (A.x + B.x + C.x) / 3.0L;
+        auto y = (A.y + B.y + C.y) / 3.0L;
+        return {x, y};
+    }
+
+    long double circumradius() const { return (a * b * c) / (4.0L * area()); }
+
+    pair<long double, long double> circumcenter() const {
+        long double D = 2 * (A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y));
+        T A2 = A.x * A.x + A.y * A.y;
+        T B2 = B.x * B.x + B.y * B.y;
+        T C2 = C.x * C.x + C.y * C.y;
+        auto x = (A2 * (B.y - C.y) + B2 * (C.y - A.y) + C2 * (A.y - B.y)) / D;
+        auto y = (A2 * (C.x - B.x) + B2 * (A.x - C.x) + C2 * (B.x - A.x)) / D;
+        return {x, y};
+    }
+
+    long double inradius() const { return (2 * area()) / perimeter(); }
+
+    pair<long double, long double> incenter() const {
+        auto P = perimeter();
+        auto x = (a * A.x + b * B.x + c * C.x) / P;
+        auto y = (a * A.y + b * B.y + c * C.y) / P;
+        return {x, y};
+    }
+
+    pair<long double, long double> orthocenter() const {
+        Line<T> r(A, B), s(A, C);
+        Line<T> u{r.b, -r.a, -(C.x * r.b - C.y * r.a)};
+        Line<T> v{s.b, -s.a, -(B.x * s.b - B.y * s.a)};
+        long double det = u.a * v.b - u.b * v.a;
+        auto x = (-u.c * v.b + v.c * u.b) / det;
+        auto y = (-v.c * u.a + u.c * v.a) / det;
+        return {x, y};
     }
 };
 ```
@@ -344,22 +436,22 @@ class BIT {
 public:
     BIT(size_t n) : bt1(n+1), bt2(n+1) {}
 
-    void rangeAdd(size_t i, size_t j, ll x) {
+    void rangeAdd(ll i, ll j, ll x) {
     	add(i, x, bt1);           add(j + 1, -x, bt1);
     	add(i, x * (i - 1), bt2); add(j + 1, -x * j, bt2);
     }
 
-    ll rangeQuery(size_t i, size_t j) {
+    ll rangeQuery(ll i, ll j) {
     	return rsq(j, bt1) * j           - rsq(j, bt2) -
     	      (rsq(i - 1, bt1) * (i - 1) - rsq(i - 1, bt2));
     }
 
 private:
-    void add(size_t i, ll x, vll& bt) {
+    void add(ll i, ll x, vll& bt) {
         for (; i < bt.size(); i += i & -i) bt[i] += x;
     }
 
-    ll rsq(size_t i, vll& bt) {
+    ll rsq(ll i, vll& bt) {
         ll sum = 0;
         for (; i >= 1 i -= i & -i) sum += bt[i];
         return sum;
@@ -487,23 +579,23 @@ public:
         iota(all(parent), 0);
     }
 
-    ll setOf(ull x) {
+    ll setOf(ll x) {
         return parent[x] == x ? x : parent[x] = setOf(parent[x]);
     }
 
-    void mergeSetsOf(ull x, ull y) {
-        ull a = setOf(x), b = setOf(y);
+    void mergeSetsOf(ll x, ll y) {
+        ll a = setOf(x), b = setOf(y);
         if (size[a] > size[b]) swap(a, b);
         parent[a] = b;
         if (a != b) size[b] += size[a];
     }
 
-    bool sameSet(ull x, ull y) { return setOf(x) == setOf(y); }
+    bool sameSet(ll x, ll y) { return setOf(x) == setOf(y); }
 
-    size_t sizeOfSet(ull s) { return size[s]; }
+    size_t sizeOfSet(ll s) { return size[s]; }
 
 private:
-    vector<ull> parent, size;
+    vector<ll> parent, size;
 };
 ```
 
@@ -530,7 +622,7 @@ struct DSU {
     }
 
     void merge(ll x, ll y) {
-        ull a = find(x), b = find(y);
+        ll a = find(x), b = find(y);
         if (size[a] > size[b]) swap(a, b);
         parent[a] = b;
         if (a != b) size[b] += size[a];
@@ -834,7 +926,7 @@ long double dist(const pair<T, T>& P, const pair<T, T>& Q) {
 
 ### Rotação de ponto
 
-Retorna: Par de coordenadas do ponto rotacionado
+Retorna: Ponto rotacionado
 
 ```c++
 template<typename T>
@@ -900,13 +992,11 @@ bool contains(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
 Retorna: Reta mediatriz ao segmento `PQ`
 
 ```c++
-// mediatriz
 template<typename T>
 Line<T> perpendicularBisector(const pair<T, T>& P, const pair<T, T>& Q) {
     auto a = 2 * (Q.x - P.x);
     auto b = 2 * (Q.y - P.y);
     auto c = (P.x * P.x + P.y * P.y) - (Q.x * Q.x + Q.y * Q.y);
-
     return { a, b, c };
 }
 ```
