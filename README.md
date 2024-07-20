@@ -104,6 +104,15 @@ template<typename T, typename S>
 bool equals(T a, S b) { return abs(a - b) < 1e-9L; }
 ```
 
+### Compressão de coordenadas
+
+```c++
+ll idx = 0;
+map<ll, ll> mp;
+set<ll> ys(all(xs));
+for (ll y : ys) mp[y] = idx++;
+```
+
 ### Fatos
 
 * `a + b = (a & b) + (a | b)`
@@ -478,14 +487,12 @@ struct BIT {
     BIT(size_t n) : bt(n+1) {}
 
     void add(ll i, ll x) {
-        for (; i < bt.size(); i += i & -i)
-            bt[i] += x;
+        for (; i < bt.size(); i += i & -i) bt[i] += x;
     }
 
     ll rsq(ll i) {
         ll sum = 0;
-        for (; i >= 1; i -= i & -i)
-            sum += bt[i];
+        for (; i >= 1; i -= i & -i) sum += bt[i];
         return sum;
     }
 };
