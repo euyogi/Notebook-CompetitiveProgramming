@@ -82,23 +82,23 @@ signed main() {
 ### Aritmética Modular
 
 ```c++
-struct Mint {
-    static constexpr ll M = 1e9 + 7;
+static constexpr ll M = 1e9 + 7;
+struct Mi {
     ll v;
-
-    Mint() : v(0) {}
-    Mint(ll v) : v(v % M) { v += (v < 0) * M; }
-
-    friend ostream& operator<<(ostream& os, Mint a) { return os << a.v; }
-    Mint operator+(Mint b) { return v + b.v - (v + b.v >= M) * M; }
-    Mint operator-(Mint b) { return v - b.v + (v - b.v < 0) * M; }
-    Mint operator*(Mint b) { return v * b.v % M; }
-    Mint operator^(Mint b) { return (!b.v ? 1 : (Mint(v * v) ^ (b.v / 2)) * (b.v & 1 ? v : 1)); }
-    Mint operator+=(Mint b) { return *this = *this + b; }
-    Mint operator-=(Mint b) { return *this = *this - b; }
-    Mint operator*=(Mint b) { return *this = *this * b; }
-    Mint operator^=(Mint b) { return *this = *this ^ b; }
+    Mi() : v(0) {}
+    Mi(ll x) : v(x % M) { v += (v < 0) * M; }
 };
+
+bool operator==(Mi a, Mi b) { return a.v == b.v; }
+bool operator!=(Mi a, Mi b) { return a.v != b.v; }
+ostream& operator<<(ostream& os, Mi a) { return os << a.v; }
+Mi operator+(Mi a, Mi b) { return a.v + b.v - (a.v + b.v >= M) * M; }
+Mi operator-(Mi a, Mi b) { return a.v - b.v + (a.v - b.v < 0) * M; }
+Mi operator*(Mi a, Mi b) { return a.v * b.v % M; }
+Mi operator+=(Mi& a, Mi b) { return a = a + b; }
+Mi operator-=(Mi& a, Mi b) { return a = a - b; }
+Mi operator*=(Mi& a, Mi b) { return a = a * b; }
+Mi pow(Mi a, Mi b) { return (!b.v ? 1 : pow(a * a, b.v / 2) * (b.v & 1 ? a.v : 1)); }
 ```
 
 ### 4 direções adjascentes
