@@ -4,8 +4,11 @@
 
 * Template
 * Utils
+  * Aritmética modular
   * Direções adjascentes
   * Igualdade flutuante
+  * Compressão de coordenadas
+  * Próximo maior/menor elemento
   * Fatos
 * Estruturas
   * Geometria
@@ -45,6 +48,7 @@
 
 ```c++
 #include <bits/stdc++.h>
+using namespace std;
 
 #ifdef LOCAL
 #include "dbg.h"
@@ -52,7 +56,6 @@
 #define dbg(...)
 #endif
 
-using namespace std;
 using ll = long long;
 using vll = vector<ll>;
 using vvll = vector<vll>;
@@ -75,6 +78,28 @@ signed main() {
 ```
 
 # Utils
+
+### Aritmética Modular
+
+```c++
+struct Mint {
+    static constexpr ll M = 1e9 + 7;
+    ll v;
+
+    Mint() : v(0) {}
+    Mint(ll v) : v(v % M) { v += (v < 0) * M; }
+
+    friend ostream& operator<<(ostream& os, Mint a) { return os << a.v; }
+    Mint operator+(Mint b) { return v + b.v - (v + b.v >= M) * M; }
+    Mint operator-(Mint b) { return v - b.v + (v - b.v < 0) * M; }
+    Mint operator*(Mint b) { return v * b.v % M; }
+    Mint operator^(Mint b) { return (!b.v ? 1 : (Mint(v * v) ^ (b.v / 2)) * (b.v & 1 ? v : 1)); }
+    Mint operator+=(Mint b) { return *this = *this + b; }
+    Mint operator-=(Mint b) { return *this = *this - b; }
+    Mint operator*=(Mint b) { return *this = *this * b; }
+    Mint operator^=(Mint b) { return *this = *this ^ b; }
+};
+```
 
 ### 4 direções adjascentes
 
@@ -111,6 +136,22 @@ ll idx = 0;
 map<ll, ll> mp;
 set<ll> ys(all(xs));
 for (ll y : ys) mp[y] = idx++;
+```
+
+### Próximo maior/menor elemento
+
+```c++
+// get index of next smallest to the right
+// easy to change to be to left or biggest
+vector<int> next(xs.size(), xs.size());
+stack<int> prevs;
+
+for (int i = xs.size() - 1; i >= 0; --i) {
+    while (!prevs.empty() and xs[prevs.top()] >= xs[i])
+        prevs.pop();
+    if (!prevs.empty()) next[i] = prevs.top();
+    prevs.emplace(i);
+}
 ```
 
 ### Fatos
