@@ -92,12 +92,12 @@ struct Mi {
 bool operator==(Mi a, Mi b) { return a.v == b.v; }
 bool operator!=(Mi a, Mi b) { return a.v != b.v; }
 ostream& operator<<(ostream& os, Mi a) { return os << a.v; }
-Mi operator+(Mi a, Mi b) { return a.v + b.v - (a.v + b.v >= M) * M; }
-Mi operator-(Mi a, Mi b) { return a.v - b.v + (a.v - b.v < 0) * M; }
-Mi operator*(Mi a, Mi b) { return a.v * b.v % M; }
-Mi operator+=(Mi& a, Mi b) { return a = a + b; }
-Mi operator-=(Mi& a, Mi b) { return a = a - b; }
-Mi operator*=(Mi& a, Mi b) { return a = a * b; }
+Mi operator+=(Mi& a, Mi b) { return a.v += b.v - (a.v + b.v >= M) * M; }
+Mi operator-=(Mi& a, Mi b) { return a.v -= b.v + (a.v - b.v < 0) * M; }
+Mi operator*=(Mi& a, Mi b) { return a.v = a.v * b.v % M; }
+Mi operator+(Mi a, Mi b) { return a += b; }
+Mi operator-(Mi a, Mi b) { return a -= b; }
+Mi operator*(Mi a, Mi b) { return a *= b; }
 Mi pow(Mi a, Mi b) { return (!b.v ? 1 : pow(a * a, b.v / 2) * (b.v & 1 ? a.v : 1)); }
 ```
 
@@ -786,7 +786,7 @@ pair<vll, vll> dijkstra(const vvpll& g, ll s) {
     pq.emplace(0, s); ds[s] = 0;
     while (!pq.empty()) {
         auto [t, u] = pq.top(); pq.pop();
-        if (ds[v] != LONG_LONG_MAX) continue;
+        if (ds[u] < t) continue;
         for (auto& [w, v] : g[u])
             if (t + w < ds[v]) {
                 ds[v] = t + w, pre[v] = u;
