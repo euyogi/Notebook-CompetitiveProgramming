@@ -786,7 +786,7 @@ pair<vll, vll> dijkstra(const vvpll& g, ll s) {
     pq.emplace(0, s); ds[s] = 0;
     while (!pq.empty()) {
         auto [t, u] = pq.top(); pq.pop();
-        if (ds[u] < t) continue;
+        if (ds[u] < u) continue;
         for (auto& [w, v] : g[u])
             if (t + w < ds[v]) {
                 ds[v] = t + w, pre[v] = u;
