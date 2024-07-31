@@ -33,6 +33,7 @@
   * Outros
     * Busca binária
   * Matemática
+    * Teste de Primalidade
     * Divisores
     * Fatoração
     * Crivo de Eratóstenes
@@ -62,8 +63,11 @@ using vvll = vector<vll>;
 using pll = pair<ll, ll>;
 using vpll = vector<pll>;
 using vvpll = vector<vpll>;
+
 #define all(xs) xs.begin(), xs.end()
 #define found(x, xs) (xs.find(x) != xs.end())
+#define x first
+#define y second
 
 void solve() {
 
@@ -72,8 +76,8 @@ void solve() {
 signed main() {
     cin.tie(nullptr)->sync_with_stdio(false);
     ll _ts = 1;
-    // cin >> _ts; cin.ignore();
-    while (_ts--) { solve(); }
+    // cin >> _ts;
+    while (_ts--) solve();
 }
 ```
 
@@ -906,6 +910,20 @@ ll binSearch(vll& xs, ll x, ll l, ll r) {
 
 ## Matemática
 
+### Teste de Primalidade
+
+Retorna: Verdadeiro se `x` é primo, falso caso contrário
+```c++
+bool isPrime(ll x) {
+    if (i == 1) return false;
+
+    for (ll i = 2; i * i <= x; ++i)
+        if (x % i == 0) return false;
+
+    return true;
+}
+```
+
 ### Divisores:
 
 Retorna: Vetor ordenado com todos os divisores de `x`
@@ -916,9 +934,9 @@ vll divisors(ll x) {
     for (ll i = 2; i * i <= x; ++i)
         if (x % i == 0) {
             ds.emplace_back(i);
-            ds.emplace_back(x / i);
+            if (i * i != x)
+                ds.emplace_back(x / i);
         }
-    sort(all(ds));
     return ds;
 }
 ```
