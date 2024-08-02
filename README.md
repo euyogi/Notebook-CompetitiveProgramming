@@ -64,6 +64,10 @@ using vvll = vector<vll>;
 using pll = pair<ll, ll>;
 using vpll = vector<pll>;
 using vvpll = vector<vpll>;
+using tll = tuple<ll, ll, ll>;
+using vtll = vector<tll>;
+using ld = long double;
+using pld = pair<ld, ld>;
 
 #define all(xs) xs.begin(), xs.end()
 #define found(x, xs) (xs.find(x) != xs.end())
@@ -103,7 +107,9 @@ Mi operator*=(Mi& a, Mi b) { return a.v = a.v * b.v % M; }
 Mi operator+(Mi a, Mi b) { return a += b; }
 Mi operator-(Mi a, Mi b) { return a -= b; }
 Mi operator*(Mi a, Mi b) { return a *= b; }
-Mi pow(Mi a, Mi b) { return (!b.v ? 1 : pow(a * a, b.v / 2) * (b.v & 1 ? a.v : 1)); }
+Mi pow(Mi a, Mi b) {
+    return (!b.v ? 1 : pow(a * a, b.v / 2) * (b.v & 1 ? a.v : 1));
+}
 ```
 
 ### 4 direções adjascentes
@@ -115,7 +121,8 @@ vpll ds { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
 ### 8 direções adjascentes
 
 ```c++
-vpll ds { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 }, { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, -1 } };
+vpll ds { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 },
+          { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, -1 } };
 ```
 
 ### Loop das direções
@@ -148,10 +155,10 @@ for (ll y : ys) mp[y] = idx++;
 ```c++
 // get index of next smallest to the right
 // easy to change to be to left or biggest
-vector<int> next(xs.size(), xs.size());
-stack<int> prevs;
+vll next(xs.size(), xs.size());
+stack<ll> prevs;
 
-for (int i = xs.size() - 1; i >= 0; --i) {
+for (ll i = xs.size() - 1; i >= 0; --i) {
     while (!prevs.empty() and xs[prevs.top()] >= xs[i])
         prevs.pop();
     if (!prevs.empty()) next[i] = prevs.top();
@@ -193,9 +200,10 @@ template<typename T>
 struct Line {
     T a, b, c;
 
-    Line(const pair<T, T>& P, const pair<T, T>& Q) : a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y) {}
+    Line(const pair<T, T>& P, const pair<T, T>& Q)
+        : a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y) {}
 
-    void normalizeReal() { b /= a, c /= a, a /= a; }
+    void normalizeReal() { b /= a, c /= a, a = 1; }
 
     void normalize() {
         if (a < 0 or (a == 0 and b < 0))
@@ -204,17 +212,21 @@ struct Line {
         a /= gcd_abc, b /= gcd_abc, c /= gcd_abc;
     }
 
-    bool contains(const pair<T, T>& P) const { return equals(a * P.x + b * P.y + c, 0); }
+    bool contains(const pair<T, T>& P) {
+        return equals(a * P.x + b * P.y + c, 0);
+    }
 
-    bool parallel(const Line& r) const {
+    bool parallel(const Line& r) {
         T det = a * r.b - b * r.a;
         return equals(det, 0) and !(*this == r);
     }
 
-    bool orthogonal(const Line& r) const { return equals(a * r.a + b * r.b, 0); }
+    bool orthogonal(const Line& r) {
+        return equals(a * r.a + b * r.b, 0);
+    }
 
-    pair<long double, long double> intersection(const Line& r) {
-        long double det = r.a * b - r.b * a;
+    pld intersection(const Line& r) {
+        ld det = r.a * b - r.b * a;
 
         // same or parallel
         if (equals(det, 0)) return {};
@@ -225,20 +237,23 @@ struct Line {
     }
 
     // distance from P to line
-    long double distance(const pair<T, T>& P) const { return abs(a * P.x + b * P.y + c) / hypot(a, b); }
+    ld distance(const pair<T, T>& P) {
+        return abs(a * P.x + b * P.y + c) / hypot(a, b);
+    }
 
     // closest point in line to P
-    pair<long double, long double> closest(const pair<T, T>& P) const {
-        long double den = a * a + b * b;
+    pld closest(const pair<T, T>& P) {
+        ld den = a * a + b * b;
         auto x = (b * (b * P.x - a * P.y) - a * c) / den;
         auto y = (a * (-b * P.x + a * P.y) - b * c) / den;
         return { x, y };
     }
 
-    bool operator==(const Line& r) const {
+    bool operator==(const Line& r) {
         T k = a ? a : b;
         T s = r.a ? r.a : r.b;
-        return equals(a * s, r.a * k) and equals(b * s, r.b * k) and equals(c * s, r.c * k);
+        return equals(a * s, r.a * k) and equals(b * s, r.b * k)
+                                      and equals(c * s, r.c * k);
     }
 };
 ```
@@ -261,21 +276,24 @@ template<typename T>
 struct Segment {
     pair<T, T> A, B;
 
-    Segment(const pair<T, T>& P, const pair<T, T>& Q) : A(P), B(Q) {}
+    Segment(const pair<T, T>& P, const pair<T, T>& Q)
+        : A(P), B(Q) {}
 
-    bool contains(const pair<T, T>& P) const {
+    bool contains(const pair<T, T>& P) {
         auto dAB = dist(A, B), dAP = dist(A, P), dPB = dist(P, B);
         return equals(dAP + dPB, dAB);
     }
 
-    bool intersect(const Segment& r) const {
+    bool intersect(const Segment& r) {
         auto d1 = D(A, B, r.A), d2 = D(A, B, r.B);
         auto d3 = D(r.A, r.B, A), d4 = D(r.A, r.B, B);
 
-        if ((equals(d1, 0) and contains(r.A)) or (equals(d2, 0) and contains(r.B)))
+        if ((equals(d1, 0) and contains(r.A)) or
+            (equals(d2, 0) and contains(r.B)))
             return true;
 
-        if ((equals(d3, 0) and r.contains(A)) or (equals(d4, 0) and r.contains(B)))
+        if ((equals(d3, 0) and r.contains(A)) or
+            (equals(d4, 0) and r.contains(B)))
             return true;
 
         return (d1 * d2 < 0) and (d3 * d4 < 0);
@@ -321,47 +339,55 @@ struct Circle {
 
     Circle(const pair<T, T>& P, T r) : C(P), r(r) {}
 
-    long double area() const { return M_PI * r * r; }
-    long double perimeter() const { return 2.0L * M_PI * r; }
-    long double arc(double radians) const { return radians * r; }
-    long double chord(double radians) const { return 2.0L * r * sin(radians / 2.0L); }
-    long double sector(double radians) const { return (radians * r * r) / 2.0L; }
+    ld area() { return M_PI * r * r; }
+    ld perimeter() { return 2.0L * M_PI * r; }
+    ld arc(ld radians) { return radians * r; }
 
-    long double segment(double radians) const {
+    ld chord(ld radians) {
+        return 2.0L * r * sin(radians / 2.0L);
+    }
+
+    ld sector(ld radians) {
+        return (radians * r * r) / 2.0L;
+    }
+
+    ld segment(ld radians) {
         auto c = chord(radians);
         auto s = (r + r + c) / 2.0L;
         auto t = sqrt(s) * sqrt(s - r) * sqrt(s - r) * sqrt(s - c);
         return sector(radians) - t;
     }
 
-    PointPosition position(const pair<T, T>& P) const {
+    PointPosition position(const pair<T, T>& P) {
         auto d = dist(P, C);
         return equals(d, r) ? ON : (d < r ? IN : OUT);
     }
 
-    vector<pair<T, T>> intersection(const Circle& c) const {
+    vector<pair<T, T>> intersection(const Circle& c) {
         auto d = dist(c.C, C);
 
         // no intersection or same
         if (d > c.r + r or d < abs(c.r - r) or
-                (equals(d, 0) and equals(c.r, r)))
+            (equals(d, 0) and equals(c.r, r)))
             return {};
 
         auto a = (c.r * c.r - r * r + d * d) / (2.0L * d);
         auto h = sqrt(c.r * c.r - a * a);
         auto x = c.C.x + (a / d) * (C.x - c.C.x);
         auto y = c.C.y + (a / d) * (C.y - c.C.y);
-        pair<long double, long double> P1, P2;
+        pld P1, P2;
         P1.x = x + (h / d) * (C.y - c.C.y);
         P1.y = y - (h / d) * (C.x - c.C.x);
         P2.x = x - (h / d) * (C.y - c.C.y);
         P2.y = y + (h / d) * (C.x - c.C.x);
-        return P1 == P2 ? vector<pair<T, T>> { P1 } : vector<pair<T, T>> { P1, P2 };
+        return P1 == P2 ? vector<pair<T, T>> { P1 } :
+                          vector<pair<T, T>> { P1, P2 };
     }
 
     // circle at origin
-    vector<pair<T, T>> intersection(const pair<T, T>& P, const pair<T, T>& Q) {
-        long double a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y);
+    vector<pair<T, T>>
+    intersection(const pair<T, T>& P, const pair<T, T>& Q) {
+        ld a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y);
         auto x0 = -a * c / (a*a + b*b), y0 = -b * c / (a*a + b*b);
         if (c*c > r*r * (a*a + b*b) + 1e-9L) return {};
         if (equals(c*c, r*r * (a*a + b*b))) return { { x0, y0 } };
@@ -409,41 +435,43 @@ struct Triangle {
     Triangle(pair<T, T> P, pair<T, T> Q, pair<T, T> R)
         : A(P), B(Q), C(R), a(dist(A, B)), b(dist(B, C)), c(dist(C, A)) {}
 
-    T area() const {
+    T area() {
         T det = (A.x * B.y + A.y * C.x + B.x * C.y) -
                 (C.x * B.y + C.y * A.x + B.x * A.y);
         if (is_floating_point_v<T>) return 0.5L * abs(det);
         return abs(det);
     }
 
-    long double perimeter() const { return a + b + c; }
+    ld perimeter() { return a + b + c; }
 
-    Class sidesClassification() const {
+    Class sidesClassification() {
         if (equals(a, b) and equals(b, c)) return EQUILATERAL;
         if (equals(a, b) or equals(a, c) or equals(b, c)) return ISOSCELES;
         return SCALENE;
     }
 
-    Angles anglesClassification() const {
+    Angles anglesClassification() {
         auto alpha = acos((a * a - b * b - c * c) / (-2.0L * b * c));
         auto beta = acos((b * b - a * a - c * c) / (-2.0L * a * c));
         auto gamma = acos((c * c - a * a - b * b) / (-2.0L * a * b));
         auto right = M_PI / 2.0L;
-        if (equals(alpha, right) || equals(beta, right) || equals(gamma, right)) return RIGHT;
+        if (equals(alpha, right) || equals(beta, right)
+                                 || equals(gamma, right))
+            return RIGHT;
         if (alpha > right || beta > right || gamma > right) return OBTUSE;
         return ACUTE;
     }
 
-    pair<long double, long double> barycenter() const {
+    pld barycenter() {
         auto x = (A.x + B.x + C.x) / 3.0L;
         auto y = (A.y + B.y + C.y) / 3.0L;
         return {x, y};
     }
 
-    long double circumradius() const { return (a * b * c) / (4.0L * area()); }
+    ld circumradius() { return (a * b * c) / (4.0L * area()); }
 
-    pair<long double, long double> circumcenter() const {
-        long double D = 2 * (A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y));
+    pld circumcenter() {
+        ld D = 2 * (A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y));
         T A2 = A.x * A.x + A.y * A.y;
         T B2 = B.x * B.x + B.y * B.y;
         T C2 = C.x * C.x + C.y * C.y;
@@ -452,20 +480,20 @@ struct Triangle {
         return {x, y};
     }
 
-    long double inradius() const { return (2 * area()) / perimeter(); }
+    ld inradius() { return (2 * area()) / perimeter(); }
 
-    pair<long double, long double> incenter() const {
+    pld incenter() {
         auto P = perimeter();
         auto x = (a * A.x + b * B.x + c * C.x) / P;
         auto y = (a * A.y + b * B.y + c * C.y) / P;
         return {x, y};
     }
 
-    pair<long double, long double> orthocenter() const {
+    pld orthocenter() {
         Line<T> r(A, B), s(A, C);
         Line<T> u{r.b, -r.a, -(C.x * r.b - C.y * r.a)};
         Line<T> v{s.b, -s.a, -(B.x * s.b - B.y * s.a)};
-        long double det = u.a * v.b - u.b * v.a;
+        ld det = u.a * v.b - u.b * v.a;
         auto x = (-u.c * v.b + v.c * u.b) / det;
         auto y = (-v.c * u.a + u.c * v.a) / det;
         return {x, y};
@@ -489,7 +517,7 @@ Métodos:
 ```c++
 class BIT {
 public:
-    BIT(size_t n) : bt1(n+1), bt2(n+1) {}
+    BIT(ll n) : bt1(n+1), bt2(n+1) {}
 
     void rangeAdd(ll i, ll j, ll x) {
     	add(i, x, bt1);           add(j + 1, -x, bt1);
@@ -530,7 +558,7 @@ Métodos:
 ```c++
 struct BIT {
     vll bt
-    BIT(size_t n) : bt(n+1) {}
+    BIT(ll n) : bt(n+1) {}
 
     void add(ll i, ll x) {
         for (; i < bt.size(); i += i & -i) bt[i] += x;
@@ -590,11 +618,11 @@ public:
         seg.resize(2 * n, DEF);
     }
 
-    T setQuery(ll i, ll j, T x = -LONG_LONG_MAX, ll l = 0, ll r = 0, ll node = 0) {
+    T setQuery(ll i, ll j, T x = LONG_LONG_MIN, ll l = 0, ll r = 0, ll node = 0) {
         if (not node) r = n - 1, node = 1;
         if (i <= l and r <= j) {
             // change accordingly
-            if (x != -LONG_LONG_MAX) seg[node] = x;
+            if (x != LONG_LONG_MIN) seg[node] = x;
             return seg[node];
         }
         if (j < l or i > r) return DEF;
@@ -628,7 +656,7 @@ Métodos:
 ```c++
 class DSU {
 public:
-    DSU(size_t n) : parent(n + 1), size(n + 1, 1) {
+    DSU(ll n) : parent(n + 1), size(n + 1, 1) {
         iota(all(parent), 0);
     }
 
@@ -644,11 +672,10 @@ public:
     }
 
     bool sameSet(ll x, ll y) { return setOf(x) == setOf(y); }
-
     size_t sizeOfSet(ll s) { return size[s]; }
 
 private:
-    vector<ll> parent, size;
+    vll parent, size;
 };
 ```
 
@@ -665,7 +692,7 @@ Métodos:
 
 ```c++
 struct DSU {
-    vector<ll> parent, size;
+    vll parent, size;
     DSU(ll n) : parent(n + 1), size(n + 1, 1) {
         iota(all(parent), 0);
     }
@@ -700,9 +727,9 @@ e a soma total de suas arestas
 O Grafo precisa ser conectado.
 
 ```c++
-pair<vector<tuple<ll, ll, ll>>, ll> kruskal(vector<tuple<ll, ll, ll>>& edges, int n) {
+pair<vtll, ll> kruskal(vtll& edges, int n) {
     DSU dsu(n);
-    vector<tuple<ll, ll, ll>> mst;
+    vtll mst;
     ll edges_sum = 0;
     sort(all(edges));
     for (auto [w, u, v] : edges)
@@ -1036,7 +1063,7 @@ Retorna: Distância entre os pontos `P` e `Q`
 
 ```c++
 template<typename T>
-long double dist(const pair<T, T>& P, const pair<T, T>& Q) {
+ld dist(const pair<T, T>& P, const pair<T, T>& Q) {
     return hypot(P.x - Q.x, P.y - Q.y);
 }
 ```
@@ -1047,7 +1074,7 @@ Retorna: Ponto rotacionado
 
 ```c++
 template<typename T>
-pair<long double, long double> rotate(const pair<T, T>& P, long double radians) {
+pld rotate(const pair<T, T>& P, ld radians) {
     auto x = cos(radians) * P.x - sin(radians) * P.y;
     auto y = sin(radians) * P.x + cos(radians) * P.y;
     return { x, y };
@@ -1064,7 +1091,8 @@ Retorna: Valor que representa a orientação do ponto
 // D < 0: P at right
 template<typename T>
 T D(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
-    return (A.x * B.y + A.y * P.x + B.x * P.y) - (P.x * B.y + P.y * A.x + B.x * A.y);
+    return (A.x * B.y + A.y * P.x + B.x * P.y) -
+           (P.x * B.y + P.y * A.x + B.x * A.y);
 }
 ```
 
@@ -1074,8 +1102,9 @@ Retorna: Ângulo entre segmentos
 
 ```c++
 // smallest angle between segments PQ and RS
-template<typename T>
-long double angle(const pair<T, T>& P, const pair<T, T>& Q, const pair<T, T>& R, const pair<T, T>& S) {
+template<typename T> ld
+angle(const pair<T, T>& P, const pair<T, T>& Q,
+      const pair<T, T>& R, const pair<T, T>& S) {
     T ux = P.x - Q.x, uy = P.y - Q.y;
     T vx = R.x - S.x, vy = R.y - S.y;
     T num = ux * vx + uy * vy;
