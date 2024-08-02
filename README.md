@@ -30,6 +30,7 @@
     * Binary Lifting
     * Menor Ancestral Comum (LCA)
     * Sparse Table *
+    * Ordenação Topológica
   * Outros
     * Busca binária
   * Matemática
@@ -882,6 +883,42 @@ int LCA(int u, int v) {
 }
 ```
 
+### Ordenação Topológica
+
+Parâmetros:
+
+* `g`: grafo
+
+Retorna: Vetor com a ordenação topológica do grafo, se houver ciclo retorna vetor vazio
+
+```c++
+vll topologicalSort(vvll& g) {
+    vll degree(g.size()), res;
+    for (int i = 0; i < g.size(); ++i)
+        for (auto u : g[i])
+            ++degree[u];
+
+    // lower values bigger priorities
+    priority_queue<ll, vll, greater<>> pq;
+    for (int i = 0; i < degree.size(); ++i)
+        if (degree[i] == 0) pq.emplace(i);
+
+    while (!pq.empty()) {
+        ll u = pq.top();
+        pq.pop();
+        res.emplace_back(u);
+        for (ll v : g[u])
+            if (--degree[v] == 0)
+                pq.emplace(v);
+    }
+
+    if (res.size() != g.size())
+        return {}; // cycle
+
+    return res;
+}
+```
+
 ## Outros
 
 ### Busca binária
@@ -924,7 +961,7 @@ bool isPrime(ll x) {
 }
 ```
 
-### Divisores:
+### Divisores
 
 Retorna: Vetor ordenado com todos os divisores de `x`
 
@@ -941,12 +978,12 @@ vll divisors(ll x) {
 }
 ```
 
-### Fatoração:
+### Fatoração
 
 Retorna: Vetor com cada fator primo de `x`
 
 ```c++
-vll factor(ll x) {
+vll factors(ll x) {
     vll fs;
     for (ll i = 2; i * i <= x; ++i)
         while (x % i == 0) {
@@ -958,22 +995,36 @@ vll factor(ll x) {
 }
 ```
 
-### Crivo de Eratóstenes:
+### Crivo de Eratóstenes
 
-Retorna: Vetor com todos os primos no intervalo `[1, n]`
+Retorna: Vetor com todos os primos no intervalo `[1, n]` e vetor de menor fator primo
 
 ```c++
-vll sieve(ll n) {
-    vll ps;
-    vector<bool> is_composite(n);
-    for (int i = 2; i < n; ++i) {
-        if (!is_composite[i]) ps.emplace_back (i);
-        for (int j = 0; j < ps.size() and i * ps[j] < n; ++j) {
-            is_composite[i * ps[j]] = true;
-            if (i % ps[j] == 0) break;
+pair<vll, vll> sieve(ll n) {
+    vll ps, spf(n + 1);
+    for (ll i = 2; i <= n; i++)
+        if (!spf[i]) {
+            spf[i] = i;
+            ps.emplace_back(i);
+            for (ll j = i * i; j <= n; j += i)
+                if (!spf[j]) spf[j] = i;
         }
+    return { ps, spf };
+}
+```
+
+Exemplo de fatoração em O(log N) com o vetor de menor fator primo:
+
+```c++
+auto [ps, spf] = sieve(42);
+for (ll i = 0; i < n; i++) {
+    ll v;
+    cin >> v;
+    while (v != 1) {
+        cout << spf[v] << " ";
+        v /= spf[v];
     }
-    return ps;
+    cout << "\n";
 }
 ```
 
