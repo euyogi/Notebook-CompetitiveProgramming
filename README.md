@@ -17,24 +17,25 @@
     * Círculo
     * Triângulo
   * Árvores
-    * BIT Tree
-    * Red-Black Tree
-    * Segment Tree
-    * Disjoint Set Union
+    * BIT tree
+    * Red-Black tree
+    * Segment tree
+    * Disjoint set union
 * Algoritmos
   * Grafos
-    * Kruskal (Árvore Geradora Mínima)
+    * Kruskal (Árvore geradora mínima)
     * DFS
     * BFS 0/1
     * Dijkstra
-    * Binary Lifting
-    * Menor Ancestral Comum (LCA)
-    * Sparse Table *
-    * Ordenação Topológica
+    * Binary lifting
+    * Menor ancestral comum (LCA)
+    * Sparse table *
+    * Ordenação topológica
   * Outros
     * Busca binária
+    * Maior sequêcia crescente
   * Matemática
-    * Teste de Primalidade
+    * Teste de primalidade
     * Divisores
     * Fatoração
     * Crivo de Eratóstenes
@@ -88,7 +89,7 @@ signed main() {
 
 # Utils
 
-### Aritmética Modular
+### Aritmética modular
 
 ```c++
 static constexpr ll M = 1e9 + 7;
@@ -96,20 +97,21 @@ struct Mi {
     ll v;
     Mi() : v(0) {}
     Mi(ll x) : v(x % M) { v += (v < 0) * M; }
+    friend bool operator==(Mi a, Mi b) { return a.v == b.v; }
+    friend bool operator!=(Mi a, Mi b) { return a.v != b.v; }
+    friend ostream& operator<<(ostream& os, Mi a) { return os << a.v; }
+    Mi operator+=(Mi b) { return v += b.v - (v + b.v >= M) * M; }
+    Mi operator-=(Mi b) { return v -= b.v + (v - b.v < 0) * M; }
+    Mi operator*=(Mi b) { return v = v * b.v % M; }
+    Mi operator/=(Mi b) & { return *this *= b.inv(); }
+    friend Mi operator+(Mi a, Mi b) { return a += b; }
+    friend Mi operator-(Mi a, Mi b) { return a -= b; }
+    friend Mi operator*(Mi a, Mi b) { return a *= b; }
+    friend Mi pow(Mi a, Mi b) {
+        return (!b.v ? 1 : pow(a * a, b.v / 2) * (b.v & 1 ? a.v : 1));
+    }
+    Mi inv() { return pow(*this, M - 2); }
 };
-
-bool operator==(Mi a, Mi b) { return a.v == b.v; }
-bool operator!=(Mi a, Mi b) { return a.v != b.v; }
-ostream& operator<<(ostream& os, Mi a) { return os << a.v; }
-Mi operator+=(Mi& a, Mi b) { return a.v += b.v - (a.v + b.v >= M) * M; }
-Mi operator-=(Mi& a, Mi b) { return a.v -= b.v + (a.v - b.v < 0) * M; }
-Mi operator*=(Mi& a, Mi b) { return a.v = a.v * b.v % M; }
-Mi operator+(Mi a, Mi b) { return a += b; }
-Mi operator-(Mi a, Mi b) { return a -= b; }
-Mi operator*(Mi a, Mi b) { return a *= b; }
-Mi pow(Mi a, Mi b) {
-    return (!b.v ? 1 : pow(a * a, b.v / 2) * (b.v & 1 ? a.v : 1));
-}
 ```
 
 ### 4 direções adjascentes
@@ -144,10 +146,13 @@ bool equals(T a, S b) { return abs(a - b) < 1e-9L; }
 ### Compressão de coordenadas
 
 ```c++
-ll idx = 0;
-map<ll, ll> mp;
-set<ll> ys(all(xs));
-for (ll y : ys) mp[y] = idx++;
+void compress(vll& xs) {
+    ll idx = 0;
+    map<ll, ll> mp;
+    set<ll> ys(all(xs));
+    for (ll y : ys) mp[y] = idx++;
+    for (ll& x : xs) x = mp[x];
+}
 ```
 
 ### Próximo maior/menor elemento
@@ -168,7 +173,8 @@ for (ll i = xs.size() - 1; i >= 0; --i) {
 
 ### Fatos
 
-* `a + b = (a & b) + (a | b)`
+> `a + b = (a & b) + (a | b)`
+> a maior diferença entre dois primos consecutivos < 10^18 é 1476
 
 # Estruturas
 
@@ -503,7 +509,7 @@ struct Triangle {
 
 ## Árvores
 
-### BIT Tree
+### BIT tree
 
 Parâmetros:
 
@@ -544,7 +550,7 @@ private:
 };
 ```
 
-### BIT Tree (Simples)
+### BIT tree (Simples)
 
 Parâmetros:
 
@@ -572,7 +578,7 @@ struct BIT {
 };
 ```
 
-### Red-Black Tree
+### Red-Black tree
 
 Métodos:
 
@@ -590,7 +596,7 @@ typedef tree<ll, null_type, less_equal<>,
 rb_tree_tag, tree_order_statistics_node_update> RBT;
 ```
 
-### Segment Tree (Simples)
+### Segment tree (Simples)
 
 Parâmetros:
 
@@ -640,7 +646,7 @@ private:
     ll n;
 };
 ```
-### Disjoint Set Union
+### Disjoint set union
 
 Parâmetros:
 
@@ -679,7 +685,7 @@ private:
 };
 ```
 
-### Disjoint Set Union (Simples)
+### Disjoint set union (Simples)
 
 Parâmetros:
 
@@ -839,7 +845,7 @@ vll getPath(const vll& pre, ll s, ll u) {
 }
 ```
 
-### Binary Lifting
+### Binary lifting
 
 Parâmetros:
 
@@ -860,7 +866,7 @@ void populate(int n, vector<vector<int>>& g) {
     parent.resize(n + 1, vector<int>(LOG));
     depth.resize(n + 1);
 
-    // initialize know relationships (e.g.: dfs if it's a graph)
+    // initialize known relationships (e.g.: dfs if it's a graph)
 
     // parent[1][0] = 1;
     // auto dfs = [&](auto&& self, int u, int p) -> void {
@@ -885,7 +891,7 @@ int kthAncestor(int u, int k) {
 }
 ```
 
-### Menor Ancestral Comum (LCA)
+### Menor ancestral comum (LCA)
 
 Parâmetros:
 
@@ -910,7 +916,7 @@ int LCA(int u, int v) {
 }
 ```
 
-### Ordenação Topológica
+### Ordenação topológica
 
 Parâmetros:
 
@@ -972,9 +978,28 @@ ll binSearch(vll& xs, ll x, ll l, ll r) {
 }
 ```
 
+### Maior sequência crescente (LIS)
+
+Parâmetros:
+
+* `xs`: vetor alvo
+
+Retorna: Par com o tamanho da maior sequência crescente e o último elemento dela
+
+```c++
+pll lis(vll& xs) {
+    vll ss;
+    for (ll x : xs) {
+        auto it = lower_bound(all(ss), x);
+        if (it == ss.end()) ss.emplace_back(x);
+        else *it = x;
+    }
+    return { ss.size(), ss.back() };
+}
+```
 ## Matemática
 
-### Teste de Primalidade
+### Teste de primalidade
 
 Retorna: Verdadeiro se `x` é primo, falso caso contrário
 ```c++
