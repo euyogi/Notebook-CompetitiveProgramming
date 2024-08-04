@@ -147,10 +147,10 @@ bool equals(T a, S b) { return abs(a - b) < 1e-9L; }
 
 ```c++
 void compress(vll& xs) {
-    ll idx = 0;
+    ll c = 0;
     map<ll, ll> mp;
-    set<ll> ys(all(xs));
-    for (ll y : ys) mp[y] = idx++;
+    for (ll x : xs) mp[x] = 0;
+    for (auto& p : mp) p.y = c++;
     for (ll& x : xs) x = mp[x];
 }
 ```
@@ -174,7 +174,8 @@ for (ll i = xs.size() - 1; i >= 0; --i) {
 ### Fatos
 
 > `a + b = (a & b) + (a | b)`
-> a maior diferença entre dois primos consecutivos < 10^18 é 1476
+
+> a maior diferença entre dois primos consecutivos `< 10^18` é `1476`
 
 # Estruturas
 
@@ -727,10 +728,8 @@ Parâmetros:
 * `edges`: grafo representado por vetor de arestas `(peso, u, v)`
 * `n`: quantidade máxima de vértices
 
-Retorna: Vetor com a árvore geradora mínima (mst) representado por vetor de arestas
-e a soma total de suas arestas
-
-O Grafo precisa ser conectado.
+Retorna: Vetor com a árvore geradora mínima (mst), se o grafo for conectado,
+representado por vetor de arestas e a soma total de suas arestas
 
 ```c++
 pair<vtll, ll> kruskal(vtll& edges, int n) {
@@ -785,7 +784,7 @@ auto dfs = [&](auto&& self, ll u) -> void {
 
 Parâmetros:
 
-* `g`: grafo
+* `g`: grafo alvo
 * `s`: vértice inicial (menores distâncias em relação à ele)
 
 Retorna: Vetor com as menores distâncias de cada aresta para `s`
@@ -812,7 +811,7 @@ vll bfs01(const vvpll& g, ll s) {
 
 Parâmetros:
 
-* `g`: grafo
+* `g`: grafo alvo
 * `s`: vértice inicial (menores distâncias em relação à ele)
 
 Retorna: Vetor com as menores distâncias de cada aresta para `s` e vetor de trajetos
@@ -920,20 +919,20 @@ int LCA(int u, int v) {
 
 Parâmetros:
 
-* `g`: grafo
+* `g`: grafo alvo
 
 Retorna: Vetor com a ordenação topológica do grafo, se houver ciclo retorna vetor vazio
 
 ```c++
 vll topologicalSort(vvll& g) {
     vll degree(g.size()), res;
-    for (int i = 0; i < g.size(); ++i)
+    for (int i = 1; i < g.size(); ++i)
         for (auto u : g[i])
             ++degree[u];
 
     // lower values bigger priorities
     priority_queue<ll, vll, greater<>> pq;
-    for (int i = 0; i < degree.size(); ++i)
+    for (int i = 1; i < degree.size(); ++i)
         if (degree[i] == 0) pq.emplace(i);
 
     while (!pq.empty()) {
@@ -982,12 +981,12 @@ ll binSearch(vll& xs, ll x, ll l, ll r) {
 
 Parâmetros:
 
-* `xs`: vetor alvo
+* `xs`: sequência alvo
 
 Retorna: Par com o tamanho da maior sequência crescente e o último elemento dela
 
 ```c++
-pll lis(vll& xs) {
+pll LIS(vll& xs) {
     vll ss;
     for (ll x : xs) {
         auto it = lower_bound(all(ss), x);
@@ -997,6 +996,31 @@ pll lis(vll& xs) {
     return { ss.size(), ss.back() };
 }
 ```
+
+### Maior subsequência comum (LCS)
+
+Parâmetros:
+
+* `xs`: primeira sequência
+* `ys`: segunda sequência
+
+Retorna: Tamanho da maior subsequência comum
+
+```c++
+template<typename T>
+ll LCS(vector<T>& xs, vector<T>& ys) {
+    vvll dp(xs.size() + 1, vll(ys.size() + 1));
+    for (ll i = 1; i <= xs.size(); ++i)
+        for (ll j = 1; j <= ys.size(); ++j) {
+            if (xs[i - 1] == ys[j - 1])
+                dp[i][j] = 1 + dp[i - 1][j - 1];
+            else
+                dp[i][j] = max(dp[i][j - 1], dp[i - 1][j]);
+        }
+    return dp.back().back();
+}
+```
+
 ## Matemática
 
 ### Teste de primalidade
@@ -1073,10 +1097,10 @@ for (ll i = 0; i < n; i++) {
     ll v;
     cin >> v;
     while (v != 1) {
-        cout << spf[v] << " ";
+        cout << spf[v] << ' ';
         v /= spf[v];
     }
-    cout << "\n";
+    cout << '\n';
 }
 ```
 
