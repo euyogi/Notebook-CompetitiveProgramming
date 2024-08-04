@@ -33,7 +33,8 @@
     * Ordenação topológica
   * Outros
     * Busca binária
-    * Maior sequêcia crescente
+    * Maior subsequêcia crescente (LIS)
+    * Maior subsequência comum (LCS)
   * Matemática
     * Teste de primalidade
     * Divisores
@@ -977,13 +978,13 @@ ll binSearch(vll& xs, ll x, ll l, ll r) {
 }
 ```
 
-### Maior sequência crescente (LIS)
+### Maior subsequência crescente (LIS)
 
 Parâmetros:
 
 * `xs`: sequência alvo
 
-Retorna: Par com o tamanho da maior sequência crescente e o último elemento dela
+Retorna: Par com o tamanho da maior subsequência crescente e o último elemento dela
 
 ```c++
 pll LIS(vll& xs) {
