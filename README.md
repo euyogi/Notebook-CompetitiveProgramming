@@ -40,6 +40,7 @@
     * Divisores
     * Fatoração
     * Crivo de Eratóstenes
+    * Conversão de base
   * Geometria
     * Distância entre pontos
     * Rotação de ponto
@@ -176,7 +177,9 @@ for (ll i = xs.size() - 1; i >= 0; --i) {
 
 > `a + b = (a & b) + (a | b)`
 
-> a maior diferença entre dois primos consecutivos `< 10^18` é `1476`
+> maior quantidade de divisores de um número `< 10^18` é `107520`
+
+> maior diferença entre dois primos consecutivos `< 10^18` é `1476`
 
 # Estruturas
 
@@ -627,10 +630,11 @@ public:
     }
 
     T setQuery(ll i, ll j, T x = LONG_LONG_MIN, ll l = 0, ll r = 0, ll node = 0) {
-        if (not node) r = n - 1, node = 1;
+        if (!node) r = n - 1, node = 1;
         if (i <= l and r <= j) {
             // change accordingly
-            if (x != LONG_LONG_MIN) seg[node] = x;
+            if (x != LONG_LONG_MIN) seg[node] = x; // point update
+            // if (x != LONG_LONG_MIN) seg[node] += x; // range sum
             return seg[node];
         }
         if (j < l or i > r) return DEF;
@@ -638,7 +642,8 @@ public:
         // change accordingly
         ll sum = (setQuery(i, j, x, l, m, node * 2) +
                   setQuery(i, j, x, m + 1, r, node * 2 + 1));
-        seg[node] = (seg[2 * node] + seg[2 * node + 1]);
+        seg[node] = (seg[2 * node] + seg[2 * node + 1]); // point update
+        // sum += seg[node]; // range sum
         return sum;
     }
 
@@ -1102,6 +1107,23 @@ for (ll i = 0; i < n; i++) {
         v /= spf[v];
     }
     cout << '\n';
+}
+```
+
+### Conversão de base
+
+Retorna: Vetor com a representação de `x` na base `b`
+
+```c++
+// coefficients like 1*2^2 + 0*2^1 + 1*2^0 = 5
+vll toBase(ll x, ll b) {
+    vll res;
+    while (x) {
+        res.emplace_back(x % b);
+        x /= b;
+    }
+    reverse(all(res);
+    return res;
 }
 ```
 
