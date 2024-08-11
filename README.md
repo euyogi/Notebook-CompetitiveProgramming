@@ -29,12 +29,13 @@
     * Dijkstra
     * Binary lifting
     * Menor ancestral comum (LCA)
-    * Sparse table *
     * Ordenação topológica
   * Outros
     * Busca binária
     * Maior subsequêcia crescente (LIS)
     * Maior subsequência comum (LCS)
+    * Soma de prefixo 2D
+    * Soma de prefixo 3D
   * Matemática
     * Teste de primalidade
     * Divisores
@@ -629,8 +630,8 @@ public:
         seg.resize(2 * n, DEF);
     }
 
-    T setQuery(ll i, ll j, T x = LONG_LONG_MIN, ll l = 0, ll r = 0, ll node = 0) {
-        if (!node) r = n - 1, node = 1;
+    T setQuery(ll i, ll j, T x = LONG_LONG_MIN, ll l = 0, ll r = -1, ll node = 1) {
+        if (r == -1) r = n - 1;
         if (i <= l and r <= j) {
             // change accordingly
             if (x != LONG_LONG_MIN) seg[node] = x; // point update
@@ -638,10 +639,10 @@ public:
             return seg[node];
         }
         if (j < l or i > r) return DEF;
-        ll m = l + (r - l) / 2;
+        ll m = (l + r) / 2;
         // change accordingly
-        ll sum = (setQuery(i, j, x, l, m, node * 2) +
-                  setQuery(i, j, x, m + 1, r, node * 2 + 1));
+        ll sum = (setQuery(i, j, x, l, m, 2 * node) +
+                  setQuery(i, j, x, m + 1, r, 2 * node + 1));
         seg[node] = (seg[2 * node] + seg[2 * node + 1]); // point update
         // sum += seg[node]; // range sum
         return sum;
@@ -738,15 +739,15 @@ Retorna: Vetor com a árvore geradora mínima (mst), se o grafo for conectado,
 representado por vetor de arestas e a soma total de suas arestas
 
 ```c++
-pair<vtll, ll> kruskal(vtll& edges, int n) {
+pair<vtll, ll> kruskal(vtll& edges, ll n) {
     DSU dsu(n);
     vtll mst;
     ll edges_sum = 0;
     sort(all(edges));
     for (auto [w, u, v] : edges)
         if (!dsu.sameSet(u, v)) {
-            mst.emplace_back(w, u, v);
             dsu.mergeSetsOf(u, v);
+            mst.emplace_back(w, u, v);
             edges_sum += w;
         }
     return { mst, edges_sum };
@@ -766,7 +767,7 @@ auto dfs = [&](auto&& self, ll u, ll p) -> void {
     // processing
     for (auto v : g[u]) if (v != p)
         self(self, v, u);
-}; dfs(dfs, 1, -1);
+}; dfs(dfs, 1, 0);
 ```
 
 ### DFS em grafos
@@ -1027,6 +1028,60 @@ ll LCS(vector<T>& xs, vector<T>& ys) {
 }
 ```
 
+### Soma de prefixo 2D
+
+Construção:
+
+```c++
+vvll psum(n + 1, vll(n + 1));
+for (ll i = 0; i < n; ++i)
+    for (ll j = 0; j < n; ++j) {
+        // sum side and up rectangles, add element and remove intersection
+        psum[i + 1][j + 1] = psum[i + 1][j] + psum[i][j + 1];
+        psum[i + 1][j + 1] += xs[i][j] - psum[i][j];
+    }
+```
+
+Query:
+
+```c++
+// sum total rectangle, subtract side and up and add intersection
+ll ans = psum[hy][hx] - psum[hy][lx - 1] - psum[ly - 1][hx];
+ans += psum[ly - 1][lx - 1];
+```
+
+### Soma de prefixo 3D
+
+Construção:
+
+```c++
+vvvll psum(n + 1, vvll(n + 1, vll(n + 1)));
+for (ll i = 1; i <= n; ++i)
+    for (ll j = 1; j <= n; ++j)
+        for (ll k = 1; k <= n; ++k) {
+            // sum cuboids from sides and down
+            psum[i][j][k] = psum[i - 1][j][k] + psum[i][j - 1][k] + psum[i][j][k - 1];
+            // subtract intersections
+            psum[i][j][k] -= psum[i][j - 1][k - 1] + psum[i - 1][j][k - 1] +
+                                                     psum[i - 1][j - 1][k];
+            // re-sum missing cuboid and add element
+            psum[i][j][k] += psum[i - 1][j - 1][k - 1] + xs[i - 1][j - 1][k - 1];
+        }
+```
+
+Query:
+
+```c++
+// sum total cuboid, subtract sides and down
+ll ans = psum[hx][hy][hz] - psum[lx - 1][hy][hz] -
+         psum[hx][ly - 1][hz] - psum[hx][hy][lz - 1];
+// add intersections
+ans += psum[hx][ly - 1][lz - 1] + psum[lx - 1][hy][lz - 1] +
+                                  psum[lx - 1][ly - 1][hz];
+// re-subtract missing cuboid
+ans -= psum[lx - 1][ly - 1][lz - 1];
+```
+
 ## Matemática
 
 ### Teste de primalidade
@@ -1034,7 +1089,7 @@ ll LCS(vector<T>& xs, vector<T>& ys) {
 Retorna: Verdadeiro se `x` é primo, falso caso contrário
 ```c++
 bool isPrime(ll x) {
-    if (i == 1) return false;
+    if (x == 1) return false;
 
     for (ll i = 2; i * i <= x; ++i)
         if (x % i == 0) return false;
