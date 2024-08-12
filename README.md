@@ -3,52 +3,54 @@
 # Sumário
 
 * Template
-* Utils
-  * Aritmética modular
-  * Direções adjascentes
-  * Igualdade flutuante
-  * Compressão de coordenadas
-  * Próximo maior/menor elemento
-  * Fatos
-* Estruturas
-  * Geometria
-    * Reta
-    * Segmento
-    * Círculo
-    * Triângulo
-  * Árvores
-    * BIT tree
-    * Red-Black tree
-    * Segment tree
-    * Disjoint set union
 * Algoritmos
+  * Geometria
+    * Ângulo entre segmentos
+    * Distância entre pontos
+    * Envoltório convexo
+    * Mediatriz
+    * Orientação de ponto
+    * Ponto contido em segmento
+    * Rotação de ponto
   * Grafos
-    * Kruskal (Árvore geradora mínima)
-    * DFS
-    * BFS 0/1
-    * Dijkstra
     * Binary lifting
+    * BFS 0/1
+    * DFS
+    * Dijkstra
+    * Kruskal (Árvore geradora mínima)
     * Menor ancestral comum (LCA)
     * Ordenação topológica
   * Outros
     * Busca binária
-    * Maior subsequêcia crescente (LIS)
     * Maior subsequência comum (LCS)
+    * Maior subsequência crescente (LIS)
     * Soma de prefixo 2D
     * Soma de prefixo 3D
   * Matemática
-    * Teste de primalidade
+    * Conversão de base
+    * Crivo de Eratóstenes
     * Divisores
     * Fatoração
-    * Crivo de Eratóstenes
-    * Conversão de base
+    * Teste de primalidade
+* Estruturas
+  * Árvores
+    * BIT tree
+    * Disjoint set union
+    * Red-Black tree
+    * Segment tree
   * Geometria
-    * Distância entre pontos
-    * Rotação de ponto
-    * Orientação de ponto
-    * Ângulo entre segmentos
-    * Ponto contido em segmento
-    * Mediatriz
+    * Círculo
+    * Reta
+    * Segmento
+    * Triângulo
+* Utils
+  * Aritmética modular
+  * Compressão de coordenadas
+  * Direções adjascentes
+  * Fatos
+  * Igualdade flutuante
+  * Próximo maior/menor elemento
+
 
 # Main template
 
@@ -90,99 +92,740 @@ signed main() {
 }
 ```
 
-# Utils
+# Algoritmos
 
-### Aritmética modular
+## Geometria
+
+### Ângulo entre segmentos
+
+Retorna: Ângulo entre segmentos
 
 ```c++
-static constexpr ll M = 1e9 + 7;
-struct Mi {
-    ll v;
-    Mi() : v(0) {}
-    Mi(ll x) : v(x % M) { v += (v < 0) * M; }
-    friend bool operator==(Mi a, Mi b) { return a.v == b.v; }
-    friend bool operator!=(Mi a, Mi b) { return a.v != b.v; }
-    friend ostream& operator<<(ostream& os, Mi a) { return os << a.v; }
-    Mi operator+=(Mi b) { return v += b.v - (v + b.v >= M) * M; }
-    Mi operator-=(Mi b) { return v -= b.v + (v - b.v < 0) * M; }
-    Mi operator*=(Mi b) { return v = v * b.v % M; }
-    Mi operator/=(Mi b) & { return *this *= b.inv(); }
-    friend Mi operator+(Mi a, Mi b) { return a += b; }
-    friend Mi operator-(Mi a, Mi b) { return a -= b; }
-    friend Mi operator*(Mi a, Mi b) { return a *= b; }
-    friend Mi pow(Mi a, Mi b) {
-        return (!b.v ? 1 : pow(a * a, b.v / 2) * (b.v & 1 ? a.v : 1));
+// smallest angle between segments PQ and RS
+template<typename T> ld
+angle(const pair<T, T>& P, const pair<T, T>& Q,
+      const pair<T, T>& R, const pair<T, T>& S) {
+    T ux = P.x - Q.x, uy = P.y - Q.y;
+    T vx = R.x - S.x, vy = R.y - S.y;
+    T num = ux * vx + uy * vy;
+
+    // degenerate segment: den = 0
+    auto den = hypot(ux, uy) * hypot(vx, vy);
+    return acos(num / den);
+}
+```
+
+### Distância entre pontos
+
+Retorna: Distância entre os pontos `P` e `Q`
+
+```c++
+template<typename T>
+ld dist(const pair<T, T>& P, const pair<T, T>& Q) {
+    return hypot(P.x - Q.x, P.y - Q.y);
+}
+```
+
+### Envoltório convexo
+
+Retorna: Vetor com os pontos do envoltório convexo
+
+```c++
+template<typename T>
+vector<pair<T, T>> makeHull(vector<pair<T, T>>& ps) {
+    vector<pair<T, T>> hull;
+    for (auto& p : ps) {
+        auto sz = hull.size();
+        while (sz >= 2 and D(hull[sz - 2], hull[sz - 1], p) <= 0) {
+            hull.pop_back();
+            sz = hull.size();
+        }
+        hull.push_back(p);
     }
-    Mi inv() { return pow(*this, M - 2); }
+    return hull;
+}
+
+template<typename T>
+vector<pair<T, T>> monotoneChain(vector<pair<T, T>> ps) {
+    vector<pair<T, T>> lower, upper;
+    sort(all(ps));
+    lower = makeHull(ps);
+    reverse(all(ps));
+    upper = makeHull(ps);
+    lower.pop_back();
+    lower.insert(lower.end(), upper.begin(), upper.end());
+    return lower;
+}
+```
+
+### Orientação de ponto
+
+Retorna: Valor que representa a orientação do ponto
+
+```c++
+// D = 0: P in line
+// D > 0: P at left
+// D < 0: P at right
+template<typename T>
+T D(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
+    return (A.x * B.y + A.y * P.x + B.x * P.y) -
+           (P.x * B.y + P.y * A.x + B.x * A.y);
+}
+```
+
+### Mediatriz
+
+Retorna: Reta mediatriz ao segmento `PQ`
+
+```c++
+template<typename T>
+Line<T> perpendicularBisector(const pair<T, T>& P, const pair<T, T>& Q) {
+    auto a = 2 * (Q.x - P.x);
+    auto b = 2 * (Q.y - P.y);
+    auto c = (P.x * P.x + P.y * P.y) - (Q.x * Q.x + Q.y * Q.y);
+    return { a, b, c };
+}
+```
+
+### Ponto contido em segmento
+
+Retorna: Verdadeiro se o ponto está contido no segmento, falso caso contrário
+
+```c++
+// P in segment AB
+template<typename T>
+bool contains(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
+    auto xmin = min(A.x, B.x), xmax = max(A.x, B.x);
+    auto ymin = min(A.y, B.y), ymax = max(A.y, B.y);
+
+    if (P.x < xmin || P.x > xmax || P.y < ymin || P.y > ymax)
+        return false;
+
+    return equals((P.y - A.y) * (B.x - A.x), (P.x - A.x) * (B.y - A.y));
+}
+```
+
+### Rotação de ponto
+
+Retorna: Ponto rotacionado
+
+```c++
+template<typename T>
+pld rotate(const pair<T, T>& P, ld radians) {
+    auto x = cos(radians) * P.x - sin(radians) * P.y;
+    auto y = sin(radians) * P.x + cos(radians) * P.y;
+    return { x, y };
+}
+```
+
+## Grafos
+
+### Binary lifting
+
+Parâmetros:
+
+* `n`: quantidade de vértices/elementos
+* `x`: vértice/elemento alvo
+* `k`: ordem do ancestral
+
+Retorna: `k` ancestral do vértice/elemento `x`
+
+```c++
+const int LOG = 31; // aproximate log of n, + 1
+
+vector<vector<int>> parent;
+vector<int> depth;
+
+// if isn't a graph delete parameter g
+void populate(int n, vector<vector<int>>& g) {
+    parent.resize(n + 1, vector<int>(LOG));
+    depth.resize(n + 1);
+
+    // initialize known relationships (e.g.: dfs if it's a graph)
+
+    // parent[1][0] = 1;
+    // auto dfs = [&](auto&& self, int u, int p) -> void {
+    //     for (ll v : g[u]) if (v != p) {
+    //         parent[v][0] = u;
+    //         depth[v] = depth[u] + 1;
+    //         self(self, v, u);
+    //     }
+    // }; dfs(dfs, 1, -1);
+
+    for (ll i = 1; i < LOG; ++i)
+        for (ll j = 1; j <= n; ++j)
+            parent[j][i] = parent[ parent[j][i - 1] ][i - 1];
+}
+
+int kthAncestor(int u, int k) {
+    // if (k > depth[u]) return -1; // no kth ancestor
+    for (int i = 0; i < LOG; ++i)
+        if (k & (1 << i))
+            u = parent[u][i];
+    return u;
+}
+```
+
+### BFS 0/1
+
+Parâmetros:
+
+* `g`: grafo alvo
+* `s`: vértice inicial (menores distâncias em relação à ele)
+
+Retorna: Vetor com as menores distâncias de cada aresta para `s`
+
+```c++
+vll bfs01(const vvpll& g, ll s) {
+    vll ds(g.size(), LONG_LONG_MAX);
+    deque<ll> dq;
+    dq.emplace(s); ds[s] = 0;
+    while (!dq.empty()) {
+        ll u = pq.front(); pq.pop();
+        for (ll v : g[u])
+            if (ds[u] + w < ds[v]) {
+                ds[v] = ds[u] + w;
+                if (w == 1) dq.emplace_back(v)
+                else dq.emplace_front(v);
+            }
+    }
+    return ds;
+}
+```
+
+### DFS em árvores
+
+Parâmetros:
+
+* `self`: própria função
+* `u`: vértice atual
+* `p`: vértice anterior
+
+```c++
+auto dfs = [&](auto&& self, ll u, ll p) -> void {
+    // processing
+    for (auto v : g[u]) if (v != p)
+        self(self, v, u);
+}; dfs(dfs, 1, 0);
+```
+
+### DFS em grafos
+
+Parâmetros:
+
+* `self`: própria função
+* `u`: vértice atual
+
+```c++
+vector<bool> vs(g.size());
+auto dfs = [&](auto&& self, ll u) -> void {
+    vs[u] = true;
+    // processing
+    for (auto v : g[u]) if (!vs[v])
+        self(self, v);
+}; dfs(dfs, 1);
+```
+
+### Dijkstra
+
+Parâmetros:
+
+* `g`: grafo alvo
+* `s`: vértice inicial (menores distâncias em relação à ele)
+
+Retorna: Vetor com as menores distâncias de cada aresta para `s` e vetor de trajetos
+
+```c++
+pair<vll, vll> dijkstra(const vvpll& g, ll s) {
+    vll ds(g.size(), LONG_LONG_MAX), pre(g.size(), -1);
+    priority_queue<pll, vpll, greater<>> pq;
+    pq.emplace(0, s); ds[s] = 0;
+    while (!pq.empty()) {
+        auto [t, u] = pq.top(); pq.pop();
+        if (ds[u] < t) continue;
+        for (auto& [w, v] : g[u])
+            if (t + w < ds[v]) {
+                ds[v] = t + w, pre[v] = u;
+                pq.emplace(v, t + w);
+            }
+    }
+    return { ds, pre };
+}
+
+vll getPath(const vll& pre, ll s, ll u) {
+    vll p { u };
+    do {
+        p.emplace_back(pre[u]);
+        u = pre[u];
+    } while (u != s);
+    reverse(all(p));
+    return p;
+}
+```
+
+### Kruskal
+
+Parâmetros:
+
+* `edges`: grafo representado por vetor de arestas `(peso, u, v)`
+* `n`: quantidade máxima de vértices
+
+Retorna: Vetor com a árvore geradora mínima (mst), se o grafo for conectado,
+representado por vetor de arestas e a soma total de suas arestas
+
+```c++
+pair<vtll, ll> kruskal(vtll& edges, ll n) {
+    DSU dsu(n);
+    vtll mst;
+    ll edges_sum = 0;
+    sort(all(edges));
+    for (auto [w, u, v] : edges)
+        if (!dsu.sameSet(u, v)) {
+            dsu.mergeSetsOf(u, v);
+            mst.emplace_back(w, u, v);
+            edges_sum += w;
+        }
+    return { mst, edges_sum };
+}
+```
+
+### Menor ancestral comum (LCA)
+
+Parâmetros:
+
+* `u`: primeiro vértice/elemento
+* `v`: segundo vértice/elemento
+
+Retorna: Menor ancestral comum entre `u` e `v`
+
+
+```c++
+int LCA(int u, int v) {
+    if (depth[u] < depth[v]) swap(u, v);
+    int k = depth[u] - depth[v];
+    u = kthAncestor(u, k);
+    if (u == v) return u;
+    for (int i = LOG - 1; i >= 0; --i)
+        if (parent[u][i] != parent[v][i]) {
+            u = parent[u][i];
+            v = parent[v][i];
+        }
+    return parent[u][0];
+}
+```
+
+### Ordenação topológica
+
+Parâmetros:
+
+* `g`: grafo alvo
+
+Retorna: Vetor com a ordenação topológica do grafo, se houver ciclo retorna vetor vazio
+
+```c++
+vll topologicalSort(vvll& g) {
+    vll degree(g.size()), res;
+    for (int i = 1; i < g.size(); ++i)
+        for (auto u : g[i])
+            ++degree[u];
+
+    // lower values bigger priorities
+    priority_queue<ll, vll, greater<>> pq;
+    for (int i = 1; i < degree.size(); ++i)
+        if (degree[i] == 0) pq.emplace(i);
+
+    while (!pq.empty()) {
+        ll u = pq.top();
+        pq.pop();
+        res.emplace_back(u);
+        for (ll v : g[u])
+            if (--degree[v] == 0)
+                pq.emplace(v);
+    }
+
+    if (res.size() != g.size())
+        return {}; // cycle
+
+    return res;
+}
+```
+
+## Outros
+
+### Busca binária
+
+Parâmetros:
+
+* `xs`: vetor ordenado alvo
+* `x`: elemento alvo
+* `l`: índice de início
+* `r`: índice de fim
+
+Retorna: Índice de `x` se encontrado, se não `-1`
+
+Pode ser útil em vez de retornar ```-1```, retornar ```l```
+
+```c++
+ll binSearch(vll& xs, ll x, ll l, ll r) {
+    if (l > r) return -1;
+    ll m = l + (r - l) / 2;
+    if (xs[m] == x) return m;
+    if (xs[m] < x) l = m + 1;
+    else r = m - 1;
+    return binSearch(xs, x, l, r);
+}
+```
+
+### Maior subsequência comum (LCS)
+
+Parâmetros:
+
+* `xs`: primeira sequência
+* `ys`: segunda sequência
+
+Retorna: Tamanho da maior subsequência comum
+
+```c++
+template<typename T>
+ll LCS(vector<T>& xs, vector<T>& ys) {
+    vvll dp(xs.size() + 1, vll(ys.size() + 1));
+    for (ll i = 1; i <= xs.size(); ++i)
+        for (ll j = 1; j <= ys.size(); ++j) {
+            if (xs[i - 1] == ys[j - 1])
+                dp[i][j] = 1 + dp[i - 1][j - 1];
+            else
+                dp[i][j] = max(dp[i][j - 1], dp[i - 1][j]);
+        }
+    return dp.back().back();
+}
+```
+
+### Maior subsequência crescente (LIS)
+
+Parâmetros:
+
+* `xs`: sequência alvo
+
+Retorna: Par com o tamanho da maior subsequência crescente e o último elemento dela
+
+```c++
+pll LIS(vll& xs) {
+    vll ss;
+    for (ll x : xs) {
+        auto it = lower_bound(all(ss), x);
+        if (it == ss.end()) ss.emplace_back(x);
+        else *it = x;
+    }
+    return { ss.size(), ss.back() };
+}
+```
+
+### Soma de prefixo 2D
+
+Construção:
+
+```c++
+vvll psum(n + 1, vll(n + 1));
+for (ll i = 0; i < n; ++i)
+    for (ll j = 0; j < n; ++j) {
+        // sum side and up rectangles, add element and remove intersection
+        psum[i + 1][j + 1] = psum[i + 1][j] + psum[i][j + 1];
+        psum[i + 1][j + 1] += xs[i][j] - psum[i][j];
+    }
+```
+
+Query:
+
+```c++
+// sum total rectangle, subtract side and up and add intersection
+ll ans = psum[hy][hx] - psum[hy][lx - 1] - psum[ly - 1][hx];
+ans += psum[ly - 1][lx - 1];
+```
+
+### Soma de prefixo 3D
+
+Construção:
+
+```c++
+vvvll psum(n + 1, vvll(n + 1, vll(n + 1)));
+for (ll i = 1; i <= n; ++i)
+    for (ll j = 1; j <= n; ++j)
+        for (ll k = 1; k <= n; ++k) {
+            // sum cuboids from sides and down
+            psum[i][j][k] = psum[i - 1][j][k] + psum[i][j - 1][k] + psum[i][j][k - 1];
+            // subtract intersections
+            psum[i][j][k] -= psum[i][j - 1][k - 1] + psum[i - 1][j][k - 1] +
+                                                     psum[i - 1][j - 1][k];
+            // re-sum missing cuboid and add element
+            psum[i][j][k] += psum[i - 1][j - 1][k - 1] + xs[i - 1][j - 1][k - 1];
+        }
+```
+
+Query:
+
+```c++
+// sum total cuboid, subtract sides and down
+ll ans = psum[hx][hy][hz] - psum[lx - 1][hy][hz] -
+         psum[hx][ly - 1][hz] - psum[hx][hy][lz - 1];
+// add intersections
+ans += psum[hx][ly - 1][lz - 1] + psum[lx - 1][hy][lz - 1] +
+                                  psum[lx - 1][ly - 1][hz];
+// re-subtract missing cuboid
+ans -= psum[lx - 1][ly - 1][lz - 1];
+```
+
+## Matemática
+
+### Conversão de base
+
+Retorna: Vetor com a representação de `x` na base `b`
+
+```c++
+// coefficients like 1*2^2 + 0*2^1 + 1*2^0 = 5
+vll toBase(ll x, ll b) {
+    vll res;
+    while (x) {
+        res.emplace_back(x % b);
+        x /= b;
+    }
+    reverse(all(res);
+    return res;
+}
+```
+
+### Crivo de Eratóstenes
+
+Retorna: Vetor com todos os primos no intervalo `[1, n]` e vetor de menor fator primo
+
+```c++
+pair<vll, vll> sieve(ll n) {
+    vll ps, spf(n + 1);
+    for (ll i = 2; i <= n; i++)
+        if (!spf[i]) {
+            spf[i] = i;
+            ps.emplace_back(i);
+            for (ll j = i * i; j <= n; j += i)
+                if (!spf[j]) spf[j] = i;
+        }
+    return { ps, spf };
+}
+```
+
+Exemplo de fatoração em O(log N) com o vetor de menor fator primo:
+
+```c++
+auto [ps, spf] = sieve(42);
+for (ll i = 0; i < n; i++) {
+    ll v;
+    cin >> v;
+    while (v != 1) {
+        cout << spf[v] << ' ';
+        v /= spf[v];
+    }
+    cout << '\n';
+}
+```
+
+### Divisores
+
+Retorna: Vetor com todos os divisores de `x`
+
+```c++
+vll divisors(ll x) {
+    vll ds {1};
+    for (ll i = 2; i * i <= x; ++i)
+        if (x % i == 0) {
+            ds.emplace_back(i);
+            if (i * i != x)
+                ds.emplace_back(x / i);
+        }
+    return ds;
+}
+```
+
+### Fatoração
+
+Retorna: Vetor com cada fator primo de `x`
+
+```c++
+vll factors(ll x) {
+    vll fs;
+    for (ll i = 2; i * i <= x; ++i)
+        while (x % i == 0) {
+            fs.emplace_back(i);
+            x /= i;
+        }
+    if (x > 1) fs.emplace_back(x);
+    return fs;
+}
+```
+
+### Teste de primalidade
+
+Retorna: Verdadeiro se `x` é primo, falso caso contrário
+```c++
+bool isPrime(ll x) {
+    for (ll i = 2; i * i <= x; ++i)
+        if (x % i == 0) return false;
+    return x != 1;
+}
+```
+
+# Estruturas
+
+## Árvores
+
+### BIT tree
+
+Parâmetros:
+
+* `n`: intervalo máximo para as operações `[1, n]`
+
+Métodos:
+
+* `rangeAdd(i, j, x)`: soma `x` em cada elemento no intervalo `[i, j]`
+* `rangeQuery(i, j)`: retorna a soma do intervalo `[i, j]`
+
+```c++
+class BIT {
+public:
+    BIT(ll n) : bt1(n+1), bt2(n+1) {}
+
+    void rangeAdd(ll i, ll j, ll x) {
+    	add(i, x, bt1);           add(j + 1, -x, bt1);
+    	add(i, x * (i - 1), bt2); add(j + 1, -x * j, bt2);
+    }
+
+    ll rangeQuery(ll i, ll j) {
+    	return rsq(j, bt1) * j           - rsq(j, bt2) -
+    	      (rsq(i - 1, bt1) * (i - 1) - rsq(i - 1, bt2));
+    }
+
+private:
+    void add(ll i, ll x, vll& bt) {
+        for (; i < bt.size(); i += i & -i) bt[i] += x;
+    }
+
+    ll rsq(ll i, vll& bt) {
+        ll sum = 0;
+        for (; i >= 1 i -= i & -i) sum += bt[i];
+        return sum;
+    }
+
+    vll bt1, bt2;
 };
 ```
 
-### 4 direções adjascentes
+### Disjoint set union
+
+Parâmetros:
+
+* `n`: intervalo máximo para operações `[1, n]`
+
+Métodos:
+
+* `mergeSetsOf(x, y)`: combina os conjuntos que contém `x` e `y`
+* `sameSet(x, y)`: retorna verdadeiro se `x` e `y` estão contidos no mesmo conjunto, falso caso contrário
+* `setOf(x)`: retorna o representante do conjunto que contém `x`
+* `sizeOfSet(s)`: retorna quantos elementos estão contidos no conjunto representado por `s`
 
 ```c++
-vpll ds { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+class DSU {
+public:
+    DSU(ll n) : parent(n + 1), size(n + 1, 1) {
+        iota(all(parent), 0);
+    }
+
+    ll setOf(ll x) {
+        return parent[x] == x ? x : parent[x] = setOf(parent[x]);
+    }
+
+    void mergeSetsOf(ll x, ll y) {
+        ll a = setOf(x), b = setOf(y);
+        if (size[a] > size[b]) swap(a, b);
+        parent[a] = b;
+        if (a != b) size[b] += size[a];
+    }
+
+    bool sameSet(ll x, ll y) { return setOf(x) == setOf(y); }
+    size_t sizeOfSet(ll s) { return size[s]; }
+
+private:
+    vll parent, size;
+};
 ```
 
-### 8 direções adjascentes
+### Red-Black tree
+
+Métodos:
+
+* `find_by_order(k)`: retorna o `k`-ésimo elemento
+* `insert(x)`: insere elemento `x`
+* `order_of_key(x)`: retorna quantos elementos existem menor que `x`
 
 ```c++
-vpll ds { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 },
-          { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, -1 } };
+#include <ext/pb_ds/assoc_container.hpp>
+#include <ext/pb_ds/tree_policy.hpp>
+
+using namespace __gnu_pbds;
+
+// if less<>, then unique elements
+typedef tree<ll, null_type, less_equal<>,
+rb_tree_tag, tree_order_statistics_node_update> RBT;
 ```
 
-### Loop das direções
+### Segment tree (Simples)
+
+Parâmetros:
+
+* `n`: intervalo máximo para operações `[0, n)`
+
+Métodos:
+
+* `setQuery(i, j, x, l, r, node)`: super função (set/query).
+  `i` e `j` é o intervalo da nossa ação. `x` é um argumento
+  opcional que é passado somente quando queremos setar um valor.
+  `l` e `r` é o intervalo que o nó representa. `node` é o nó
+  atual. esses três últimos argumentos não são passados nunca.
+  se passamos `x` (set) não deve-se utilizar o valor retornado,
+  caso contrário (query), retorna valor correspondente à
+  funcionalidade codificada de acordo com o tipo passado como
+  template
 
 ```c++
-for (auto [ox, oy] : ds) {
-    ll nx = x + ox, ny = y + oy;
-    // processing
-}
+template<typename T>
+class SegTree {
+public:
+    SegTree(ll n) {
+        while (__builtin_popcount(n) != 1) ++n;
+        (*this).n = n;
+        seg.resize(2 * n, DEF);
+    }
+
+    T setQuery(ll i, ll j, T x = LONG_LONG_MIN, ll l = 0, ll r = -1, ll node = 1) {
+        if (r == -1) r = n - 1;
+        if (i <= l and r <= j) {
+            // change accordingly
+            if (x != LONG_LONG_MIN) seg[node] = x; // point update
+            // if (x != LONG_LONG_MIN) seg[node] += x; // range sum
+            return seg[node];
+        }
+        if (j < l or i > r) return DEF;
+        ll m = (l + r) / 2;
+        // change accordingly
+        ll sum = (setQuery(i, j, x, l, m, 2 * node) +
+                  setQuery(i, j, x, m + 1, r, 2 * node + 1));
+        seg[node] = (seg[2 * node] + seg[2 * node + 1]); // point update
+        // sum += seg[node]; // range sum
+        return sum;
+    }
+
+private:
+    const T DEF = 0; // change accordingly
+    vector<T> seg;
+    ll n;
+};
 ```
-
-### Igualdade flutuante
-
-```c++
-template<typename T, typename S>
-bool equals(T a, S b) { return abs(a - b) < 1e-9L; }
-```
-
-### Compressão de coordenadas
-
-```c++
-void compress(vll& xs) {
-    ll c = 0;
-    map<ll, ll> mp;
-    for (ll x : xs) mp[x] = 0;
-    for (auto& p : mp) p.y = c++;
-    for (ll& x : xs) x = mp[x];
-}
-```
-
-### Próximo maior/menor elemento
-
-```c++
-// get index of next smallest to the right
-// easy to change to be to left or biggest
-vll next(xs.size(), xs.size());
-stack<ll> prevs;
-
-for (ll i = xs.size() - 1; i >= 0; --i) {
-    while (!prevs.empty() and xs[prevs.top()] >= xs[i])
-        prevs.pop();
-    if (!prevs.empty()) next[i] = prevs.top();
-    prevs.emplace(i);
-}
-```
-
-### Fatos
-
-> `a + b = (a & b) + (a | b)`
-
-> maior quantidade de divisores de um número `< 10^18` é `107520`
-
-> maior diferença entre dois primos consecutivos `< 10^18` é `1476`
-
-# Estruturas
 
 ## Geometria
 
@@ -513,763 +1156,94 @@ struct Triangle {
 };
 ```
 
-## Árvores
+# Utils
 
-### BIT tree
-
-Parâmetros:
-
-* `n`: intervalo máximo para as operações `[1, n]`
-
-Métodos:
-
-* `rangeAdd(i, j, x)`: soma `x` em cada elemento no intervalo `[i, j]`
-* `rangeQuery(i, j)`: retorna a soma do intervalo `[i, j]`
+### Aritmética modular
 
 ```c++
-class BIT {
-public:
-    BIT(ll n) : bt1(n+1), bt2(n+1) {}
-
-    void rangeAdd(ll i, ll j, ll x) {
-    	add(i, x, bt1);           add(j + 1, -x, bt1);
-    	add(i, x * (i - 1), bt2); add(j + 1, -x * j, bt2);
-    }
-
-    ll rangeQuery(ll i, ll j) {
-    	return rsq(j, bt1) * j           - rsq(j, bt2) -
-    	      (rsq(i - 1, bt1) * (i - 1) - rsq(i - 1, bt2));
-    }
-
-private:
-    void add(ll i, ll x, vll& bt) {
-        for (; i < bt.size(); i += i & -i) bt[i] += x;
-    }
-
-    ll rsq(ll i, vll& bt) {
-        ll sum = 0;
-        for (; i >= 1 i -= i & -i) sum += bt[i];
-        return sum;
-    }
-
-    vll bt1, bt2;
-};
-```
-
-### BIT tree (Simples)
-
-Parâmetros:
-
-* `n`: intervalo máximo para as operações `[1, n]`
-
-Métodos:
-
-* `add(i, x)`: soma `x` no índice `i`
-* `rsq(i)`: retorna a soma do intervalo `[1, i]`
-
-```c++
-struct BIT {
-    vll bt
-    BIT(ll n) : bt(n+1) {}
-
-    void add(ll i, ll x) {
-        for (; i < bt.size(); i += i & -i) bt[i] += x;
-    }
-
-    ll rsq(ll i) {
-        ll sum = 0;
-        for (; i >= 1; i -= i & -i) sum += bt[i];
-        return sum;
-    }
-};
-```
-
-### Red-Black tree
-
-Métodos:
-
-* `insert(x)`: insere elemento `x`
-* `order_of_key(x)`: retorna quantos elementos existem menor que `x`
-
-```c++
-#include <ext/pb_ds/assoc_container.hpp>
-#include <ext/pb_ds/tree_policy.hpp>
-
-using namespace __gnu_pbds;
-
-// if less<>, then unique elements
-typedef tree<ll, null_type, less_equal<>,
-rb_tree_tag, tree_order_statistics_node_update> RBT;
-```
-
-### Segment tree (Simples)
-
-Parâmetros:
-
-* `n`: intervalo máximo para operações `[0, n)`
-
-Métodos:
-
-* `setQuery(i, j, x, l, r, node)`: super função (set/query).
-  `i` e `j` é o intervalo da nossa ação. `x` é um argumento
-  opcional que é passado somente quando queremos setar um valor.
-  `l` e `r` é o intervalo que o nó representa. `node` é o nó
-  atual. esses três últimos argumentos não são passados nunca.
-  se passamos `x` (set) não deve-se utilizar o valor retornado,
-  caso contrário (query), retorna valor correspondente à
-  funcionalidade codificada de acordo com o tipo passado como
-  template
-
-```c++
-template<typename T>
-class SegTree {
-public:
-    SegTree(ll n) {
-        while (__builtin_popcount(n) != 1) ++n;
-        (*this).n = n;
-        seg.resize(2 * n, DEF);
-    }
-
-    T setQuery(ll i, ll j, T x = LONG_LONG_MIN, ll l = 0, ll r = -1, ll node = 1) {
-        if (r == -1) r = n - 1;
-        if (i <= l and r <= j) {
-            // change accordingly
-            if (x != LONG_LONG_MIN) seg[node] = x; // point update
-            // if (x != LONG_LONG_MIN) seg[node] += x; // range sum
-            return seg[node];
-        }
-        if (j < l or i > r) return DEF;
-        ll m = (l + r) / 2;
-        // change accordingly
-        ll sum = (setQuery(i, j, x, l, m, 2 * node) +
-                  setQuery(i, j, x, m + 1, r, 2 * node + 1));
-        seg[node] = (seg[2 * node] + seg[2 * node + 1]); // point update
-        // sum += seg[node]; // range sum
-        return sum;
-    }
-
-private:
-    const T DEF = 0; // change accordingly
-    vector<T> seg;
-    ll n;
-};
-```
-### Disjoint set union
-
-Parâmetros:
-
-* `n`: intervalo máximo para operações `[1, n]`
-
-Métodos:
-
-* `mergeSetsOf(x, y)`: combina os conjuntos que contém `x` e `y`
-* `sameSet(x, y)`: retorna verdadeiro se `x` e `y` estão contidos no mesmo conjunto, falso caso contrário
-* `setOf(x)`: retorna o representante do conjunto que contém `x`
-* `sizeOfSet(s)`: retorna quantos elementos estão contidos no conjunto representado por `s`
-
-```c++
-class DSU {
-public:
-    DSU(ll n) : parent(n + 1), size(n + 1, 1) {
-        iota(all(parent), 0);
-    }
-
-    ll setOf(ll x) {
-        return parent[x] == x ? x : parent[x] = setOf(parent[x]);
-    }
-
-    void mergeSetsOf(ll x, ll y) {
-        ll a = setOf(x), b = setOf(y);
-        if (size[a] > size[b]) swap(a, b);
-        parent[a] = b;
-        if (a != b) size[b] += size[a];
-    }
-
-    bool sameSet(ll x, ll y) { return setOf(x) == setOf(y); }
-    size_t sizeOfSet(ll s) { return size[s]; }
-
-private:
-    vll parent, size;
-};
-```
-
-### Disjoint set union (Simples)
-
-Parâmetros:
-
-* `n`: intervalo máximo para operações `[1, n]`
-
-Métodos:
-
-* `merge(x, y)`: combina os conjuntos que contém `x` e `y`
-* `find(x)`: retorna o representante do conjunto que contém `x`
-
-```c++
-struct DSU {
-    vll parent, size;
-    DSU(ll n) : parent(n + 1), size(n + 1, 1) {
-        iota(all(parent), 0);
-    }
-
-    ll find(ll x) {
-        return parent[x] == x ? x : parent[x] = find(parent[x]);
-    }
-
-    void merge(ll x, ll y) {
-        ll a = find(x), b = find(y);
-        if (size[a] > size[b]) swap(a, b);
-        parent[a] = b;
-        if (a != b) size[b] += size[a];
-    }
-};
-```
-
-# Algoritmos
-
-## Grafos
-
-### Kruskal
-
-Parâmetros:
-
-* `edges`: grafo representado por vetor de arestas `(peso, u, v)`
-* `n`: quantidade máxima de vértices
-
-Retorna: Vetor com a árvore geradora mínima (mst), se o grafo for conectado,
-representado por vetor de arestas e a soma total de suas arestas
-
-```c++
-pair<vtll, ll> kruskal(vtll& edges, ll n) {
-    DSU dsu(n);
-    vtll mst;
-    ll edges_sum = 0;
-    sort(all(edges));
-    for (auto [w, u, v] : edges)
-        if (!dsu.sameSet(u, v)) {
-            dsu.mergeSetsOf(u, v);
-            mst.emplace_back(w, u, v);
-            edges_sum += w;
-        }
-    return { mst, edges_sum };
-}
-```
-
-### DFS em árvores
-
-Parâmetros:
-
-* `self`: própria função
-* `u`: vértice atual
-* `p`: vértice anterior
-
-```c++
-auto dfs = [&](auto&& self, ll u, ll p) -> void {
-    // processing
-    for (auto v : g[u]) if (v != p)
-        self(self, v, u);
-}; dfs(dfs, 1, 0);
-```
-
-### DFS em grafos
-
-Parâmetros:
-
-* `self`: própria função
-* `u`: vértice atual
-
-```c++
-vector<bool> vs(g.size());
-auto dfs = [&](auto&& self, ll u) -> void {
-    vs[u] = true;
-    // processing
-    for (auto v : g[u]) if (!vs[v])
-        self(self, v);
-}; dfs(dfs, 1);
-```
-
-### BFS 0/1
-
-Parâmetros:
-
-* `g`: grafo alvo
-* `s`: vértice inicial (menores distâncias em relação à ele)
-
-Retorna: Vetor com as menores distâncias de cada aresta para `s`
-
-```c++
-vll bfs01(const vvpll& g, ll s) {
-    vll ds(g.size(), LONG_LONG_MAX);
-    deque<ll> dq;
-    dq.emplace(s); ds[s] = 0;
-    while (!dq.empty()) {
-        ll u = pq.front(); pq.pop();
-        for (ll v : g[u])
-            if (ds[u] + w < ds[v]) {
-                ds[v] = ds[u] + w;
-                if (w == 1) dq.emplace_back(v)
-                else dq.emplace_front(v);
-            }
-    }
-    return ds;
-}
-```
-
-### Dijkstra
-
-Parâmetros:
-
-* `g`: grafo alvo
-* `s`: vértice inicial (menores distâncias em relação à ele)
-
-Retorna: Vetor com as menores distâncias de cada aresta para `s` e vetor de trajetos
-
-```c++
-pair<vll, vll> dijkstra(const vvpll& g, ll s) {
-    vll ds(g.size(), LONG_LONG_MAX), pre(g.size(), -1);
-    priority_queue<pll, vpll, greater<>> pq;
-    pq.emplace(0, s); ds[s] = 0;
-    while (!pq.empty()) {
-        auto [t, u] = pq.top(); pq.pop();
-        if (ds[u] < u) continue;
-        for (auto& [w, v] : g[u])
-            if (t + w < ds[v]) {
-                ds[v] = t + w, pre[v] = u;
-                pq.emplace(v, t + w);
-            }
-    }
-    return { ds, pre };
-}
-
-vll getPath(const vll& pre, ll s, ll u) {
-    vll p { u };
-    do {
-        p.emplace_back(pre[u]);
-        u = pre[u];
-    } while (u != s);
-    reverse(all(p));
-    return p;
-}
-```
-
-### Binary lifting
-
-Parâmetros:
-
-* `n`: quantidade de vértices/elementos
-* `x`: vértice/elemento alvo
-* `k`: ordem do ancestral
-
-Retorna: `k` ancestral do vértice/elemento `x`
-
-```c++
-const int LOG = 31; // aproximate log of n, + 1
-
-vector<vector<int>> parent;
-vector<int> depth;
-
-// if isn't a graph delete parameter g
-void populate(int n, vector<vector<int>>& g) {
-    parent.resize(n + 1, vector<int>(LOG));
-    depth.resize(n + 1);
-
-    // initialize known relationships (e.g.: dfs if it's a graph)
-
-    // parent[1][0] = 1;
-    // auto dfs = [&](auto&& self, int u, int p) -> void {
-    //     for (ll v : g[u]) if (v != p) {
-    //         parent[v][0] = u;
-    //         depth[v] = depth[u] + 1;
-    //         self(self, v, u);
-    //     }
-    // }; dfs(dfs, 1, -1);
-
-    for (ll i = 1; i < LOG; ++i)
-        for (ll j = 1; j <= n; ++j)
-            parent[j][i] = parent[ parent[j][i - 1] ][i - 1];
-}
-
-int kthAncestor(int u, int k) {
-    // if (k > depth[u]) return -1; // no kth ancestor
-    for (int i = 0; i < LOG; ++i)
-        if (k & (1 << i))
-            u = parent[u][i];
-    return u;
-}
-```
-
-### Menor ancestral comum (LCA)
-
-Parâmetros:
-
-* `u`: primeiro vértice/elemento
-* `v`: segundo vértice/elemento
-
-Retorna: Menor ancestral comum entre `u` e `v`
-
-
-```c++
-int LCA(int u, int v) {
-    if (depth[u] < depth[v]) swap(u, v);
-    int k = depth[u] - depth[v];
-    u = kthAncestor(u, k);
-    if (u == v) return u;
-    for (int i = LOG - 1; i >= 0; --i)
-        if (parent[u][i] != parent[v][i]) {
-            u = parent[u][i];
-            v = parent[v][i];
-        }
-    return parent[u][0];
-}
-```
-
-### Ordenação topológica
-
-Parâmetros:
-
-* `g`: grafo alvo
-
-Retorna: Vetor com a ordenação topológica do grafo, se houver ciclo retorna vetor vazio
-
-```c++
-vll topologicalSort(vvll& g) {
-    vll degree(g.size()), res;
-    for (int i = 1; i < g.size(); ++i)
-        for (auto u : g[i])
-            ++degree[u];
-
-    // lower values bigger priorities
-    priority_queue<ll, vll, greater<>> pq;
-    for (int i = 1; i < degree.size(); ++i)
-        if (degree[i] == 0) pq.emplace(i);
-
-    while (!pq.empty()) {
-        ll u = pq.top();
-        pq.pop();
-        res.emplace_back(u);
-        for (ll v : g[u])
-            if (--degree[v] == 0)
-                pq.emplace(v);
-    }
-
-    if (res.size() != g.size())
-        return {}; // cycle
-
-    return res;
-}
-```
-
-## Outros
-
-### Busca binária
-
-Parâmetros:
-
-* `xs`: vetor ordenado alvo
-* `x`: elemento alvo
-* `l`: índice de início
-* `r`: índice de fim
-
-Retorna: Índice de `x` se encontrado, se não `-1`
-
-Pode ser útil em vez de retornar ```-1```, retornar ```l```
-
-```c++
-ll binSearch(vll& xs, ll x, ll l, ll r) {
-    if (l > r) return -1;
-    ll m = l + (r - l) / 2;
-    if (xs[m] == x) return m;
-    if (xs[m] < x) l = m + 1;
-    else r = m - 1;
-    return binSearch(xs, x, l, r);
-}
-```
-
-### Maior subsequência crescente (LIS)
-
-Parâmetros:
-
-* `xs`: sequência alvo
-
-Retorna: Par com o tamanho da maior subsequência crescente e o último elemento dela
-
-```c++
-pll LIS(vll& xs) {
-    vll ss;
-    for (ll x : xs) {
-        auto it = lower_bound(all(ss), x);
-        if (it == ss.end()) ss.emplace_back(x);
-        else *it = x;
-    }
-    return { ss.size(), ss.back() };
-}
-```
-
-### Maior subsequência comum (LCS)
-
-Parâmetros:
-
-* `xs`: primeira sequência
-* `ys`: segunda sequência
-
-Retorna: Tamanho da maior subsequência comum
-
-```c++
-template<typename T>
-ll LCS(vector<T>& xs, vector<T>& ys) {
-    vvll dp(xs.size() + 1, vll(ys.size() + 1));
-    for (ll i = 1; i <= xs.size(); ++i)
-        for (ll j = 1; j <= ys.size(); ++j) {
-            if (xs[i - 1] == ys[j - 1])
-                dp[i][j] = 1 + dp[i - 1][j - 1];
-            else
-                dp[i][j] = max(dp[i][j - 1], dp[i - 1][j]);
-        }
-    return dp.back().back();
-}
-```
-
-### Soma de prefixo 2D
-
-Construção:
-
-```c++
-vvll psum(n + 1, vll(n + 1));
-for (ll i = 0; i < n; ++i)
-    for (ll j = 0; j < n; ++j) {
-        // sum side and up rectangles, add element and remove intersection
-        psum[i + 1][j + 1] = psum[i + 1][j] + psum[i][j + 1];
-        psum[i + 1][j + 1] += xs[i][j] - psum[i][j];
-    }
-```
-
-Query:
-
-```c++
-// sum total rectangle, subtract side and up and add intersection
-ll ans = psum[hy][hx] - psum[hy][lx - 1] - psum[ly - 1][hx];
-ans += psum[ly - 1][lx - 1];
-```
-
-### Soma de prefixo 3D
-
-Construção:
-
-```c++
-vvvll psum(n + 1, vvll(n + 1, vll(n + 1)));
-for (ll i = 1; i <= n; ++i)
-    for (ll j = 1; j <= n; ++j)
-        for (ll k = 1; k <= n; ++k) {
-            // sum cuboids from sides and down
-            psum[i][j][k] = psum[i - 1][j][k] + psum[i][j - 1][k] + psum[i][j][k - 1];
-            // subtract intersections
-            psum[i][j][k] -= psum[i][j - 1][k - 1] + psum[i - 1][j][k - 1] +
-                                                     psum[i - 1][j - 1][k];
-            // re-sum missing cuboid and add element
-            psum[i][j][k] += psum[i - 1][j - 1][k - 1] + xs[i - 1][j - 1][k - 1];
-        }
-```
-
-Query:
-
-```c++
-// sum total cuboid, subtract sides and down
-ll ans = psum[hx][hy][hz] - psum[lx - 1][hy][hz] -
-         psum[hx][ly - 1][hz] - psum[hx][hy][lz - 1];
-// add intersections
-ans += psum[hx][ly - 1][lz - 1] + psum[lx - 1][hy][lz - 1] +
-                                  psum[lx - 1][ly - 1][hz];
-// re-subtract missing cuboid
-ans -= psum[lx - 1][ly - 1][lz - 1];
-```
-
-## Matemática
-
-### Teste de primalidade
-
-Retorna: Verdadeiro se `x` é primo, falso caso contrário
-```c++
-bool isPrime(ll x) {
-    if (x == 1) return false;
-
-    for (ll i = 2; i * i <= x; ++i)
-        if (x % i == 0) return false;
-
-    return true;
-}
-```
-
-### Divisores
-
-Retorna: Vetor ordenado com todos os divisores de `x`
-
-```c++
-vll divisors(ll x) {
-    vll ds {1};
-    for (ll i = 2; i * i <= x; ++i)
-        if (x % i == 0) {
-            ds.emplace_back(i);
-            if (i * i != x)
-                ds.emplace_back(x / i);
-        }
-    return ds;
-}
-```
-
-### Fatoração
-
-Retorna: Vetor com cada fator primo de `x`
-
-```c++
-vll factors(ll x) {
-    vll fs;
-    for (ll i = 2; i * i <= x; ++i)
-        while (x % i == 0) {
-            fs.emplace_back(i);
-            x /= i;
-        }
-    if (x > 1) fs.emplace_back(x);
-    return fs;
-}
-```
-
-### Crivo de Eratóstenes
-
-Retorna: Vetor com todos os primos no intervalo `[1, n]` e vetor de menor fator primo
-
-```c++
-pair<vll, vll> sieve(ll n) {
-    vll ps, spf(n + 1);
-    for (ll i = 2; i <= n; i++)
-        if (!spf[i]) {
-            spf[i] = i;
-            ps.emplace_back(i);
-            for (ll j = i * i; j <= n; j += i)
-                if (!spf[j]) spf[j] = i;
-        }
-    return { ps, spf };
-}
-```
-
-Exemplo de fatoração em O(log N) com o vetor de menor fator primo:
-
-```c++
-auto [ps, spf] = sieve(42);
-for (ll i = 0; i < n; i++) {
+static constexpr ll M = 1e9 + 7;
+struct Mi {
     ll v;
-    cin >> v;
-    while (v != 1) {
-        cout << spf[v] << ' ';
-        v /= spf[v];
+    Mi() : v(0) {}
+    Mi(ll x) : v(x % M) { v += (v < 0) * M; }
+    friend bool operator==(Mi a, Mi b) { return a.v == b.v; }
+    friend bool operator!=(Mi a, Mi b) { return a.v != b.v; }
+    friend ostream& operator<<(ostream& os, Mi a) { return os << a.v; }
+    Mi operator+=(Mi b) { return v += b.v - (v + b.v >= M) * M; }
+    Mi operator-=(Mi b) { return v -= b.v + (v - b.v < 0) * M; }
+    Mi operator*=(Mi b) { return v = v * b.v % M; }
+    Mi operator/=(Mi b) & { return *this *= b.inv(); }
+    friend Mi operator+(Mi a, Mi b) { return a += b; }
+    friend Mi operator-(Mi a, Mi b) { return a -= b; }
+    friend Mi operator*(Mi a, Mi b) { return a *= b; }
+    friend Mi pow(Mi a, Mi b) {
+        return (!b.v ? 1 : pow(a * a, b.v / 2) * (b.v & 1 ? a.v : 1));
     }
-    cout << '\n';
+    Mi inv() { return pow(*this, M - 2); }
+};
+```
+
+### Compressão de coordenadas
+
+```c++
+void compress(vll& xs) {
+    ll c = 0;
+    map<ll, ll> mp;
+    for (ll x : xs) mp[x] = 0;
+    for (auto& p : mp) p.y = c++;
+    for (ll& x : xs) x = mp[x];
 }
 ```
 
-### Conversão de base
-
-Retorna: Vetor com a representação de `x` na base `b`
+### 4 direções adjascentes
 
 ```c++
-// coefficients like 1*2^2 + 0*2^1 + 1*2^0 = 5
-vll toBase(ll x, ll b) {
-    vll res;
-    while (x) {
-        res.emplace_back(x % b);
-        x /= b;
-    }
-    reverse(all(res);
-    return res;
+vpll ds { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+```
+
+### 8 direções adjascentes
+
+```c++
+vpll ds { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 },
+          { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, -1 } };
+```
+
+### Loop das direções
+
+```c++
+for (auto [ox, oy] : ds) {
+    ll nx = x + ox, ny = y + oy;
+    // processing
 }
 ```
 
-## Geometria
+### Fatos
 
-### Distância entre pontos
+> `a + b = (a & b) + (a | b)`
 
-Retorna: Distância entre os pontos `P` e `Q`
+> maior quantidade de divisores de um número `< 10^18` é `107520`
+
+> maior diferença entre dois primos consecutivos `< 10^18` é `1476`
+
+### Igualdade flutuante
 
 ```c++
-template<typename T>
-ld dist(const pair<T, T>& P, const pair<T, T>& Q) {
-    return hypot(P.x - Q.x, P.y - Q.y);
-}
+template<typename T, typename S>
+bool equals(T a, S b) { return abs(a - b) < 1e-9L; }
 ```
 
-### Rotação de ponto
-
-Retorna: Ponto rotacionado
+### Próximo maior/menor elemento
 
 ```c++
-template<typename T>
-pld rotate(const pair<T, T>& P, ld radians) {
-    auto x = cos(radians) * P.x - sin(radians) * P.y;
-    auto y = sin(radians) * P.x + cos(radians) * P.y;
-    return { x, y };
-}
-```
+// get index of next smallest to the right
+// easy to change to be to left or biggest
+vll next(xs.size(), xs.size());
+stack<ll> prevs;
 
-### Orientação de ponto
-
-Retorna: Valor que representa a orientação do ponto
-
-```c++
-// D = 0: P in line
-// D > 0: P at left
-// D < 0: P at right
-template<typename T>
-T D(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
-    return (A.x * B.y + A.y * P.x + B.x * P.y) -
-           (P.x * B.y + P.y * A.x + B.x * A.y);
-}
-```
-
-### Ângulo entre segmentos
-
-Retorna: Ângulo entre segmentos
-
-```c++
-// smallest angle between segments PQ and RS
-template<typename T> ld
-angle(const pair<T, T>& P, const pair<T, T>& Q,
-      const pair<T, T>& R, const pair<T, T>& S) {
-    T ux = P.x - Q.x, uy = P.y - Q.y;
-    T vx = R.x - S.x, vy = R.y - S.y;
-    T num = ux * vx + uy * vy;
-
-    // degenerate segment: den = 0
-    auto den = hypot(ux, uy) * hypot(vx, vy);
-    return acos(num / den);
-}
-```
-
-### Ponto contido em segmento
-
-Retorna: Verdadeiro se o ponto está contido no segmento, falso caso contrário
-
-```c++
-// P in segment AB
-template<typename T>
-bool contains(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
-    auto xmin = min(A.x, B.x), xmax = max(A.x, B.x);
-    auto ymin = min(A.y, B.y), ymax = max(A.y, B.y);
-
-    if (P.x < xmin || P.x > xmax || P.y < ymin || P.y > ymax)
-        return false;
-
-    return equals((P.y - A.y) * (B.x - A.x), (P.x - A.x) * (B.y - A.y));
-}
-```
-
-### Mediatriz
-
-Retorna: Reta mediatriz ao segmento `PQ`
-
-```c++
-template<typename T>
-Line<T> perpendicularBisector(const pair<T, T>& P, const pair<T, T>& Q) {
-    auto a = 2 * (Q.x - P.x);
-    auto b = 2 * (Q.y - P.y);
-    auto c = (P.x * P.x + P.y * P.y) - (Q.x * Q.x + Q.y * Q.y);
-    return { a, b, c };
+for (ll i = xs.size() - 1; i >= 0; --i) {
+    while (!prevs.empty() and xs[prevs.top()] >= xs[i])
+        prevs.pop();
+    if (!prevs.empty()) next[i] = prevs.top();
+    prevs.emplace(i);
 }
 ```
