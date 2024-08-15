@@ -17,6 +17,7 @@
     * BFS 0/1
     * DFS
     * Dijkstra
+    * Euler tour
     * Kruskal (Árvore geradora mínima)
     * Menor ancestral comum (LCA)
     * Ordenação topológica
@@ -27,6 +28,7 @@
     * Soma de prefixo 2D
     * Soma de prefixo 3D
   * Matemática
+    * Coeficiente binomial
     * Conversão de base
     * Crivo de Eratóstenes
     * Divisores
@@ -34,10 +36,10 @@
     * Teste de primalidade
 * Estruturas
   * Árvores
-    * BIT tree
     * Disjoint set union
     * Red-Black tree
     * Segment tree
+    * Wavelet tree *
   * Geometria
     * Círculo
     * Reta
@@ -50,7 +52,6 @@
   * Fatos
   * Igualdade flutuante
   * Próximo maior/menor elemento
-
 
 # Main template
 
@@ -140,7 +141,7 @@ vector<pair<T, T>> makeHull(vector<pair<T, T>>& ps) {
             hull.pop_back();
             sz = hull.size();
         }
-        hull.push_back(p);
+        hull.emplace_back(p);
     }
     return hull;
 }
@@ -153,7 +154,7 @@ vector<pair<T, T>> monotoneChain(vector<pair<T, T>> ps) {
     reverse(all(ps));
     upper = makeHull(ps);
     lower.pop_back();
-    lower.insert(lower.end(), upper.begin(), upper.end());
+    lower.insert(lower.end(), all(upper);
     return lower;
 }
 ```
@@ -250,7 +251,7 @@ void populate(int n, vector<vector<int>>& g) {
     //         depth[v] = depth[u] + 1;
     //         self(self, v, u);
     //     }
-    // }; dfs(dfs, 1, -1);
+    // }; dfs(dfs, 1, 0);
 
     for (ll i = 1; i < LOG; ++i)
         for (ll j = 1; j <= n; ++j)
@@ -363,6 +364,25 @@ vll getPath(const vll& pre, ll s, ll u) {
 }
 ```
 
+### Euler Tour
+
+Técnica para transformar árvores em vetores, o código é basicamente uma DFS, aí
+utilizamos um vetor de início e fim para cada nó que marca a posição do nó no vetor imaginário.
+
+Com isso conseguimos usar, por exemplo, segment trees nessa árvore e realizar operações em
+todos os filhos de um certo nó.
+
+```c++
+ll timer = 0;
+vll st, et; // resize to quantity of nodes + 1
+void eulerTour(ll u, ll p) {
+    st[u] = timer++;
+    for (ll v : g[u]) if (v != p)
+        eulerTour(v, u);
+    et[u] = timer++;
+}
+```
+
 ### Kruskal
 
 Parâmetros:
@@ -397,7 +417,6 @@ Parâmetros:
 * `v`: segundo vértice/elemento
 
 Retorna: Menor ancestral comum entre `u` e `v`
-
 
 ```c++
 int LCA(int u, int v) {
@@ -463,7 +482,7 @@ Parâmetros:
 
 Retorna: Índice de `x` se encontrado, se não `-1`
 
-Pode ser útil em vez de retornar ```-1```, retornar ```l```
+Pode ser útil em vez de retornar `-1`, retornar `l`
 
 ```c++
 ll binSearch(vll& xs, ll x, ll l, ll r) {
@@ -534,7 +553,7 @@ for (ll i = 0; i < n; ++i)
     }
 ```
 
-Query:
+Consulta:
 
 ```c++
 // sum total rectangle, subtract side and up and add intersection
@@ -561,7 +580,7 @@ for (ll i = 1; i <= n; ++i)
         }
 ```
 
-Query:
+Consulta:
 
 ```c++
 // sum total cuboid, subtract sides and down
@@ -575,6 +594,27 @@ ans -= psum[lx - 1][ly - 1][lz - 1];
 ```
 
 ## Matemática
+
+### Coeficiente binomial
+
+Retorna: Combinação de `n` elementos tomados `p`
+
+```c++
+ll binom(ll n, ll p) {
+    const ll MAXN = 5e5, M = 1e9 + 7; // check mod value!
+    static ll fac[MAXN + 1], inv[MAXN + 1], finv[MAXN + 1];
+    if (fac[0] != 1) {
+        fac[0] = fac[1] = inv[1] = finv[0] = finv[1] = 1;
+        for (int i = 2; i <= MAXN; i++) {
+            fac[i] = fac[i - 1] * i % M;
+            inv[i] = M - M / i * inv[M % i] % M;
+            finv[i] = finv[i - 1] * inv[i] % M;
+        }
+    }
+    if (n < p or n * p < 0) return 0;
+    return fac[n] * finv[p] % M * finv[n - p] % M;
+}
+```
 
 ### Conversão de base
 
@@ -675,47 +715,6 @@ bool isPrime(ll x) {
 
 ## Árvores
 
-### BIT tree
-
-Parâmetros:
-
-* `n`: intervalo máximo para as operações `[1, n]`
-
-Métodos:
-
-* `rangeAdd(i, j, x)`: soma `x` em cada elemento no intervalo `[i, j]`
-* `rangeQuery(i, j)`: retorna a soma do intervalo `[i, j]`
-
-```c++
-class BIT {
-public:
-    BIT(ll n) : bt1(n+1), bt2(n+1) {}
-
-    void rangeAdd(ll i, ll j, ll x) {
-    	add(i, x, bt1);           add(j + 1, -x, bt1);
-    	add(i, x * (i - 1), bt2); add(j + 1, -x * j, bt2);
-    }
-
-    ll rangeQuery(ll i, ll j) {
-    	return rsq(j, bt1) * j           - rsq(j, bt2) -
-    	      (rsq(i - 1, bt1) * (i - 1) - rsq(i - 1, bt2));
-    }
-
-private:
-    void add(ll i, ll x, vll& bt) {
-        for (; i < bt.size(); i += i & -i) bt[i] += x;
-    }
-
-    ll rsq(ll i, vll& bt) {
-        ll sum = 0;
-        for (; i >= 1 i -= i & -i) sum += bt[i];
-        return sum;
-    }
-
-    vll bt1, bt2;
-};
-```
-
 ### Disjoint set union
 
 Parâmetros:
@@ -755,13 +754,14 @@ private:
 };
 ```
 
-### Red-Black tree
+### Red-Black tree (ordered set)
 
 Métodos:
 
-* `find_by_order(k)`: retorna o `k`-ésimo elemento
+* `find_by_order(k)`: retorna um iterador para o `k`-ésimo elemento (à partir do 0)
 * `insert(x)`: insere elemento `x`
-* `order_of_key(x)`: retorna quantos elementos existem menor que `x`
+* `order_of_key(x)`: retorna quantos elementos existem menor/igual que `x` (depende do parâmetro)
+* `erase(it)`: remove elemento apontado por `it`
 
 ```c++
 #include <ext/pb_ds/assoc_container.hpp>
@@ -774,7 +774,7 @@ typedef tree<ll, null_type, less_equal<>,
 rb_tree_tag, tree_order_statistics_node_update> RBT;
 ```
 
-### Segment tree (Simples)
+### Segment tree
 
 Parâmetros:
 
@@ -789,40 +789,46 @@ Métodos:
   atual. esses três últimos argumentos não são passados nunca.
   se passamos `x` (set) não deve-se utilizar o valor retornado,
   caso contrário (query), retorna valor correspondente à
-  funcionalidade codificada de acordo com o tipo passado como
+  funcionalidade codificada e de acordo com o tipo passado como
   template
 
 ```c++
 template<typename T>
-class SegTree {
+class Segtree {
 public:
-    SegTree(ll n) {
-        while (__builtin_popcount(n) != 1) ++n;
-        (*this).n = n;
-        seg.resize(2 * n, DEF);
-    }
+    Segtree(ll n) : seg(4 * n, DEF), lzy(4 * n), n(n) {}
 
     T setQuery(ll i, ll j, T x = LONG_LONG_MIN, ll l = 0, ll r = -1, ll node = 1) {
         if (r == -1) r = n - 1;
-        if (i <= l and r <= j) {
-            // change accordingly
-            if (x != LONG_LONG_MIN) seg[node] = x; // point update
-            // if (x != LONG_LONG_MIN) seg[node] += x; // range sum
-            return seg[node];
-        }
+        if (lzy[node]) unlazy(node, l, r);
         if (j < l or i > r) return DEF;
+        if (i <= l and r <= j) {
+            if (x != LONG_LONG_MIN) { // set
+                lzy[node] += x;
+                unlazy(node, l, r);
+            }
+            return seg[node]; // query
+        }
         ll m = (l + r) / 2;
-        // change accordingly
-        ll sum = (setQuery(i, j, x, l, m, 2 * node) +
-                  setQuery(i, j, x, m + 1, r, 2 * node + 1));
-        seg[node] = (seg[2 * node] + seg[2 * node + 1]); // point update
-        // sum += seg[node]; // range sum
-        return sum;
+        T op = (setQuery(i, j, x, l, m, 2 * node) +
+                setQuery(i, j, x, m + 1, r, 2 * node + 1));
+        seg[node] = (seg[2 * node] + seg[2 * node + 1]); // set
+        return op; // query
     }
 
 private:
+    void unlazy(ll node, ll l, ll r) {
+        // change accordingly
+        seg[node] += (r - l + 1) * lzy[node];
+        if (l < r) {
+            lzy[2 * node] += lzy[node];
+            lzy[2 * node + 1] += lzy[node];
+        }
+        lzy[node] = 0;
+    }
+
     const T DEF = 0; // change accordingly
-    vector<T> seg;
+    vector<T> seg, lzy;
     ll n;
 };
 ```
@@ -994,8 +1000,8 @@ struct Circle {
 
     Circle(const pair<T, T>& P, T r) : C(P), r(r) {}
 
-    ld area() { return M_PI * r * r; }
-    ld perimeter() { return 2.0L * M_PI * r; }
+    ld area() { return acos(-1) * r * r; }
+    ld perimeter() { return 2.0L * acos(-1) * r; }
     ld arc(ld radians) { return radians * r; }
 
     ld chord(ld radians) {
@@ -1109,7 +1115,7 @@ struct Triangle {
         auto alpha = acos((a * a - b * b - c * c) / (-2.0L * b * c));
         auto beta = acos((b * b - a * a - c * c) / (-2.0L * a * c));
         auto gamma = acos((c * c - a * a - b * b) / (-2.0L * a * b));
-        auto right = M_PI / 2.0L;
+        auto right = acos(-1) / 2.0L;
         if (equals(alpha, right) || equals(beta, right)
                                  || equals(gamma, right))
             return RIGHT;
@@ -1161,9 +1167,8 @@ struct Triangle {
 ### Aritmética modular
 
 ```c++
-static constexpr ll M = 1e9 + 7;
 struct Mi {
-    ll v;
+    ll M = 1e9 + 7, v;
     Mi() : v(0) {}
     Mi(ll x) : v(x % M) { v += (v < 0) * M; }
     friend bool operator==(Mi a, Mi b) { return a.v == b.v; }
@@ -1224,6 +1229,10 @@ for (auto [ox, oy] : ds) {
 > maior quantidade de divisores de um número `< 10^18` é `107520`
 
 > maior diferença entre dois primos consecutivos `< 10^18` é `1476`
+
+> princípio da inclusão e exclusão: a união de `n` conjuntos é
+a soma de todas as interseções de um número ímpar de conjuntos menos
+a soma de todas as interseções de um número par de conjuntos
 
 ### Igualdade flutuante
 
