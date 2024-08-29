@@ -8,6 +8,7 @@
     * Ângulo entre segmentos
     * Distância entre pontos
     * Envoltório convexo
+    * Interseção de segmentos
     * Mediatriz
     * Orientação de ponto
     * Ponto contido em segmento
@@ -15,7 +16,6 @@
   * Grafos
     * Binary lifting
     * BFS 0/1
-    * DFS
     * Dijkstra
     * Euler tour
     * Kruskal (Árvore geradora mínima)
@@ -33,7 +33,6 @@
     * Crivo de Eratóstenes
     * Divisores
     * Fatoração
-    * Teste de primalidade
 * Estruturas
   * Árvores
     * Disjoint set union
@@ -45,10 +44,10 @@
     * Reta
     * Segmento
     * Triângulo
+    * Polígono
 * Utils
   * Aritmética modular
   * Compressão de coordenadas
-  * Direções adjascentes
   * Fatos
   * Igualdade flutuante
   * Próximo maior/menor elemento
@@ -103,9 +102,9 @@ Retorna: Ângulo entre segmentos
 
 ```c++
 // smallest angle between segments PQ and RS
-template<typename T> ld
-angle(const pair<T, T>& P, const pair<T, T>& Q,
-      const pair<T, T>& R, const pair<T, T>& S) {
+template<typename T>
+ld angle(const pair<T, T>& P, const pair<T, T>& Q,
+         const pair<T, T>& R, const pair<T, T>& S) {
     T ux = P.x - Q.x, uy = P.y - Q.y;
     T vx = R.x - S.x, vy = R.y - S.y;
     T num = ux * vx + uy * vy;
@@ -154,8 +153,28 @@ vector<pair<T, T>> monotoneChain(vector<pair<T, T>> ps) {
     reverse(all(ps));
     upper = makeHull(ps);
     lower.pop_back();
-    lower.insert(lower.end(), all(upper);
+    lower.insert(lower.end(), all(upper));
     return lower;
+}
+```
+
+### Interseção de segmentos
+
+Retorna: Se há interseção entre os segmentos `PQ` e `RS`
+
+```c++
+template<typename T>
+ll dir(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
+    ll d = D(A, B, P);
+    return (d > 0 ? 1 : (d < 0 ? -1 : 0));
+}
+
+template<typename T>
+bool intersects(const pair<T, T>& P, const pair<T, T>& Q,
+               const pair<T, T>& R, const pair<T, T>& S) {
+	bool f = dir(P, Q, R) != dir(P, Q, S);
+	bool s = dir(R, S, P) != dir(R, S, Q);
+	return f && s;
 }
 ```
 
@@ -190,7 +209,7 @@ Line<T> perpendicularBisector(const pair<T, T>& P, const pair<T, T>& Q) {
 
 ### Ponto contido em segmento
 
-Retorna: Verdadeiro se o ponto está contido no segmento, falso caso contrário
+Retorna: Se o ponto está contido no segmento
 
 ```c++
 // P in segment AB
@@ -198,10 +217,8 @@ template<typename T>
 bool contains(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
     auto xmin = min(A.x, B.x), xmax = max(A.x, B.x);
     auto ymin = min(A.y, B.y), ymax = max(A.y, B.y);
-
     if (P.x < xmin || P.x > xmax || P.y < ymin || P.y > ymax)
         return false;
-
     return equals((P.y - A.y) * (B.x - A.x), (P.x - A.x) * (B.y - A.y));
 }
 ```
@@ -292,39 +309,6 @@ vll bfs01(const vvpll& g, ll s) {
     }
     return ds;
 }
-```
-
-### DFS em árvores
-
-Parâmetros:
-
-* `self`: própria função
-* `u`: vértice atual
-* `p`: vértice anterior
-
-```c++
-auto dfs = [&](auto&& self, ll u, ll p) -> void {
-    // processing
-    for (auto v : g[u]) if (v != p)
-        self(self, v, u);
-}; dfs(dfs, 1, 0);
-```
-
-### DFS em grafos
-
-Parâmetros:
-
-* `self`: própria função
-* `u`: vértice atual
-
-```c++
-vector<bool> vs(g.size());
-auto dfs = [&](auto&& self, ll u) -> void {
-    vs[u] = true;
-    // processing
-    for (auto v : g[u]) if (!vs[v])
-        self(self, v);
-}; dfs(dfs, 1);
 ```
 
 ### Dijkstra
@@ -700,17 +684,6 @@ vll factors(ll x) {
 }
 ```
 
-### Teste de primalidade
-
-Retorna: Verdadeiro se `x` é primo, falso caso contrário
-```c++
-bool isPrime(ll x) {
-    for (ll i = 2; i * i <= x; ++i)
-        if (x % i == 0) return false;
-    return x != 1;
-}
-```
-
 # Estruturas
 
 ## Árvores
@@ -724,13 +697,12 @@ Parâmetros:
 Métodos:
 
 * `mergeSetsOf(x, y)`: combina os conjuntos que contém `x` e `y`
-* `sameSet(x, y)`: retorna verdadeiro se `x` e `y` estão contidos no mesmo conjunto, falso caso contrário
+* `sameSet(x, y)`: retorna se `x` e `y` estão contidos no mesmo conjunto
 * `setOf(x)`: retorna o representante do conjunto que contém `x`
 * `sizeOfSet(s)`: retorna quantos elementos estão contidos no conjunto representado por `s`
 
 ```c++
-class DSU {
-public:
+struct DSU {
     DSU(ll n) : parent(n + 1), size(n + 1, 1) {
         iota(all(parent), 0);
     }
@@ -747,9 +719,7 @@ public:
     }
 
     bool sameSet(ll x, ll y) { return setOf(x) == setOf(y); }
-    size_t sizeOfSet(ll s) { return size[s]; }
 
-private:
     vll parent, size;
 };
 ```
@@ -770,8 +740,9 @@ Métodos:
 using namespace __gnu_pbds;
 
 // if less<>, then unique elements
-typedef tree<ll, null_type, less_equal<>,
-rb_tree_tag, tree_order_statistics_node_update> RBT;
+template<typename T>
+using RBT = tree<T, null_type, less_equal<>,
+rb_tree_tag, tree_order_statistics_node_update>;
 ```
 
 ### Segment tree
@@ -849,9 +820,9 @@ Métodos:
 
 * `normalizeReal()`: normaliza os coeficientes (reais) da reta
 * `normalize()`: normaliza os coeficientes (inteiros) da reta
-* `contains(P)`: retorna verdadeiro se `P` está contido na reta, falso caso contrário
-* `parallel(r)`: retorna verdadeiro se a reta é paralela a `r`, falso caso contrário
-* `orthogonal(r)`: retorna verdadeiro se a reta é perpendicular a `r`, falso caso contrário
+* `contains(P)`: se `P` está contido na reta
+* `parallel(r)`: retorna se a reta é paralela a `r`
+* `orthogonal(r)`: retorna se a reta é perpendicular a `r`
 * `intersection(r)`: retorna ponto de interseção
 * `distance(P)`: retorna a distância de `P` à reta
 * `closest(P)`: retorna ponto mais próximo de `P` pertencente à reta
@@ -862,16 +833,15 @@ struct Line {
     T a, b, c;
 
     Line(const pair<T, T>& P, const pair<T, T>& Q)
-        : a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y) {}
-
-    void normalizeReal() { b /= a, c /= a, a = 1; }
-
-    void normalize() {
-        if (a < 0 or (a == 0 and b < 0))
-            a *= -1, b *= -1, c *= -1;
-        T gcd_abc = gcd(a, gcd(b, c));
-        a /= gcd_abc, b /= gcd_abc, c /= gcd_abc;
-    }
+        : a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y) {
+            if constexpr (is_floating_point_v<T>)
+                b /= a, c /= a, a = 1;
+            else {
+                if (a < 0 or (a == 0 and b < 0)) a *= -1, b *= -1, c *= -1;
+                T gcd_abc = gcd(a, gcd(b, c));
+                a /= gcd_abc, b /= gcd_abc, c /= gcd_abc;
+            }
+        }
 
     bool contains(const pair<T, T>& P) {
         return equals(a * P.x + b * P.y + c, 0);
@@ -879,7 +849,7 @@ struct Line {
 
     bool parallel(const Line& r) {
         T det = a * r.b - b * r.a;
-        return equals(det, 0) and !(*this == r);
+        return equals(det, 0);
     }
 
     bool orthogonal(const Line& r) {
@@ -911,10 +881,7 @@ struct Line {
     }
 
     bool operator==(const Line& r) {
-        T k = a ? a : b;
-        T s = r.a ? r.a : r.b;
-        return equals(a * s, r.a * k) and equals(b * s, r.b * k)
-                                      and equals(c * s, r.c * k);
+        return equals(a, r.a) and equals(b, r.b) and equals(c, r.c);
     }
 };
 ```
@@ -928,8 +895,8 @@ Parâmetros:
 
 Métodos:
 
-* `contains(P)`: retorna verdadeiro se `P` está contido no segmento, falso caso contrário
-* `intersect(r)`: retorna verdadeiro se `r` intersecta com o segmento, falso caso contrário
+* `contains(P)`: retorna se `P` está contido no segmento
+* `intersect(r)`: retorna se `r` intersecta com o segmento
 * `closest(P)`: retorna ponto mais próximo de `P` pertencente ao segmento
 
 ```c++
@@ -1078,8 +1045,8 @@ Métodos:
 * `sidesClassification()`: retorna valor que representa a classificação do triângulo
 * `anglesClassification()`: retorna valor que representa a classificação do triângulo
 * `barycenter()`: retorna ponto de interseção entre as medianas
-* `circumradius`: retorna valor do raio da circunferência circunscrita
-* `circumcenter`: retorna ponto de interseção entre as as retas perpendiculares que interceptam nos pontos médios
+* `circumradius()`: retorna valor do raio da circunferência circunscrita
+* `circumcenter()`: retorna ponto de interseção entre as as retas perpendiculares que interceptam nos pontos médios
 * `inradius()`: retorna valor do raio da circunferência inscrita
 * `incenter(c)`: retorna ponto de interseção entre as bissetrizes
 * `orthocenter(P, Q)`: retorna ponto de interseção entre as alturas
@@ -1162,6 +1129,114 @@ struct Triangle {
 };
 ```
 
+### Polígono
+
+Parâmetros:
+
+* `ps`: vetor de pontos
+
+Métodos:
+
+* `convex()`: retorna se o polígono é convexo
+* `perimeter()`: retorna perímetro
+* `area()`: retorna área
+* `contains()`: retorna se o polígono contém o ponto `P`
+* `cut()`: retorna polígono separado pela reta `PQ`
+* `circumradius()`: retorna valor do raio da circunferência circunscrita
+* `apothem()`: retorna valor da apótema
+
+```c++
+template <typename T>
+struct Polygon {
+    vector<pair<T, T>> vs;
+    ll n;
+
+    // should be clock ordered
+    Polygon(const vector<pair<T, T>>& ps)
+        : vs(ps), n(vs.size()) { vs.emplace_back(vs.front()); }
+
+    bool convex() {
+        if (n < 3) return false;
+        ll P = 0, N = 0, Z = 0;
+
+        for (ll i = 0; i < n; ++i) {
+            auto d = D(vs[i], vs[(i + 1) % n], vs[(i + 2) % n]);
+            d ? (d > 0 ? ++P : ++N) : ++Z;
+        }
+
+        return P == n or N == n;
+    }
+
+    ld perimeter() {
+        ld p = 0;
+        for (ll i = 0; i < n; ++i) p += dist(vs[i], vs[i + 1]);
+        return p;
+    }
+
+    T area() { // double if lattice
+        T a = 0;
+
+        for (ll i = 0; i < n; ++i) {
+            a += vs[i].x * vs[i + 1].y;
+            a -= vs[i + 1].x * vs[i].y;
+        }
+
+        if (is_floating_point_v<T>) return 0.5L * abs(a);
+        return abs(a);
+    }
+
+    bool contains(const pair<T, T>& P) {
+        if (n < 3) return false;
+        ld sum = 0;
+
+        for (ll i = 0; i < n; ++i) {
+            // border points are considered outside, should
+            // use contains point in segment to count them
+            auto d = D(vs[i], vs[i + 1], P);
+            auto a = angle(P, vs[i], P, vs[i + 1]);
+            sum += d > 0 ? a : (d < 0 ? -a : 0);
+        }
+
+        return equals(abs(sum), 2 * acos(-1.0L)); // check precision
+    }
+
+    Polygon cut(const pair<T, T>& P, const pair<T, T>& Q) {
+        vector<pair<T, T>> points;
+        ld EPS { 1e-9L };
+
+        for (int i = 0; i < n; ++i) {
+            auto d1 = D(P, Q, vs[i]);
+            auto d2 = D(P, Q, vs[i + 1]);
+            if (d1 > -EPS) points.emplace_back(vs[i]);
+            if (d1 * d2 < -EPS)
+                points.emplace_back(intersection(vs[i], vs[i + 1], P, Q));
+        }
+
+        return { points };
+    }
+
+    ld circumradius() {
+        auto s = dist(vs[0], vs[1]);
+        return (s / 2.0L) * (1.0L / sin(acos(-1.0L) / n));
+    }
+
+    ld apothem() {
+        auto s = dist(vs[0], vs[1]);
+        return (s / 2.0L) * (1.0L / tan(acos(-1.0L) / n));
+    }
+
+private:
+    // lines intersection
+    pair<T, T> intersection(const pair<T, T>& P, const pair<T, T>& Q,
+                            const pair<T, T>& R, const pair<T, T>& S) {
+        T a = S.y - R.y, b = R.x - S.x, c = S.x * R.y - R.x * S.y;
+        T u = abs(a * P.x + b * P.y + c);
+        T v = abs(a * Q.x + b * Q.y + c);
+        return {(P.x * v + Q.x * u) / (u + v), (P.y * v + Q.y * u) / (u + v)};
+    }
+};
+```
+
 # Utils
 
 ### Aritmética modular
@@ -1200,31 +1275,13 @@ void compress(vll& xs) {
 }
 ```
 
-### 4 direções adjascentes
-
-```c++
-vpll ds { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
-```
-
-### 8 direções adjascentes
-
-```c++
-vpll ds { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 },
-          { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, -1 } };
-```
-
-### Loop das direções
-
-```c++
-for (auto [ox, oy] : ds) {
-    ll nx = x + ox, ny = y + oy;
-    // processing
-}
-```
-
 ### Fatos
 
 > `a + b = (a & b) + (a | b)`
+
+> `A = I + B / 2 - 1`, sendo `A` a área da treliça, `I` a
+quantidade de pontos interiores com coordenadas inteiras e `B`
+os pontos da borda com coordenadas inteiras
 
 > maior quantidade de divisores de um número `< 10^18` é `107520`
 
