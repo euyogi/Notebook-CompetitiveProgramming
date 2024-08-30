@@ -172,10 +172,10 @@ ll dir(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
 
 template<typename T>
 bool intersects(const pair<T, T>& P, const pair<T, T>& Q,
-               const pair<T, T>& R, const pair<T, T>& S) {
-	bool f = dir(P, Q, R) != dir(P, Q, S);
-	bool s = dir(R, S, P) != dir(R, S, Q);
-	return f && s;
+                const pair<T, T>& R, const pair<T, T>& S) {
+    bool f = dir(P, Q, R) != dir(P, Q, S);
+    bool s = dir(R, S, P) != dir(R, S, Q);
+    return f && s;
 }
 ```
 
@@ -834,15 +834,15 @@ struct Line {
     T a, b, c;
 
     Line(const pair<T, T>& P, const pair<T, T>& Q)
-        : a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y) {
-            if constexpr (is_floating_point_v<T>)
-                b /= a, c /= a, a = 1;
-            else {
-                if (a < 0 or (a == 0 and b < 0)) a *= -1, b *= -1, c *= -1;
-                T gcd_abc = gcd(a, gcd(b, c));
-                a /= gcd_abc, b /= gcd_abc, c /= gcd_abc;
-            }
+            : a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y) {
+        if constexpr (is_floating_point_v<T>)
+            b /= a, c /= a, a = 1;
+        else {
+            if (a < 0 or (a == 0 and b < 0)) a *= -1, b *= -1, c *= -1;
+            T gcd_abc = gcd(a, gcd(b, c));
+            a /= gcd_abc, b /= gcd_abc, c /= gcd_abc;
         }
+    }
 
     bool contains(const pair<T, T>& P) {
         return equals(a * P.x + b * P.y + c, 0);
