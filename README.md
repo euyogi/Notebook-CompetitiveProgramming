@@ -47,6 +47,7 @@
     * Polígono
 * Utils
   * Aritmética modular
+  * Big integer
   * Compressão de coordenadas
   * Fatos
   * Igualdade flutuante
@@ -1252,17 +1253,71 @@ struct Mi {
     Mi operator+=(Mi b) { return v += b.v - (v + b.v >= M) * M; }
     Mi operator-=(Mi b) { return v -= b.v + (v - b.v < 0) * M; }
     Mi operator*=(Mi b) { return v = v * b.v % M; }
-    Mi operator/=(Mi b) & { return *this *= b.inv(); }
+    Mi operator/=(Mi b) & { return *this *= pow(b, M - 2); }
     friend Mi operator+(Mi a, Mi b) { return a += b; }
     friend Mi operator-(Mi a, Mi b) { return a -= b; }
     friend Mi operator*(Mi a, Mi b) { return a *= b; }
     friend Mi pow(Mi a, Mi b) {
         return (!b.v ? 1 : pow(a * a, b.v / 2) * (b.v & 1 ? a.v : 1));
     }
-    Mi inv() { return pow(*this, M - 2); }
 };
 ```
 
+### Big integer
+
+```c++
+struct Bi {
+    string v;
+    Bi() : v("0") {}
+    Bi(const string& x) : v(x) { reverse(v.begin(), v.end()); }
+    friend Bi operator+(Bi a, const Bi& b) { return a += b; }
+    friend Bi operator-(Bi a, const Bi& b) { return a -= b; }
+
+    friend ostream& operator<<(ostream& os, const Bi& a) {
+        ll i = a.v.size() - 1;
+        while (a.v[i] == '0' and i > 0) --i;
+        while (i >= 0) os << a.v[i--];
+        return os;
+    }
+
+    Bi operator+=(const Bi& b) {
+        bool c = false;
+        for (ll i = 0, x; i < max(v.size(), b.v.size()); ++i) {
+            x = c;
+            if (i < v.size()) x += v[i] - '0';
+            if (i < b.v.size()) x += b.v[i] - '0';
+            c = x >= 10, x -= 10 * (x >= 10);
+            if (i < v.size()) v[i] = x + '0';
+            else v += x + '0';
+        }
+        if (c) v += '1';
+        return *this;
+    }
+
+    // assumes a > b
+    Bi operator-=(const Bi& b) {
+        for (ll i = 0, x; i < v.size(); ++i) {
+            x = v[i] - '0';
+            if (i < b.v.size()) x -= b.v[i] - '0';
+            if (x < 0) x += 10, --v[i + 1];
+            v[i] = x + '0';
+        }
+        return *this;
+    }
+
+    Bi prefix(ll n) {
+        string p = v.substr(v.size() - n, n);
+        reverse(all(p));
+        return p;
+    }
+
+    Bi suffix(ll n) {
+        string s = v.substr(0, n);
+        reverse(all(s));
+        return s;
+    }
+};
+```
 ### Compressão de coordenadas
 
 ```c++
