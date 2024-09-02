@@ -18,6 +18,7 @@
     * BFS 0/1
     * Dijkstra
     * Euler tour
+    * Floyd Warshall
     * Kruskal (Árvore geradora mínima)
     * Menor ancestral comum (LCA)
     * Ordenação topológica
@@ -38,7 +39,7 @@
     * Disjoint set union
     * Red-Black tree
     * Segment tree
-    * Wavelet tree *
+    * Wavelet tree **
   * Geometria
     * Círculo
     * Reta
