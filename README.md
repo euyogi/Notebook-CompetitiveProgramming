@@ -18,6 +18,7 @@
     * BFS 0/1
     * Dijkstra
     * Euler tour
+    * Floyd Warshall
     * Kruskal (Árvore geradora mínima)
     * Menor ancestral comum (LCA)
     * Ordenação topológica
