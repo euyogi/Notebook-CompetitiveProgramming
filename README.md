@@ -379,15 +379,15 @@ Retorna: Vetor com as menores distâncias entre cada par de arestas
 ```c++
 vvll floydWarshall(const vvpll& g) {
     ll n = g.size();
-    vvll ds(n, vll(n, INT_MAX));
+    vvll ds(n + 1, vll(n + 1, INT_MAX));
 
-    for (ll u = 1; u < n; u++)
+    for (ll u = 1; u <= n; u++)
         for (auto [w, v] : g[u])
             ds[u][v] = w;
 
-    for (ll k = 1; k < n; k++)
-        for (ll u = 1; u < n; u++)
-            for (ll v = 1; v < n; v++)
+    for (ll k = 1; k <= n; k++)
+        for (ll u = 1; u <= n; u++)
+            for (ll v = 1; v <= n; v++)
                 ds[u][v] = min(ds[u][v], ds[u][k] + ds[k][u]);
 
     return ds;
