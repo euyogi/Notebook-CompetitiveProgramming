@@ -136,7 +136,7 @@ template<typename T>
 vector<pair<T, T>> makeHull(vector<pair<T, T>>& ps) {
     vector<pair<T, T>> hull;
     for (auto& p : ps) {
-        auto sz = hull.size();
+        auto sz = hull.size();          // if want collinear < 0
         while (sz >= 2 and D(hull[sz - 2], hull[sz - 1], p) <= 0) {
             hull.pop_back();
             sz = hull.size();
@@ -296,7 +296,7 @@ Retorna: Vetor com as menores distâncias de cada aresta para `s`
 
 ```c++
 vll bfs01(const vvpll& g, ll s) {
-    vll ds(g.size(), LONG_LONG_MAX);
+    vll ds(g.size(), LLONG_MAX);
     deque<ll> dq;
     dq.emplace(s); ds[s] = 0;
     while (!dq.empty()) {
@@ -323,16 +323,16 @@ Retorna: Vetor com as menores distâncias de cada aresta para `s` e vetor de tra
 
 ```c++
 pair<vll, vll> dijkstra(const vvpll& g, ll s) {
-    vll ds(g.size(), LONG_LONG_MAX), pre(g.size(), -1);
+    vll ds(g.size(), LLONG_MAX), pre(g.size(), -1);
     priority_queue<pll, vpll, greater<>> pq;
-    pq.emplace(0, s); ds[s] = 0;
+    ds[s] = 0; pq.emplace(ds[s], s);
     while (!pq.empty()) {
         auto [t, u] = pq.top(); pq.pop();
-        if (ds[u] < t) continue;
+        if (t > ds[u]) continue;
         for (auto& [w, v] : g[u])
             if (t + w < ds[v]) {
                 ds[v] = t + w, pre[v] = u;
-                pq.emplace(v, t + w);
+                pq.emplace(ds[v], v);
             }
     }
     return { ds, pre };
@@ -365,6 +365,32 @@ void eulerTour(ll u, ll p) {
     for (ll v : g[u]) if (v != p)
         eulerTour(v, u);
     et[u] = timer++;
+}
+```
+
+### Floyd Warshall
+
+Parâmetros:
+
+* `g`: grafo alvo
+
+Retorna: Vetor com as menores distâncias entre cada par de arestas
+
+```c++
+vvll floydWarshall(const vvpll& g) {
+    ll n = g.size();
+    vvll ds(n, vll(n, INT_MAX));
+
+    for (ll u = 1; u < n; u++)
+        for (auto [w, v] : g[u])
+            ds[u][v] = w;
+
+    for (ll k = 1; k < n; k++)
+        for (ll u = 1; u < n; u++)
+            for (ll v = 1; v < n; v++)
+                ds[u][v] = min(ds[u][v], ds[u][k] + ds[k][u]);
+
+    return ds;
 }
 ```
 
@@ -770,12 +796,12 @@ class Segtree {
 public:
     Segtree(ll n) : seg(4 * n, DEF), lzy(4 * n), n(n) {}
 
-    T setQuery(ll i, ll j, T x = LONG_LONG_MIN, ll l = 0, ll r = -1, ll node = 1) {
+    T setQuery(ll i, ll j, T x = LLONG_MIN, ll l = 0, ll r = -1, ll node = 1) {
         if (r == -1) r = n - 1;
         if (lzy[node]) unlazy(node, l, r);
         if (j < l or i > r) return DEF;
         if (i <= l and r <= j) {
-            if (x != LONG_LONG_MIN) { // set
+            if (x != LLONG_MIN) { // set
                 lzy[node] += x;
                 unlazy(node, l, r);
             }
@@ -1216,11 +1242,13 @@ struct Polygon {
         return { points };
     }
 
+    // for regular polygons
     ld circumradius() {
         auto s = dist(vs[0], vs[1]);
         return (s / 2.0L) * (1.0L / sin(acos(-1.0L) / n));
     }
 
+    // for regular polygons
     ld apothem() {
         auto s = dist(vs[0], vs[1]);
         return (s / 2.0L) * (1.0L / tan(acos(-1.0L) / n));
