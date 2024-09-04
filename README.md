@@ -39,7 +39,7 @@
     * Disjoint set union
     * Red-Black tree
     * Segment tree
-    * Wavelet tree **
+    * Wavelet tree *
   * Geometria
     * Círculo
     * Reta
@@ -49,6 +49,7 @@
 * Utils
   * Aritmética modular
   * Big integer
+  * Ceil division
   * Compressão de coordenadas
   * Fatos
   * Igualdade flutuante
@@ -1347,6 +1348,15 @@ struct Bi {
     }
 };
 ```
+
+### Ceil division
+
+```c++
+ll ceilDiv(ll a, ll b) {
+    return a / b + ((a ^ b) > 0 && a % b != 0);
+}
+```
+
 ### Compressão de coordenadas
 
 ```c++
