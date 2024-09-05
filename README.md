@@ -79,8 +79,7 @@ using vpll = vector<pll>;
 using vvpll = vector<vpll>;
 using tll = tuple<ll, ll, ll>;
 using vtll = vector<tll>;
-using ld = long double;
-using pld = pair<ld, ld>;
+using pd = pair<double, double>;
 
 #define all(xs) xs.begin(), xs.end()
 #define found(x, xs) (xs.find(x) != xs.end())
@@ -110,7 +109,7 @@ Retorna: Ângulo entre segmentos
 ```c++
 // smallest angle between segments PQ and RS
 template<typename T>
-ld angle(const pair<T, T>& P, const pair<T, T>& Q,
+double angle(const pair<T, T>& P, const pair<T, T>& Q,
          const pair<T, T>& R, const pair<T, T>& S) {
     T ux = P.x - Q.x, uy = P.y - Q.y;
     T vx = R.x - S.x, vy = R.y - S.y;
@@ -128,7 +127,7 @@ Retorna: Distância entre os pontos `P` e `Q`
 
 ```c++
 template<typename T>
-ld dist(const pair<T, T>& P, const pair<T, T>& Q) {
+double dist(const pair<T, T>& P, const pair<T, T>& Q) {
     return hypot(P.x - Q.x, P.y - Q.y);
 }
 ```
@@ -206,10 +205,10 @@ Retorna: Se o ponto `Q` está antes no sentido anti horário em relação ao pon
 // true if Q is before R in counter clock-wise order, centered in P
 template<typename T>
 bool ccw(pair<T, T> P, pair<T, T> Q, pair<T, T> R) {
-    static const vvll qo( { { 2, 3 }, { 1, 4 } } );
+    static const char qo[2][2] = { { 2, 3 }, { 1, 4 } };
     Q.x -= P.x, Q.y -= P.y, R.x -= P.x, R.y -= P.y, P.x = 0, P.y = 0;
-    auto qqx = Q.x >= 0, qqy = Q.y >= 0;
-    auto rqx = R.x >= 0, rqy = R.y >= 0;
+    auto qqx = equals(Q.x, 0) or Q.x > 0, qqy = equals(Q.y, 0) or Q.y > 0;
+    auto rqx = equals(R.x, 0) or R.x > 0, rqy = equals(R.y, 0) or R.y > 0;
     if (qqx != rqx || qqy != rqy) return qo[qqx][qqy] > qo[rqx][rqy];
     return equals(D(P, Q, R), 0) ?
            (Q.x * Q.x - Q.y * Q.y) < (R.x * R.x - R.y * R.y) :
@@ -253,7 +252,7 @@ Retorna: Ponto rotacionado
 
 ```c++
 template<typename T>
-pld rotate(const pair<T, T>& P, ld radians) {
+pd rotate(const pair<T, T>& P, double radians) {
     auto x = cos(radians) * P.x - sin(radians) * P.y;
     auto y = sin(radians) * P.x + cos(radians) * P.y;
     return { x, y };
@@ -906,8 +905,8 @@ struct Line {
         return equals(a * r.a + b * r.b, 0);
     }
 
-    pld intersection(const Line& r) {
-        ld det = r.a * b - r.b * a;
+    pd intersection(const Line& r) {
+        double det = r.a * b - r.b * a;
 
         // same or parallel
         if (equals(det, 0)) return {};
@@ -918,13 +917,13 @@ struct Line {
     }
 
     // distance from P to line
-    ld distance(const pair<T, T>& P) {
+    double distance(const pair<T, T>& P) {
         return abs(a * P.x + b * P.y + c) / hypot(a, b);
     }
 
     // closest point in line to P
-    pld closest(const pair<T, T>& P) {
-        ld den = a * a + b * b;
+    pd closest(const pair<T, T>& P) {
+        double den = a * a + b * b;
         auto x = (b * (b * P.x - a * P.y) - a * c) / den;
         auto y = (a * (-b * P.x + a * P.y) - b * c) / den;
         return { x, y };
@@ -1006,6 +1005,7 @@ Métodos:
 * `position(P)`: retorna valor que representa a posição do ponto
 * `intersection(c)`: retorna pontos de interseção com círculo
 * `intersection(P, Q)`: retorna pontos de interseção com reta `PQ`
+* `tanPoints()`: retorna dois pontos tangentes ao círculo à partir da origem
 
 ```c++
 enum PointPosition { IN, ON, OUT };
@@ -1017,21 +1017,21 @@ struct Circle {
 
     Circle(const pair<T, T>& P, T r) : C(P), r(r) {}
 
-    ld area() { return acos(-1) * r * r; }
-    ld perimeter() { return 2.0L * acos(-1) * r; }
-    ld arc(ld radians) { return radians * r; }
+    double area() { return acos(-1) * r * r; }
+    double perimeter() { return 2.0 * acos(-1) * r; }
+    double arc(double radians) { return radians * r; }
 
-    ld chord(ld radians) {
-        return 2.0L * r * sin(radians / 2.0L);
+    double chord(double radians) {
+        return 2.0 * r * sin(radians / 2.0);
     }
 
-    ld sector(ld radians) {
-        return (radians * r * r) / 2.0L;
+    double sector(double radians) {
+        return (radians * r * r) / 2.0;
     }
 
-    ld segment(ld radians) {
+    double segment(double radians) {
         auto c = chord(radians);
-        auto s = (r + r + c) / 2.0L;
+        auto s = (r + r + c) / 2.0;
         auto t = sqrt(s) * sqrt(s - r) * sqrt(s - r) * sqrt(s - c);
         return sector(radians) - t;
     }
@@ -1049,11 +1049,11 @@ struct Circle {
             (equals(d, 0) and equals(c.r, r)))
             return {};
 
-        auto a = (c.r * c.r - r * r + d * d) / (2.0L * d);
+        auto a = (c.r * c.r - r * r + d * d) / (2.0 * d);
         auto h = sqrt(c.r * c.r - a * a);
         auto x = c.C.x + (a / d) * (C.x - c.C.x);
         auto y = c.C.y + (a / d) * (C.y - c.C.y);
-        pld P1, P2;
+        pd P1, P2;
         P1.x = x + (h / d) * (C.y - c.C.y);
         P1.y = y - (h / d) * (C.x - c.C.x);
         P2.x = x - (h / d) * (C.y - c.C.y);
@@ -1065,9 +1065,9 @@ struct Circle {
     // circle at origin
     vector<pair<T, T>>
     intersection(const pair<T, T>& P, const pair<T, T>& Q) {
-        ld a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y);
+        double a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y);
         auto x0 = -a * c / (a*a + b*b), y0 = -b * c / (a*a + b*b);
-        if (c*c > r*r * (a*a + b*b) + 1e-9L) return {};
+        if (c*c > r*r * (a*a + b*b) + 1e-9) return {};
         if (equals(c*c, r*r * (a*a + b*b))) return { { x0, y0 } };
         auto d = r*r - c*c / (a*a + b*b);
         auto mult = sqrt(d / (a*a + b*b));
@@ -1076,6 +1076,16 @@ struct Circle {
         auto ay = y0 - a * mult;
         auto by = y0 + a * mult;
         return { { ax, ay }, { bx, by } };
+    }
+
+    // from origin
+    pair<pair<T, T>, pair<T, T>> tanPoints() {
+        auto b = hypot(C.x, C.y);
+        auto th = acos(r / b);
+        auto d = atan2(-C.y, -C.x);
+        auto d1 = d + th, d2 = d - th;
+        return { {C.x + r * cos(d1), C.y + r * sin(d1)},
+                 {C.x + r * cos(d2), C.y + r * sin(d2)} };
     }
 };
 ```
@@ -1116,11 +1126,11 @@ struct Triangle {
     T area() {
         T det = (A.x * B.y + A.y * C.x + B.x * C.y) -
                 (C.x * B.y + C.y * A.x + B.x * A.y);
-        if (is_floating_point_v<T>) return 0.5L * abs(det);
+        if (is_floating_point_v<T>) return 0.5 * abs(det);
         return abs(det);
     }
 
-    ld perimeter() { return a + b + c; }
+    double perimeter() { return a + b + c; }
 
     Class sidesClassification() {
         if (equals(a, b) and equals(b, c)) return EQUILATERAL;
@@ -1129,10 +1139,10 @@ struct Triangle {
     }
 
     Angles anglesClassification() {
-        auto alpha = acos((a * a - b * b - c * c) / (-2.0L * b * c));
-        auto beta = acos((b * b - a * a - c * c) / (-2.0L * a * c));
-        auto gamma = acos((c * c - a * a - b * b) / (-2.0L * a * b));
-        auto right = acos(-1) / 2.0L;
+        auto alpha = acos((a * a - b * b - c * c) / (-2.0 * b * c));
+        auto beta = acos((b * b - a * a - c * c) / (-2.0 * a * c));
+        auto gamma = acos((c * c - a * a - b * b) / (-2.0 * a * b));
+        auto right = acos(-1) / 2.0;
         if (equals(alpha, right) || equals(beta, right)
                                  || equals(gamma, right))
             return RIGHT;
@@ -1140,16 +1150,16 @@ struct Triangle {
         return ACUTE;
     }
 
-    pld barycenter() {
-        auto x = (A.x + B.x + C.x) / 3.0L;
-        auto y = (A.y + B.y + C.y) / 3.0L;
+    pd barycenter() {
+        auto x = (A.x + B.x + C.x) / 3.0;
+        auto y = (A.y + B.y + C.y) / 3.0;
         return {x, y};
     }
 
-    ld circumradius() { return (a * b * c) / (4.0L * area()); }
+    double circumradius() { return (a * b * c) / (4.0 * area()); }
 
-    pld circumcenter() {
-        ld D = 2 * (A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y));
+    pd circumcenter() {
+        double D = 2 * (A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y));
         T A2 = A.x * A.x + A.y * A.y;
         T B2 = B.x * B.x + B.y * B.y;
         T C2 = C.x * C.x + C.y * C.y;
@@ -1158,20 +1168,20 @@ struct Triangle {
         return {x, y};
     }
 
-    ld inradius() { return (2 * area()) / perimeter(); }
+    double inradius() { return (2 * area()) / perimeter(); }
 
-    pld incenter() {
+    pd incenter() {
         auto P = perimeter();
         auto x = (a * A.x + b * B.x + c * C.x) / P;
         auto y = (a * A.y + b * B.y + c * C.y) / P;
         return {x, y};
     }
 
-    pld orthocenter() {
+    pd orthocenter() {
         Line<T> r(A, B), s(A, C);
         Line<T> u{r.b, -r.a, -(C.x * r.b - C.y * r.a)};
         Line<T> v{s.b, -s.a, -(B.x * s.b - B.y * s.a)};
-        ld det = u.a * v.b - u.b * v.a;
+        double det = u.a * v.b - u.b * v.a;
         auto x = (-u.c * v.b + v.c * u.b) / det;
         auto y = (-v.c * u.a + u.c * v.a) / det;
         return {x, y};
@@ -1217,8 +1227,8 @@ struct Polygon {
         return P == n or N == n;
     }
 
-    ld perimeter() {
-        ld p = 0;
+    double perimeter() {
+        double p = 0;
         for (ll i = 0; i < n; ++i) p += dist(vs[i], vs[i + 1]);
         return p;
     }
@@ -1231,13 +1241,13 @@ struct Polygon {
             a -= vs[i + 1].x * vs[i].y;
         }
 
-        if (is_floating_point_v<T>) return 0.5L * abs(a);
+        if (is_floating_point_v<T>) return 0.5 * abs(a);
         return abs(a);
     }
 
     bool contains(const pair<T, T>& P) {
         if (n < 3) return false;
-        ld sum = 0;
+        double sum = 0;
 
         for (ll i = 0; i < n; ++i) {
             // border points are considered outside, should
@@ -1247,12 +1257,12 @@ struct Polygon {
             sum += d > 0 ? a : (d < 0 ? -a : 0);
         }
 
-        return equals(abs(sum), 2 * acos(-1.0L)); // check precision
+        return equals(abs(sum), 2 * acos(-1.0)); // check precision
     }
 
     Polygon cut(const pair<T, T>& P, const pair<T, T>& Q) {
         vector<pair<T, T>> points;
-        ld EPS { 1e-9L };
+        double EPS { 1e-9 };
 
         for (int i = 0; i < n; ++i) {
             auto d1 = D(P, Q, vs[i]);
@@ -1266,15 +1276,15 @@ struct Polygon {
     }
 
     // for regular polygons
-    ld circumradius() {
+    double circumradius() {
         auto s = dist(vs[0], vs[1]);
-        return (s / 2.0L) * (1.0L / sin(acos(-1.0L) / n));
+        return (s / 2.0) * (1.0 / sin(acos(-1.0) / n));
     }
 
     // for regular polygons
-    ld apothem() {
+    double apothem() {
         auto s = dist(vs[0], vs[1]);
-        return (s / 2.0L) * (1.0L / tan(acos(-1.0L) / n));
+        return (s / 2.0) * (1.0 / tan(acos(-1.0) / n));
     }
 
 private:
@@ -1412,7 +1422,7 @@ a soma de todas as interseções de um número par de conjuntos
 
 ```c++
 template<typename T, typename S>
-bool equals(T a, S b) { return abs(a - b) < 1e-9L; }
+bool equals(T a, S b) { return abs(a - b) < 1e-9; }
 ```
 
 ### Próximo maior/menor elemento
