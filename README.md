@@ -1,3 +1,5 @@
+<!-- After converting to pdf I recommend to print at: https://bookbinder.app/ -->
+
 # Notebook
 
 # Sumário
@@ -46,6 +48,8 @@
     * Segmento
     * Triângulo
     * Polígono
+    * Quadrilátero *
+
 * Utils
   * Aritmética modular
   * Big integer
@@ -183,7 +187,7 @@ bool intersects(const pair<T, T>& P, const pair<T, T>& Q,
 
 ### Orientação de ponto
 
-Retorna: Valor que representa a orientação do ponto
+Retorna: Valor que representa a orientação do ponto `P` em relação ao segmento `AB`
 
 ```c++
 // D = 0: P in line
@@ -193,6 +197,23 @@ template<typename T>
 T D(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
     return (A.x * B.y + A.y * P.x + B.x * P.y) -
            (P.x * B.y + P.y * A.x + B.x * A.y);
+}
+```
+
+Retorna: Se o ponto `Q` está antes no sentido anti horário em relação ao ponto `R`, centrado em `P`
+
+```c++
+// true if Q is before R in counter clock-wise order, centered in P
+template<typename T>
+bool ccw(pair<T, T> P, pair<T, T> Q, pair<T, T> R) {
+    static const vvll qo( { { 2, 3 }, { 1, 4 } } );
+    Q.x -= P.x, Q.y -= P.y, R.x -= P.x, R.y -= P.y, P.x = 0, P.y = 0;
+    auto qqx = Q.x >= 0, qqy = Q.y >= 0;
+    auto rqx = R.x >= 0, rqy = R.y >= 0;
+    if (qqx != rqx || qqy != rqy) return qo[qqx][qqy] > qo[rqx][rqy];
+    return equals(D(P, Q, R), 0) ?
+           (Q.x * Q.x - Q.y * Q.y) < (R.x * R.x - R.y * R.y) :
+           D(P, Q, R) > 0;
 }
 ```
 
@@ -1378,6 +1399,8 @@ quantidade de pontos interiores com coordenadas inteiras e `B`
 os pontos da borda com coordenadas inteiras
 
 > maior quantidade de divisores de um número `< 10^18` é `107520`
+
+> maior quantidade de divisores de um número `< 10^6` é `239`
 
 > maior diferença entre dois primos consecutivos `< 10^18` é `1476`
 
