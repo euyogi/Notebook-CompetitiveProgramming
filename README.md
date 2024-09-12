@@ -48,8 +48,6 @@
     * Segmento
     * Triângulo
     * Polígono
-    * Quadrilátero *
-
 * Utils
   * Aritmética modular
   * Big integer
@@ -800,14 +798,13 @@ vll factors(ll x) {
 
 Parâmetros:
 
-* `(n)`: Intervalo máximo para operações `[1, n]`
+* `(n)`: Intervalo máximo para operações `[0, n]`
 
 Métodos:
 
+* `setOf(x)`: Retorna o representante do conjunto que contém `x`
 * `mergeSetsOf(x, y)`: Junta os conjuntos que contém `x` e `y`
 * `sameSet(x, y)`: Retorna se `x` e `y` estão contidos no mesmo conjunto
-* `setOf(x)`: Retorna o representante do conjunto que contém `x`
-* `sizeOfSet(s)`: Retorna quantos elementos estão contidos no conjunto representado por `s`
 
 ```c++
 struct DSU {
@@ -921,6 +918,11 @@ Métodos:
 * `count(i, x)`: retorna ocorrências de `x` no intervalo `[l, r]`
 * `kTh(l, r, k)`: retorna o `k`-ésimo (`k > 0`) menor elemento no intervalo `[l, r]`
 
+Adendos:
+
+* 0-indexed
+* Ordena o vetor `xs` no processo de construção
+
 ```c++
 struct WaveletTree {
     WaveletTree(vll& xs, ll n) : wav(2 * n), n(n) {
@@ -953,7 +955,7 @@ struct WaveletTree {
         ll l = 0, r = n - 1, node = 1;
         while (l != r) {
             ll M = (l + r) / 2;
-            ll seqm_l = wav[node][i], seqm_r =  wav[node][j];
+            ll seqm_l = wav[node][i], seqm_r = wav[node][j];
             if  (k <= seqm_r - seqm_l) i = seqm_l,  j = seqm_r,  r = M,     node = 2 * node;
             else k -= seqm_r - seqm_l, i -= seqm_l, j -= seqm_r, l = M + 1, node = 2 * node + 1;
         }
@@ -1495,6 +1497,8 @@ inteiras, `gcd(y, x)` representa a quantidade de pontos inteiros nela
 > Maior quantidade de divisores de um número `< 10^6` é `239`
 
 > Maior diferença entre dois primos consecutivos `< 10^18` é `1476`
+
+> Maior quantidade de elementos na fatoração de um número `< 10^6` é 19
 
 > Princípio da inclusão e exclusão: a união de `n` conjuntos é
 a soma de todas as interseções de um número ímpar de conjuntos menos
