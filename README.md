@@ -1070,7 +1070,7 @@ struct Segment {
     // closest point in segment to P
     pair<T, T> closest(const pair<T, T>& P) {
         Line<T> r(A, B);
-        double Q = r.closest(P);
+        pd Q = r.closest(P);
         double distA = dist(A, P), distB = dist(B, P);
         if (this->contains(Q)) return Q;
         if (distA <= distB) return A;
@@ -1169,7 +1169,7 @@ struct Circle {
         return { {C.x + r * cos(d1), C.y + r * sin(d1)},
                  {C.x + r * cos(d2), C.y + r * sin(d2)} };
     }
-    
+
     static Circle<double> from3(const pair<T, T>& P, const pair<T, T>& Q, const pair<T, T>& R) {
         T a = 2 * (Q.x - P.x), b = 2 * (Q.y - P.y);
         T c = 2 * (R.x - P.x), d = 2 * (R.y - P.y);
@@ -1528,6 +1528,11 @@ inteiras, `gcd(y, x)` representa a quantidade de pontos inteiros nela
 > Princípio da inclusão e exclusão: a união de `n` conjuntos é
 a soma de todas as interseções de um número ímpar de conjuntos menos
 a soma de todas as interseções de um número par de conjuntos
+
+> Ao trabalhar com distância de Manhattam podemos fazer a transformação
+(x, y) -> (x + y, x - y) para transformar os pontos e ter uma equivalência
+com a distância de Chebyshev, de forma que agora conseguimos tratar x e y
+separadamente, fazer boundig boxes, etc
 
 ### Igualdade flutuante
 
