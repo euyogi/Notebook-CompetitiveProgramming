@@ -55,6 +55,7 @@
   * Compressão de coordenadas
   * Fatos
   * Igualdade flutuante
+  * Intervalos com soma S
   * Próximo maior/menor elemento
 
 # Template
@@ -90,9 +91,9 @@ void solve() {
 
 signed main() {
     cin.tie(nullptr)->sync_with_stdio(false);
-    ll _t = 1;
-    // cin >> _ts;
-    while (_t--) solve();
+    ll t = 1;
+    // cin >> t;
+    while (t--) solve();
 }
 ```
 
@@ -1523,15 +1524,15 @@ inteiras, `gcd(y, x)` representa a quantidade de pontos inteiros nela
 
 > Maior diferença entre dois primos consecutivos `< 10^18` é `1476`
 
-> Maior quantidade de elementos na fatoração de um número `< 10^6` é 19
+> Maior quantidade de elementos na fatoração de um número `< 10^6` é `19`
 
 > Princípio da inclusão e exclusão: a união de `n` conjuntos é
 a soma de todas as interseções de um número ímpar de conjuntos menos
 a soma de todas as interseções de um número par de conjuntos
 
 > Ao trabalhar com distância de Manhattam podemos fazer a transformação
-(x, y) -> (x + y, x - y) para transformar os pontos e ter uma equivalência
-com a distância de Chebyshev, de forma que agora conseguimos tratar x e y
+`(x, y) -> (x + y, x - y)` para transformar os pontos e ter uma equivalência
+com a distância de Chebyshev, de forma que agora conseguimos tratar `x` e `y`
 separadamente, fazer boundig boxes, etc
 
 ### Igualdade flutuante
@@ -1541,18 +1542,34 @@ template<typename T, typename S>
 bool equals(T a, S b) { return abs(a - b) < 1e-9; }
 ```
 
+### Intervalos com soma S
+
+```c++
+// can change to count odd/even intervals
+unordered_map<ll> freq;
+ll ans = 0, psum = 0;
+freq[0] = 1;
+for (int x : xs) {
+    psum += x;
+    ans += freq[psum - s];
+    ++freq[psum];
+}
+```
+
 ### Próximo maior/menor elemento
 
 ```c++
-// get index of next smallest to the right
-// easy to change to be to left or biggest
-vll next(xs.size(), xs.size());
-stack<ll> prevs;
-
-for (ll i = xs.size() - 1; i >= 0; --i) {
-    while (!prevs.empty() and xs[prevs.top()] >= xs[i])
-        prevs.pop();
-    if (!prevs.empty()) next[i] = prevs.top();
-    prevs.emplace(i);
+// get vector with indexes of closest biggest
+vll closests(const vll& xs) {
+    vll closest(xs.size(), -1)
+    stack<ll> prevs;
+    // 0 .. n: closest to the left
+    for (ll i = 0; i < xs.size(); ++i) { // change to >= if want the smallest
+        while (!prevs.empty() and xs[prevs.top()] <= xs[i])
+            prevs.pop();
+        if (!prevs.empty()) next[i] = prevs.top();
+        prevs.emplace(i);
+    }
+    return closest;
 }
 ```
