@@ -709,7 +709,7 @@ vll toBase(ll x, ll b) {
         res.emplace_back(x % b);
         x /= b;
     }
-    reverse(all(res);
+    reverse(all(res));
     return res;
 }
 ```
@@ -915,49 +915,39 @@ Parâmetros:
 
 Métodos:
 
-* `count(i, x)`: retorna ocorrências de `x` no intervalo `[l, r]`
 * `kTh(l, r, k)`: retorna o `k`-ésimo (`k > 0`) menor elemento no intervalo `[l, r]`
 
 Adendos:
 
 * 0-indexed
 * Ordena o vetor `xs` no processo de construção
+* Capaz de retornar as ocorrências de um elemento em um intervalo, mas dá para fazer isso
+  trivialmente com uma matriz com as posições dos elementos e uma busca binária
 
 ```c++
 struct WaveletTree {
     WaveletTree(vll& xs, ll n) : wav(2 * n), n(n) {
         auto build = [&](auto&& self, auto b, auto e, ll l, ll r, ll node) {
             if (l == r) return;
-            ll M = (l + r) / 2, i = 0;
+            ll m = (l + r) / 2, i = 0;
             wav[node].resize(e - b + 1);
             for (auto it = b; it != e; ++it, ++i)
-                wav[node][i + 1] = wav[node][i] + (*it <= M);
-            auto p = stable_partition(b, e, [M](ll i) { return i <= M; });
-            self(self, b, p, l, M, 2 * node);
-            self(self, p, e, M + 1, r, 2 * node + 1);
+                wav[node][i + 1] = wav[node][i] + (*it <= m);
+            auto p = stable_partition(b, e, [m](ll i) { return i <= m; });
+            self(self, b, p, l, m, 2 * node);
+            self(self, p, e, m + 1, r, 2 * node + 1);
         };
         build(build, all(xs), 0, n - 1, 1);
-    }
-
-    ll count(ll i, ll x) {
-        ++i;
-        ll l = 0, r = n - 1, node = 1;
-        while (l != r) {
-            ll M = (l + r) / 2;
-            if (x <= M) i =  wav[node][i], r = M,   node = 2 * node;
-            else        i -= wav[node][i], l = M+1, node = 2 * node + 1;
-        }
-        return i;
     }
 
     ll kTh(ll i, ll j, ll k) {
         ++j;
         ll l = 0, r = n - 1, node = 1;
         while (l != r) {
-            ll M = (l + r) / 2;
+            ll m = (l + r) / 2;
             ll seqm_l = wav[node][i], seqm_r = wav[node][j];
-            if  (k <= seqm_r - seqm_l) i = seqm_l,  j = seqm_r,  r = M,     node = 2 * node;
-            else k -= seqm_r - seqm_l, i -= seqm_l, j -= seqm_r, l = M + 1, node = 2 * node + 1;
+            if  (k <= seqm_r - seqm_l) i  = seqm_l, j  = seqm_r, r = m,     node = 2 * node;
+            else k -= seqm_r - seqm_l, i -= seqm_l, j -= seqm_r, l = m + 1, node = 2 * node + 1;
         }
         return l;
     }
@@ -1511,6 +1501,8 @@ void compress(vll& xs) {
 
 > `a + b = (a & b) + (a | b)`
 
+> `a + b = a ^ b + 2 * (a & b)`
+
 > Sendo `A` a área da treliça, `I` a
 quantidade de pontos interiores com coordenadas inteiras e `B`
 os pontos da borda com coordenadas inteiras, `A = I + B / 2 - 1`
@@ -1525,6 +1517,9 @@ inteiras, `gcd(y, x)` representa a quantidade de pontos inteiros nela
 > Maior diferença entre dois primos consecutivos `< 10^18` é `1476`
 
 > Maior quantidade de elementos na fatoração de um número `< 10^6` é `19`
+
+> A quantidade de divisores de um número é a multiplicação de cada potência
+  da fatoração + 1
 
 > Princípio da inclusão e exclusão: a união de `n` conjuntos é
 a soma de todas as interseções de um número ímpar de conjuntos menos
