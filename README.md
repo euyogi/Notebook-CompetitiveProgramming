@@ -11,10 +11,8 @@
     * Ângulo entre segmentos
     * Distância entre pontos
     * Envoltório convexo
-    * Interseção de segmentos
     * Mediatriz
     * Orientação de ponto
-    * Ponto contido em segmento
     * Rotação de ponto
   * Grafos
     * Binary lifting
@@ -91,9 +89,9 @@ void solve() {
 
 signed main() {
     cin.tie(nullptr)->sync_with_stdio(false);
-    ll t = 1;
-    // cin >> t;
-    while (t--) solve();
+    ll t_ = 1;
+    // cin >> t_;
+    while (t_--) solve();
 }
 ```
 
@@ -103,50 +101,57 @@ signed main() {
 #pragma once
 #include <bits/stdc++.h>
 using namespace std;
-template <typename T>
-concept is_iterable = requires(T &&x) { begin(x); } && !is_same_v<remove_cvref_t<T>, string>;
-string B(string s) { return "\033[94m" + s + "\033[m"; }
-void p(char c) { cerr << "\033[93m\'" << c << "\'\033[m"; }
-void p(string s) { cerr << "\033[93m\"" << s << "\"\033[m"; }
-template <typename T> void p(T&& x) {
-    int i = 0;
-    if constexpr (is_iterable<T>) { // nested iterable
-        cerr << B("{");
-        if (size(x) && is_iterable<decltype(*begin(x))>) {
-            cerr << "\n";
-            for (auto&& y : x) cerr << setw(2) << left << i++, p(y), cerr << "\n";
+namespace DBG {
+    template<typename T>
+    concept is_iterable = requires(T &&x) { begin(x); } &&
+                                            !is_same_v<remove_cvref_t<T>, string>;
+    template<typename T>
+    void C(T s, int n) { cerr << "\033[9" << n << 'm' << s << "\033[m"; }
+    template<typename T>
+    void B(T s) { return C(s, 4); }
+    void p(char c)   { C("\'" + string({c}) + "\'", 3); }
+    void p(string s) { C("\"" + s + "\"", 3); }
+    void p(bool b) { b ? C('T', 2) : C('F', 1); }
+    template<typename T> void p(T x) {
+        int i = 0;
+        if constexpr (is_iterable<T>) { // nested iterable
+            B('{');
+            if (size(x) && is_iterable<decltype(*begin(x))>) {
+                cerr << '\n';
+                for (auto y : x) cerr << setw(2) << left << i++, p(y), cerr << '\n';
+            }
+            else // normal iterable
+                for (auto y : x) i++ ? B(',') : B(""), p(y);
+            B('}');
+        } else if constexpr (requires { x.pop(); }) { // stacks, queues
+            auto copy = x;
+            B('{');
+            while (!copy.empty()) {
+                if (i++) B(',');
+                if constexpr (requires { x.top(); }) p(copy.top());
+                else p(copy.front());
+                copy.pop();
+            }
+            B('}');
         }
-        else // normal iterable
-            for (auto&& y : x) cerr << (i++ ? B(",") : ""), p(y);
-        cerr << B("}");
-    } else if constexpr (requires { x.pop(); }) { // stacks, queues
-        auto copy = x;
-        cerr << B("{");
-        while (!copy.empty()) {
-            cerr << (i++ ? B(",") : "");
-            if constexpr (requires { x.top(); }) p(copy.top());
-            else p(copy.front());
-            copy.pop();
-        }
-        cerr << B("}");
+        else if constexpr (requires { get<0>(x); }) { // pairs, tuples
+            B('(');
+            apply([&](auto... args) { ((i++ ? B(',') : B(""), p(args)), ...); }, x);
+            B(')');
+        } else C(x, 5);
     }
-    else if constexpr (requires { get<0>(x); }) { // pairs, tuples
-        cerr << B("("), apply([&](auto... args) {
-            ((cerr << (i++ ? B(",") : ""), p(args)), ...); }, x);
-        cerr << B(")");
-    } else cerr << "\033[35m" << x << "\033[m";
-
-template <typename T, typename... V>
-void printer(const char* names, T&& head, V&& ...tail) {
-    int i = 0;
-    for (int bs = 0; names[i] && (names[i] != ',' || bs); ++i)
-        bs += !strchr(")>}", names[i]) - !strchr("(<{", names[i]);
-    cerr.write(names, i), cerr << B(" = "), p(head);
-    if constexpr (sizeof...(tail))
-        cerr << B(" |"), printer(names + i + 1, tail...);
-    else cerr << "\n";
+    template<typename T, typename... V>
+    void printer(const char* names, T head, V ...tail) {
+        cerr << fixed;
+        int i = 0;
+        for (int bs = 0; names[i] && (names[i] != ',' || bs); ++i)
+            bs += !strchr(")>}", names[i]) - !strchr("(<{", names[i]);
+        cerr.write(names, i), B(" = "), p(head);
+        if constexpr (sizeof...(tail)) B(" |"), printer(names + i + 1, tail...);
+        else cerr << '\n';
+    }
 }
-#define dbg(...) std::cerr << B(to_string(__LINE__) + ": "), printer(#__VA_ARGS__, __VA_ARGS__)
+#define dbg(...) DBG::B(__LINE__), DBG::B(": "), DBG::printer(#__VA_ARGS__, __VA_ARGS__)
 ```
 
 # Algoritmos
@@ -224,28 +229,6 @@ vector<pair<T, T>> monotoneChain(vector<pair<T, T>> ps) {
 }
 ```
 
-### Interseção de segmentos
-
-Parâmetros:
-
-* `(P, Q, R, S)`: Pontos extremos dos segmentos `PQ` e `RS`
-
-Retorna: Se há interseção entre os segmentos
-
-```c++
-template<typename T>
-ll dir(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
-    ll d = D(A, B, P);
-    return (d > 0 ? 1 : (d < 0 ? -1 : 0));
-}
-
-template<typename T>
-bool intersects(const pair<T, T>& P, const pair<T, T>& Q,
-                const pair<T, T>& R, const pair<T, T>& S) {
-    return (dir(P, Q, R) != dir(P, Q, S)) && (dir(R, S, P) != dir(R, S, Q));
-}
-```
-
 ### Orientação de ponto
 
 Parâmetros:
@@ -301,24 +284,6 @@ Line<T> perpendicularBisector(const pair<T, T>& P, const pair<T, T>& Q) {
     T a = 2 * (Q.x - P.x), b = 2 * (Q.y - P.y);
     T c = (P.x * P.x + P.y * P.y) - (Q.x * Q.x + Q.y * Q.y);
     return { a, b, c };
-}
-```
-
-### Ponto contido em segmento
-
-Parâmetros:
-
-* `(A, B)`: Pontos extremos do segmento `AB`
-* `(P)`: Ponto alvo
-
-Retorna: Se o ponto está contido no segmento
-
-```c++
-template<typename T>
-bool contains(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
-    T xmin = min(A.x, B.x), xmax = max(A.x, B.x), ymin = min(A.y, B.y), ymax = max(A.y, B.y);
-    if (P.x < xmin || P.x > xmax || P.y < ymin || P.y > ymax) return false;
-    return equals((P.y - A.y) * (B.x - A.x), (P.x - A.x) * (B.y - A.y));
 }
 ```
 
@@ -1040,14 +1005,17 @@ template<typename T>
 struct Segment {
     Segment(const pair<T, T>& P, const pair<T, T>& Q) : A(P), B(Q) {}
 
-    bool contains(const pair<T, T>& P) {
-        double dAB = dist(A, B), dAP = dist(A, P), dPB = dist(P, B);
-        return equals(dAP + dPB, dAB);
+    bool contains(const pair<T, T>& P) const {
+        T xmin = min(A.x, B.x), xmax = max(A.x, B.x), ymin = min(A.y, B.y), ymax = max(A.y, B.y);
+        if (P.x < xmin || P.x > xmax || P.y < ymin || P.y > ymax) return false;
+        return equals((P.y - A.y) * (B.x - A.x), (P.x - A.x) * (B.y - A.y));
     }
 
     bool intersect(const Segment& r) {
         T d1 = D(A, B, r.A),  d2 = D(A, B, r.B);
         T d3 = D(r.A, r.B, A), d4 = D(r.A, r.B, B);
+        d1 /= d1 ? abs(d1) : 1, d2 /= d2 ? abs(d2) : 1;
+        d3 /= d3 ? abs(d3) : 1, d4 /= d4 ? abs(d4) : 1;
 
         if ((equals(d1, 0) and contains(r.A)) or (equals(d2, 0) and contains(r.B)))
             return true;
@@ -1221,7 +1189,7 @@ Métodos:
 enum Class { EQUILATERAL, ISOSCELES, SCALENE };
 enum Angles { RIGHT, ACUTE, OBTUSE };
 
-template <typename T>
+template<typename T>
 struct Triangle {
     Triangle(pair<T, T> P, pair<T, T> Q, pair<T, T> R)
         : A(P), B(Q), C(R), a(dist(A, B)), b(dist(B, C)), c(dist(C, A)) {}
@@ -1308,7 +1276,7 @@ Métodos:
 * `apothem()`: Retorna valor da apótema
 
 ```c++
-template <typename T>
+template<typename T>
 struct Polygon {
     // should be clock ordered
     Polygon(const vector<pair<T, T>>& ps)
@@ -1503,9 +1471,9 @@ void compress(vll& xs) {
 
 > `a + b = a ^ b + 2 * (a & b)`
 
-> Sendo `A` a área da treliça, `I` a
-quantidade de pontos interiores com coordenadas inteiras e `B`
-os pontos da borda com coordenadas inteiras, `A = I + B / 2 - 1`
+> Sendo `A` a área da treliça, `I` a quantidade de pontos interiores
+com coordenadas inteiras e `B` os pontos da borda com coordenadas
+inteiras, `A = I + B / 2 - 1`. Assim como, `I = (2A + 2 - B) / 2`
 
 > Sendo `y/x` o coeficiente angular de uma reta com coordenadas
 inteiras, `gcd(y, x)` representa a quantidade de pontos inteiros nela
