@@ -821,7 +821,7 @@ rb_tree_tag, tree_order_statistics_node_update>;
 
 Parâmetros:
 
-* `(n)`: Intervalo máximo para operações `[0, n)`
+* `(n_)`: Intervalo máximo para operações `[0, n_)`
 
 Métodos:
 
@@ -834,9 +834,9 @@ Métodos:
 template<typename T>
 struct Segtree {
     Segtree() = default;
-    Segtree(ll n) : seg(4 * n, DEF), lzy(4 * n), n(n) {}
+    Segtree(ll n_) : seg(4 * n_, DEF), lzy(4 * n_), n(n_) {}
 
-    T setQuery(ll i, ll j, T x = LLONG_MIN, ll l = 0, ll r = -1, ll node = 1) {
+    T setQuery(ll i, ll j, ll x = LLONG_MIN, ll l = 0, ll r = -1, ll node = 1) {
         if (r == -1) r = n - 1;
         if (lzy[node]) unlazy(node, l, r);
         if (j < l or i > r) return DEF;
@@ -865,7 +865,7 @@ private:
         lzy[node] = 0;
     }
 
-    T DEF = 0; // change accordingly
+    T DEF = {}; // change accordingly
     vector<T> seg, lzy;
     ll n;
 };
