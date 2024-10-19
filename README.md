@@ -7,6 +7,11 @@
 * Template
 * Debug
 * Algoritmos
+  * Árvores
+    * Binary lifting
+    * Centróide
+    * Euler tour
+    * Menor ancestral comum (LCA)
   * Geometria
     * Ângulo entre segmentos
     * Distância entre pontos
@@ -15,13 +20,12 @@
     * Orientação de ponto
     * Rotação de ponto
   * Grafos
-    * Binary lifting
+    * Bellman-Ford*
     * BFS 0/1
     * Dijkstra
-    * Euler tour
-    * Floyd Warshall
+    * Floyd-Warshall
+    * Kosaraju*
     * Kruskal (Árvore geradora mínima)
-    * Menor ancestral comum (LCA)
     * Ordenação topológica
   * Outros
     * Maior subsequência comum (LCS)
@@ -104,23 +108,23 @@ using namespace std;
 namespace DBG {
     template<typename T>
     concept is_iterable = requires(T &&x) { begin(x); } &&
-                                            !is_same_v<remove_cvref_t<T>, string>;
+                                           !is_same_v<remove_cvref_t<T>, string>;
     template<typename T>
     void C(T s, int n) { cerr << "\033[9" << n << 'm' << s << "\033[m"; }
     template<typename T>
-    void B(T s) { return C(s, 4); }
+    void B(T s)      { return C(s, 4); }
     void p(char c)   { C("\'" + string({c}) + "\'", 3); }
     void p(string s) { C("\"" + s + "\"", 3); }
-    void p(bool b) { b ? C('T', 2) : C('F', 1); }
-    template<typename T> void p(T x) {
+    void p(bool b)   { b ? C('T', 2) : C('F', 1); }
+    template<typename T>
+    void p(T x) {
         int i = 0;
         if constexpr (is_iterable<T>) { // nested iterable
             B('{');
             if (size(x) && is_iterable<decltype(*begin(x))>) {
                 cerr << '\n';
                 for (auto y : x) cerr << setw(2) << left << i++, p(y), cerr << '\n';
-            }
-            else // normal iterable
+            } else // normal iterable
                 for (auto y : x) i++ ? B(',') : B(""), p(y);
             B('}');
         } else if constexpr (requires { x.pop(); }) { // stacks, queues
@@ -133,8 +137,7 @@ namespace DBG {
                 copy.pop();
             }
             B('}');
-        }
-        else if constexpr (requires { get<0>(x); }) { // pairs, tuples
+        } else if constexpr (requires { get<0>(x); }) { // pairs, tuples
             B('(');
             apply([&](auto... args) { ((i++ ? B(',') : B(""), p(args)), ...); }, x);
             B(')');
@@ -305,17 +308,17 @@ pd rotate(const pair<T, T>& P, double radians) {
 }
 ```
 
-## Grafos
+## Árvores
 
 ### Binary lifting
 
 Parâmetros:
 
-* `(n)`: Quantidade de vértices/elementos
-* `(u)`: Vértice/elemento alvo
+* `(n)`: Quantidade de nós
+* `(u)`: Nó alvo
 * `(k)`: Ordem do ancestral
 
-Retorna: `k` ancestral do vértice/elemento `u`
+Retorna: `k` ancestral do nó `u`
 
 ```c++
 const int LOG = 31; // aproximate log of n, + 1
@@ -323,33 +326,95 @@ const int LOG = 31; // aproximate log of n, + 1
 vector<vector<int>> parent;
 vector<int> depth;
 
-// if isn't a graph delete parameter g
 void populate(int n, vector<vector<int>>& g) {
     parent.resize(n + 1, vector<int>(LOG));
     depth.resize(n + 1);
 
-    // initialize known relationships (e.g.: dfs if it's a graph)
-
-    // parent[1][0] = 1;
-    // auto dfs = [&](auto&& self, int u, int p) -> void {
-    //     for (ll v : g[u]) if (v != p) {
-    //         parent[v][0] = u;
-    //         depth[v] = depth[u] + 1;
-    //         self(self, v, u);
-    //     }
-    // }; dfs(dfs, 1, 0);
+    // initialize known relationships
+    auto dfs = [&](auto&& self, int u, int p = 1) -> void {
+        parent[u][0] = p;
+        depth[u] = depth[p] + 1;
+        for (int v : g[u]) if (v != p)
+            self(self, v, u);
+    }; dfs(dfs, 1);
 
     for (ll i = 1; i < LOG; ++i) for (ll j = 1; j <= n; ++j)
         parent[j][i] = parent[ parent[j][i - 1] ][i - 1];
 }
 
 int kthAncestor(int u, int k) {
-    // if (k > depth[u]) return -1; // no kth ancestor
+    if (k > depth[u]) return -1; // no kth ancestor
     for (int i = 0; i < LOG; ++i) if (k & (1 << i))
         u = parent[u][i];
     return u;
 }
 ```
+
+### Centróide
+
+Parâmetros:
+
+* `(g)`: Árvore alvo
+* `(u)`: Raiz da árvore
+
+Retorna: Nova raiz na qual nenhuma outra subárvore tem mais que `n / 2` nós
+
+```c++
+ll centroid(const vvll& g, ll u, ll p = 0) {
+    for (ll v : g[u]) if (v != p)
+        if (subtree[v] * 2 > g.size() - 1)
+            return centroid(g, v, u);
+    return u;
+}
+```
+
+### Euler Tour
+
+Parâmetros:
+
+`(g)`: Árvore alvo
+`(u)`: Raíz da árvore
+
+Adendos:
+
+* Técnica para linearizar árvores, popularemos um vetor de início e fim para cada nó que marca
+  o intervalo que representa a subárvore de cada nó. Assim, podemos fazer operações nesses intervalos
+
+```c++
+ll timer = 0;
+vll st, et; // resize to quantity of nodes + 1!
+void eulerTour(const vvll& g, ll u, ll p = 0) {
+    st[u] = timer++;
+    for (ll v : g[u]) if (v != p) eulerTour(g, v, u);
+    et[u] = timer++;
+}
+```
+
+### Menor ancestral comum (LCA)
+
+Parâmetros:
+
+* `(u, v)`: Nós alvos
+
+Retorna: Menor ancestral comum entre os nós
+
+Adendos:
+
+* Necessário a técnica de binary lifting
+
+```c++
+int LCA(int u, int v) {
+    if (depth[u] < depth[v]) swap(u, v);
+    int k = depth[u] - depth[v];
+    u = kthAncestor(u, k);
+    if (u == v) return u;
+    for (int i = LOG - 1; i >= 0; --i) if (parent[u][i] != parent[v][i])
+        u = parent[u][i], v = parent[v][i];
+    return parent[u][0];
+}
+```
+
+## Grafos
 
 ### BFS 0/1
 
@@ -395,7 +460,7 @@ pair<vll, vll> dijkstra(const vvpll& g, ll s) {
     while (!pq.empty()) {
         auto [t, u] = pq.top(); pq.pop();
         if (t > ds[u]) continue;
-        for (auto& [w, v] : g[u])
+        for (auto [w, v] : g[u])
             if (t + w < ds[v]) {
                 ds[v] = t + w, pre[v] = u;
                 pq.emplace(ds[v], v);
@@ -412,29 +477,6 @@ vll getPath(const vll& pre, ll s, ll u) {
     } while (u != s);
     reverse(all(p));
     return p;
-}
-```
-
-### Euler Tour
-
-Parâmetros:
-
-`(g)`: Árvore alvo
-`(u)`: Raíz da árvore
-
-Adendos:
-
-* Técnica para linearizar árvores, popularemos um vetor de início e fim para cada nó, que marca a
-  posição do nó num vetor imaginário. possibilitando, por exemplo, o uso de segment trees nessa
-  árvore para realizar operações em todos os filhos de um certo nó.
-
-```c++
-ll timer = 0;
-vll st, et; // resize to quantity of nodes + 1!
-void eulerTour(const vvll& g, u, ll p = -1) {
-    st[u] = timer++;
-    for (ll v : g[u]) if (v != p) eulerTour(v, u);
-    et[u] = timer++;
 }
 ```
 
@@ -484,26 +526,6 @@ pair<vtll, ll> kruskal(vtll& edges, ll n) {
         edges_sum += w;
     }
     return { mst, edges_sum };
-}
-```
-
-### Menor ancestral comum (LCA)
-
-Parâmetros:
-
-* `(u, v)`: Vértices/elementos alvos
-
-Retorna: Menor ancestral comum os vértices
-
-```c++
-int LCA(int u, int v) {
-    if (depth[u] < depth[v]) swap(u, v);
-    int k = depth[u] - depth[v];
-    u = kthAncestor(u, k);
-    if (u == v) return u;
-    for (int i = LOG - 1; i >= 0; --i) if (parent[u][i] != parent[v][i])
-        u = parent[u][i], v = parent[v][i];
-    return parent[u][0];
 }
 ```
 
