@@ -1,10 +1,21 @@
-<!-- Booklet print: https://bookbinder.app/ (A4, Duplex, 2 PPS, Scale Pages, 155 PW, Booklet) -->
+---
+body_class: markdown-body
+highlight_style: default
+pdf_options:
+  format: A4
+  margin: 5mm
+css: |-
+  .markdown-body { font-size: 11px; }
+---
+
+<!-- Booklet print: https://bookbinder.app (A4, Duplex, 2 PPS, Booklet) -->
 
 # Notebook
 
 # Sumário
 
 * Template
+* Flags
 * Debug
 * Algoritmos
   * Árvores
@@ -20,11 +31,11 @@
     * Orientação de ponto
     * Rotação de ponto
   * Grafos
-    * Bellman-Ford*
+    * Bellman-Ford
     * BFS 0/1
     * Dijkstra
     * Floyd-Warshall
-    * Kosaraju*
+    * Kosaraju
     * Kruskal (Árvore geradora mínima)
     * Ordenação topológica
   * Outros
@@ -99,6 +110,11 @@ signed main() {
 }
 ```
 
+# Flags
+
+`g++ -g -O0 -std=c++20 -fsanitize=undefined -Wall -Wshadow
+-Wextra -Wno-sign-compare -DLOCAL -D_GLIBCXX_DEBUG -Idbg`
+
 # Debug
 
 ```c++
@@ -107,54 +123,52 @@ signed main() {
 using namespace std;
 namespace DBG {
     template<typename T>
-    concept is_iterable = requires(T &&x) { begin(x); } &&
-                                           !is_same_v<remove_cvref_t<T>, string>;
-    template<typename T>
-    void C(T s, int n) { cerr << "\033[9" << n << 'm' << s << "\033[m"; }
-    template<typename T>
-    void B(T s)      { return C(s, 4); }
-    void p(char c)   { C("\'" + string({c}) + "\'", 3); }
-    void p(string s) { C("\"" + s + "\"", 3); }
-    void p(bool b)   { b ? C('T', 2) : C('F', 1); }
+    void C(T x, int n = 4)  { cerr << fixed << "\033[9" << n << 'm' << x << "\033[m"; }
+    void p(char x)          { C("\'" + string({x}) + "\'", 3); }
+    void p(string x)        { C("\"" + x + "\"", 3); }
+    void p(bool x)          { x ? C('T', 2) : C('F', 1); }
+    void p(vector<bool> xs) { for (bool x : xs) p(x); }
+    static int m = 0;
     template<typename T>
     void p(T x) {
         int i = 0;
-        if constexpr (is_iterable<T>) { // nested iterable
-            B('{');
-            if (size(x) && is_iterable<decltype(*begin(x))>) {
+        if constexpr (requires { begin(x); }) { // nested iterable
+            C('{');
+            if (size(x) && requires { begin(*begin(x)); }) {
                 cerr << '\n';
-                for (auto y : x) cerr << setw(2) << left << i++, p(y), cerr << '\n';
+                m += 2;
+                for (auto y : x)
+                    cerr << string(m, ' ') << setw(2) << left << i++, p(y), cerr << '\n';
+                cerr << string(m -= 2, ' ');
             } else // normal iterable
-                for (auto y : x) i++ ? B(',') : B(""), p(y);
-            B('}');
+                for (auto y : x) i++ ? C(',') : C(""), p(y);
+            C('}');
         } else if constexpr (requires { x.pop(); }) { // stacks, queues
-            auto copy = x;
-            B('{');
-            while (!copy.empty()) {
-                if (i++) B(',');
-                if constexpr (requires { x.top(); }) p(copy.top());
-                else p(copy.front());
-                copy.pop();
+            C('{');
+            while (!x.empty()) {
+                if (i++) C(',');
+                if constexpr (requires { x.top(); }) p(x.top());
+                else p(x.front());
+                x.pop();
             }
-            B('}');
+            C('}');
         } else if constexpr (requires { get<0>(x); }) { // pairs, tuples
-            B('(');
-            apply([&](auto... args) { ((i++ ? B(',') : B(""), p(args)), ...); }, x);
-            B(')');
+            C('(');
+            apply([&](auto... args) { ((i++ ? C(',') : C(""), p(args)), ...); }, x);
+            C(')');
         } else C(x, 5);
     }
     template<typename T, typename... V>
     void printer(const char* names, T head, V ...tail) {
-        cerr << fixed;
         int i = 0;
         for (int bs = 0; names[i] && (names[i] != ',' || bs); ++i)
             bs += !strchr(")>}", names[i]) - !strchr("(<{", names[i]);
-        cerr.write(names, i), B(" = "), p(head);
-        if constexpr (sizeof...(tail)) B(" |"), printer(names + i + 1, tail...);
+        cerr.write(names, i), C(" = "), p(head);
+        if constexpr (sizeof...(tail)) C(" |"), printer(names + i + 1, tail...);
         else cerr << '\n';
     }
 }
-#define dbg(...) DBG::B(__LINE__), DBG::B(": "), DBG::printer(#__VA_ARGS__, __VA_ARGS__)
+#define dbg(...) DBG::C(__LINE__), DBG::C(": "), DBG::printer(#__VA_ARGS__, __VA_ARGS__)
 ```
 
 # Algoritmos
@@ -193,7 +207,9 @@ Retorna: Distância entre os pontos
 
 ```c++
 template<typename T, typename S>
-double dist(const pair<T, T>& P, const pair<S, S>& Q) { return hypot(P.x - Q.x, P.y - Q.y); }
+double dist(const pair<T, T>& P, const pair<S, S>& Q) {
+    return hypot(P.x - Q.x, P.y - Q.y);
+}
 ```
 
 ### Envoltório convexo
@@ -202,7 +218,8 @@ Parâmetros:
 
 * `(ps)`: Vetor de pontos (representando polígono, sem repetir ponto inicial)
 
-Retorna: Vetor dos pontos do envoltório convexo (repetindo ponto inicial, sentido anti-horário)
+Retorna: Vetor dos pontos do envoltório convexo (repetindo ponto inicial,
+sentido anti-horário)
 
 ```c++
 template<typename T>
@@ -227,7 +244,7 @@ vector<pair<T, T>> monotoneChain(vector<pair<T, T>> ps) {
     reverse(all(ps));
     upper = makeHull(ps);
     lower.pop_back();
-    lower.insert(lower.end(), all(upper));
+    lower.emplace(lower.end(), all(upper));
     return lower;
 }
 ```
@@ -258,7 +275,8 @@ Parâmetros:
 
 * `(P, Q, O)`: Pontos alvo, `O` é o centro de referência
 
-Retorna: Se o ponto `P` vem antes do ponto `Q` no sentido anti-horário em relação ao centro
+Retorna: Se o ponto `P` vem antes do ponto `Q` no sentido anti-horário em relação ao
+centro
 
 ```c++
 template<typename T>
@@ -314,6 +332,7 @@ pd rotate(const pair<T, T>& P, double radians) {
 
 Parâmetros:
 
+* `(g)`: Árvore/Grafo alvo
 * `(n)`: Quantidade de nós
 * `(u)`: Nó alvo
 * `(k)`: Ordem do ancestral
@@ -321,31 +340,33 @@ Parâmetros:
 Retorna: `k` ancestral do nó `u`
 
 ```c++
-const int LOG = 31; // aproximate log of n, + 1
+const ll LOG = 31; // aproximate log of n, + 1
 
-vector<vector<int>> parent;
-vector<int> depth;
+vvll parent;
+vll depth;
 
-void populate(int n, vector<vector<int>>& g) {
-    parent.resize(n + 1, vector<int>(LOG));
+void populate(const vvll& g, ll n) {
+    parent.resize(n + 1, vll(LOG));
     depth.resize(n + 1);
 
     // initialize known relationships
-    auto dfs = [&](auto&& self, int u, int p = 1) -> void {
+    auto dfs = [&](auto&& self, ll u, ll p = 1) -> void {
         parent[u][0] = p;
         depth[u] = depth[p] + 1;
-        for (int v : g[u]) if (v != p)
+        for (ll v : g[u]) if (v != p)
             self(self, v, u);
     }; dfs(dfs, 1);
 
-    for (ll i = 1; i < LOG; ++i) for (ll j = 1; j <= n; ++j)
-        parent[j][i] = parent[ parent[j][i - 1] ][i - 1];
+    for (ll i = 1; i < LOG; ++i)
+        for (ll j = 1; j <= n; ++j)
+            parent[j][i] = parent[ parent[j][i - 1] ][i - 1];
 }
 
-int kthAncestor(int u, int k) {
+ll kthAncestor(ll u, ll k) {
     if (k > depth[u]) return -1; // no kth ancestor
-    for (int i = 0; i < LOG; ++i) if (k & (1 << i))
-        u = parent[u][i];
+    for (ll i = 0; i < LOG; ++i)
+        if (k & (1 << i))
+            u = parent[u][i];
     return u;
 }
 ```
@@ -377,15 +398,19 @@ Parâmetros:
 
 Adendos:
 
-* Técnica para linearizar árvores, popularemos um vetor de início e fim para cada nó que marca
-  o intervalo que representa a subárvore de cada nó. Assim, podemos fazer operações nesses intervalos
+* Técnica para linearizar árvores, popularemos um vetor de início e fim para cada nó
+que marca o intervalo que representa a subárvore de cada nó. Assim, podemos fazer
+operações nesses intervalos
 
 ```c++
 ll timer = 0;
-vll st, et; // resize to quantity of nodes + 1!
+vll st, et;
 void eulerTour(const vvll& g, ll u, ll p = 0) {
+    if (st.empty())
+        st.resize(g.size(), et.resize(g.size());
     st[u] = timer++;
-    for (ll v : g[u]) if (v != p) eulerTour(g, v, u);
+    for (ll v : g[u]) if (v != p)
+        eulerTour(g, v, u);
     et[u] = timer++;
 }
 ```
@@ -403,18 +428,54 @@ Adendos:
 * Necessário a técnica de binary lifting
 
 ```c++
-int LCA(int u, int v) {
+ll LCA(ll u, ll v) {
     if (depth[u] < depth[v]) swap(u, v);
-    int k = depth[u] - depth[v];
+    ll k = depth[u] - depth[v];
     u = kthAncestor(u, k);
     if (u == v) return u;
-    for (int i = LOG - 1; i >= 0; --i) if (parent[u][i] != parent[v][i])
-        u = parent[u][i], v = parent[v][i];
+    for (ll i = LOG - 1; i >= 0; --i)
+        if (parent[u][i] != parent[v][i])
+            u = parent[u][i], v = parent[v][i];
     return parent[u][0];
 }
 ```
 
 ## Grafos
+
+### Bellman-Ford
+
+Parâmetros:
+
+`(g)`: Grafo alvo
+`(s): Vértice inicial (menores distâncias em relação à ele)
+
+Retorna: Vetor com as menores distâncias de cada vértice para `s
+
+```c++
+vll spfa(const vvpll& g, ll s) {
+    vll ds(g.size(), LLONG_MAX), cnt(g.size());
+    vector<bool> in_queue(g.size());
+    queue<ll> q;
+    d[s] = 0; q.emplace(s);
+    in_queue[s] = true;
+    while (!q.empty()) {
+        ll u = q.front(); q.pop();
+        in_queue[u] = false;
+        for (auto [w, v] : g[u])
+            if (ds[u] + w < ds[v]) {
+                ds[v] = d[u] + w;
+                if (!in_queue[v]) {
+                    q.emplace(v);
+                    in_queue[v] = true;
+                    cnt[v]++;
+                    if (cnt[v] > g.size())
+                        return {}; // negative cycle
+                }
+            }
+    }
+    return ds;
+}
+```
 
 ### BFS 0/1
 
@@ -493,14 +554,78 @@ vvll floydWarshall(const vvpll& g) {
     ll n = g.size();
     vvll ds(n + 1, vll(n + 1, INT_MAX));
 
-    for (ll u = 1; u < n; u++) for (auto [w, v] : g[u])
-        ds[u][v] = w;
+    for (ll u = 1; u < n; u++)
+        for (auto [w, v] : g[u]) {
+            ds[u][v] = w;
+            if (ds[v][v] < 0)
+                ds[v][v] = INT_MIN; // negative cycle
+        }
 
     for (ll k = 1; k < n; k++)
-        for (ll u = 1; u < n; u++) for (ll v = 1; v < n; v++)
-            ds[u][v] = min(ds[u][v], ds[u][k] + ds[k][u]);
+        for (ll u = 1; u < n; u++)
+            for (ll v = 1; v < n; v++)
+                if (ds[u][k] != INT_MAX and ds[k][v] != INT_MAX) {
+                    if (ds[k][k] == INT_MIN)
+                        ds[u][v] = INT_MIN;
+                    else {
+                        ds[u][v] = min(ds[u][v], ds[u][k] + ds[k][v]);
+                        if (ds[v][v] < 0)
+                            ds[v][v] = INT_MIN;
+                    }
+                }
 
     return ds;
+}
+```
+
+### Kosaraju
+
+Parâmetros:
+
+`(g)`: Grafo alvo
+
+Retorna: Par com o grafo condensado e as componentes fortemente conectadas
+
+```c++
+pair<vvll, vvll> kosaraju(const vvll& g) {
+    vvll g_inv(g.size()), g_cond(g.size()), scc;
+    vector<bool> vs(g.size());
+    vll order, reprs(g.size());
+
+    auto dfs = [&vs](auto&& self, const vvll& g, vll& out, ll u) -> ll {
+        ll repr = u;
+        vs[u] = true;
+        for (ll v : g[u]) if (!vs[v])
+            repr = min(repr, self(self, g, out, v));
+        out.emplace_back(u);
+        return repr;
+    };
+
+    for (ll u = 1; u < g.size(); ++u) {
+        for (ll v : g[u])
+            g_inv[v].emplace_back(u);
+        if (!vs[u])
+            dfs(dfs, g, order, u);
+    }
+
+    vs.assign(g.size(), false);
+    reverse(all(order));
+
+    for (ll u : order)
+        if (!vs[u]) {
+            vll cc;
+            ll repr = dfs(dfs, g_inv, cc, u);
+            scc.emplace_back(cc);
+            for (ll v : cc)
+                reprs[v] = repr;
+        }
+
+    for (ll u = 1; u < g.size(); ++u)
+        for (ll v : g[u])
+            if (reprs[u] != reprs[v])
+                g_cond[reprs[u]].emplace_back(reprs[v]);
+
+    return { g_cond, scc };
 }
 ```
 
@@ -511,8 +636,8 @@ Parâmetros:
 * `(edges)`: Vetor de arestas `(peso, u, v)`
 * `(n)`: Quantidade máxima de vértices
 
-Retorna: Vetor com a árvore geradora mínima (se o grafo for conectado), representado por vetor
-de arestas e a soma total de suas arestas
+Retorna: Vetor com a árvore geradora mínima (se o grafo for conectado), representado
+por vetor de arestas e a soma total de suas arestas
 
 ```c++
 pair<vtll, ll> kruskal(vtll& edges, ll n) {
@@ -540,17 +665,23 @@ Retorna: Vetor com a ordenação topológica do grafo (vazio se houver ciclo)
 ```c++
 vll topologicalSort(vvll& g) {
     vll degree(g.size()), res;
-    for (ll i = 1; i < g.size(); ++i) for (ll u : g[i]) ++degree[u];
+    for (ll u = 1; u < g.size(); ++u)
+        for (ll v : g[i])
+            ++degree[v];
 
     // lower values bigger priorities
     priority_queue<ll, vll, greater<>> pq;
-    for (ll i = 1; i < degree.size(); ++i) if (degree[i] == 0) pq.emplace(i);
+    for (ll u = 1; u < degree.size(); ++u)
+        if (degree[u] == 0)
+            pq.emplace(u);
 
     while (!pq.empty()) {
         ll u = pq.top();
         pq.pop();
         res.emplace_back(u);
-        for (ll v : g[u]) if (--degree[v] == 0) pq.emplace(v);
+        for (ll v : g[u])
+            if (--degree[v] == 0)
+                pq.emplace(v);
     }
 
     if (res.size() != g.size()) return {}; // cycle
@@ -570,7 +701,7 @@ Retorna: Tamanho da maior subsequência comum
 
 ```c++
 template<typename T>
-ll LCS(vector<T>& xs, vector<T>& ys) {
+ll LCS(T& xs, T& ys) {
     vvll dp(xs.size() + 1, vll(ys.size() + 1));
     for (ll i = 1; i <= xs.size(); ++i)
         for (ll j = 1; j <= ys.size(); ++j)
@@ -604,56 +735,65 @@ pll LIS(vll& xs) {
 
 ### Soma de prefixo 2D
 
-Construção:
-
 ```c++
-vvll psum(n + 1, vll(n + 1));
-for (ll i = 0; i < n; ++i)
-    for (ll j = 0; j < n; ++j) {
-        // sum side and up rectangles, add element and remove intersection
-        psum[i + 1][j + 1] = psum[i + 1][j] + psum[i][j + 1];
-        psum[i + 1][j + 1] += xs[i][j] - psum[i][j];
+struct Psum2D {
+    Psum2D(const vvll& xs) : n(xs.size()), m(xs[0].size()), psum(n + 1, vll(m + 1)) {
+        for (ll i = 0; i < n; ++i)
+            for (ll j = 0; j < m; ++j) {
+                // sum side and up rectangles, add element and remove intersection
+                psum[i + 1][j + 1] = psum[i + 1][j] + psum[i][j + 1];
+                psum[i + 1][j + 1] += xs[i][j] - psum[i][j];
+            }
     }
-```
 
-Consulta:
+    ll query(ll lx, ll hx, ll ly, ll hy) {
+        // sum total rectangle, subtract side and up and add intersection
+        ll res = psum[hy][hx] - psum[hy][lx - 1] - psum[ly - 1][hx];
+        res += psum[ly - 1][lx - 1];
+        return res;
+    }
 
-```c++
-// sum total rectangle, subtract side and up and add intersection
-ll ans = psum[hy][hx] - psum[hy][lx - 1] - psum[ly - 1][hx];
-ans += psum[ly - 1][lx - 1];
+    ll n, m;
+    vvll psum;
+}
 ```
 
 ### Soma de prefixo 3D
 
-Construção:
-
 ```c++
-vvvll psum(n + 1, vvll(n + 1, vll(n + 1)));
-for (ll i = 1; i <= n; ++i)
-    for (ll j = 1; j <= n; ++j)
-        for (ll k = 1; k <= n; ++k) {
-            // sum cuboids from sides and down
-            psum[i][j][k] = psum[i - 1][j][k] + psum[i][j - 1][k] + psum[i][j][k - 1];
-            // subtract intersections
-            psum[i][j][k] -= psum[i][j - 1][k - 1] + psum[i - 1][j][k - 1] +
-                                                     psum[i - 1][j - 1][k];
-            // re-sum missing cuboid and add element
-            psum[i][j][k] += psum[i - 1][j - 1][k - 1] + xs[i - 1][j - 1][k - 1];
-        }
-```
+struct Psum3D {
+    Psum3D(const vvvll& xs)
+            : n(xs.size()), m(xs[0].size()), o(xs[0][0].size()),
+              psum(n + 1, vvll(m + 1, vll(o + 1)) {
+        for (ll i = 1; i <= n; ++i)
+            for (ll j = 1; j <= m; ++j)
+                for (ll k = 1; k <= o; ++k) {
+                    // sum cuboids from sides and down
+                    psum[i][j][k] = psum[i - 1][j][k] + psum[i][j - 1][k] +
+                                                        psum[i][j][k - 1];
+                    // subtract intersections
+                    psum[i][j][k] -= psum[i][j - 1][k - 1] + psum[i - 1][j][k - 1] +
+                                                             psum[i - 1][j - 1][k];
+                    // re-sum missing cuboid and add element
+                    psum[i][j][k] += psum[i - 1][j - 1][k - 1] + xs[i - 1][j - 1][k - 1];
+                }
+    }
 
-Consulta:
+    ll query(ll lx, ll hx, ll ly, ll hy, ll lz, ll hz) {
+        // sum total cuboid, subtract sides and down
+        ll res = psum[hx][hy][hz]     - psum[lx - 1][hy][hz] -
+                 psum[hx][ly - 1][hz] - psum[hx][hy][lz - 1];
+        // add intersections
+        res += psum[hx][ly - 1][lz - 1] + psum[lx - 1][hy][lz - 1] +
+                                          psum[lx - 1][ly - 1][hz];
+        // re-subtract missing cuboid
+        res -= psum[lx - 1][ly - 1][lz - 1];
+        return res;
+    }
 
-```c++
-// sum total cuboid, subtract sides and down
-ll ans = psum[hx][hy][hz] - psum[lx - 1][hy][hz] -
-         psum[hx][ly - 1][hz] - psum[hx][hy][lz - 1];
-// add intersections
-ans += psum[hx][ly - 1][lz - 1] + psum[lx - 1][hy][lz - 1] +
-                                  psum[lx - 1][ly - 1][hz];
-// re-subtract missing cuboid
-ans -= psum[lx - 1][ly - 1][lz - 1];
+    ll n, m, o;
+    vvvll psum;
+}
 ```
 
 ## Matemática
@@ -714,7 +854,8 @@ pair<vll, vll> sieve(ll n) {
     vll ps, spf(n + 1);
     for (ll i = 2; i <= n; i++) if (!spf[i]) {
         ps.emplace_back(i);
-        for (ll j = i; j <= n; j += i) if (!spf[j]) spf[j] = i;
+        for (ll j = i; j <= n; j += i)
+            if (!spf[j]) spf[j] = i;
     }
     return { ps, spf };
 }
@@ -748,10 +889,11 @@ Retorna: Vetor desordenado com todos os divisores
 ```c++
 vll divisors(ll x) {
     vll ds {1};
-    for (ll i = 2; i * i <= x; ++i) if (x % i == 0) {
-        ds.emplace_back(i);
-        if (i * i != x) ds.emplace_back(x / i);
-    }
+    for (ll i = 2; i * i <= x; ++i)
+        if (x % i == 0) {
+            ds.emplace_back(i);
+            if (i * i != x) ds.emplace_back(x / i);
+        }
     return ds;
 }
 ```
@@ -821,7 +963,7 @@ struct DSU {
 Métodos:
 
 * `find_by_order(k)`: Retorna um iterador para o `k`-ésimo elemento (à partir do 0)
-* `order_of_key(x)`: Retorna quantos elementos existem menor/igual que `x` (depende do parâmetro)
+* `order_of_key(x)`:  Retorna quantos elementos existem menor que `x`
 
 Adendos:
 
@@ -833,9 +975,8 @@ Adendos:
 
 using namespace __gnu_pbds;
 
-// if less<>, then unique elements
 template<typename T>
-using RBT = tree<T, null_type, less_equal<>,
+using RBT = tree<T, null_type, less<>,
 rb_tree_tag, tree_order_statistics_node_update>;
 ```
 
@@ -933,8 +1074,11 @@ struct WaveletTree {
         while (l != r) {
             ll m = (l + r) / 2;
             ll seqm_l = wav[node][i], seqm_r = wav[node][j];
-            if  (k <= seqm_r - seqm_l) i  = seqm_l, j  = seqm_r, r = m,     node = 2 * node;
-            else k -= seqm_r - seqm_l, i -= seqm_l, j -= seqm_r, l = m + 1, node = 2 * node + 1;
+            node *= 2;
+            if (k <= seqm_r - seqm_l)
+                i = seqm_l, j = seqm_r, r = m;
+            else
+                k -= seqm_r - seqm_l, i -= seqm_l, j -= seqm_r, l = m + 1, ++node;
         }
         return l;
     }
@@ -993,7 +1137,9 @@ struct Line {
         return { x, y };
     }
 
-    double distance(const pair<T, T>& P) { return abs(a * P.x + b * P.y + c) / hypot(a, b); }
+    double distance(const pair<T, T>& P) {
+        return abs(a * P.x + b * P.y + c) / hypot(a, b);
+    }
 
     pd closest(const pair<T, T>& P) {
         double den = a * a + b * b;
@@ -1028,7 +1174,8 @@ struct Segment {
     Segment(const pair<T, T>& P, const pair<T, T>& Q) : A(P), B(Q) {}
 
     bool contains(const pair<T, T>& P) const {
-        T xmin = min(A.x, B.x), xmax = max(A.x, B.x), ymin = min(A.y, B.y), ymax = max(A.y, B.y);
+        T xmin = min(A.x, B.x), xmax = max(A.x, B.x);
+        T ymin = min(A.y, B.y), ymax = max(A.y, B.y);
         if (P.x < xmin || P.x > xmax || P.y < ymin || P.y > ymax) return false;
         return equals((P.y - A.y) * (B.x - A.x), (P.x - A.x) * (B.y - A.y));
     }
@@ -1151,7 +1298,8 @@ struct Circle {
                  {C.x + r * cos(d2), C.y + r * sin(d2)} };
     }
 
-    static Circle<double> from3(const pair<T, T>& P, const pair<T, T>& Q, const pair<T, T>& R) {
+    static Circle<double> from3(const pair<T, T>& P, const pair<T, T>& Q,
+                                                     const pair<T, T>& R) {
         T a = 2 * (Q.x - P.x), b = 2 * (Q.y - P.y);
         T c = 2 * (R.x - P.x), d = 2 * (R.y - P.y);
         double det = a * d - b * c;
@@ -1174,9 +1322,13 @@ struct Circle {
             c = { ps[i], 0 };
             for (ll j = 0; j < i; ++j) {
                 if (c.position(ps[j]) != OUT) continue;
-                c = { { (ps[i].x + ps[j].x) / 2.0, (ps[i].y + ps[j].y) / 2.0 }, dist(ps[i], ps[j]) / 2.0 };
+                c = {
+                    { (ps[i].x + ps[j].x) / 2.0, (ps[i].y + ps[j].y) / 2.0 },
+                       dist(ps[i], ps[j]) / 2.0
+                };
                 for (ll k = 0; k < j; ++k)
-                    if (c.position(ps[k]) == OUT) c = from3(ps[i], ps[j], ps[k]);
+                    if (c.position(ps[k]) == OUT)
+                        c = from3(ps[i], ps[j], ps[k]);
             }
         }
         return c;
@@ -1201,8 +1353,8 @@ Métodos:
 * `anglesClassification()`: Retorna valor que representa a classificação do triângulo
 * `barycenter()`: Retorna ponto de interseção entre as medianas
 * `circumradius()`: Retorna valor do raio da circunferência circunscrita
-* `circumcenter()`: Retorna ponto de interseção entre as as retas perpendiculares que interceptam
-                    nos pontos médios
+* `circumcenter()`: Retorna ponto de interseção entre as as retas perpendiculares que
+                    interceptam nos pontos médios
 * `inradius()`: Retorna valor do raio da circunferência inscrita
 * `incenter(c)`: Retorna ponto de interseção entre as bissetrizes
 * `orthocenter(P, Q)`: Retorna ponto de interseção entre as alturas
@@ -1217,7 +1369,8 @@ struct Triangle {
         : A(P), B(Q), C(R), a(dist(A, B)), b(dist(B, C)), c(dist(C, A)) {}
 
     T area() {
-        T det = (A.x * B.y + A.y * C.x + B.x * C.y) - (C.x * B.y + C.y * A.x + B.x * A.y);
+        T det = (A.x * B.y + A.y * C.x + B.x * C.y) -
+                (C.x * B.y + C.y * A.x + B.x * A.y);
         if (is_floating_point_v<T>) return 0.5 * abs(det);
         return abs(det);
     }
@@ -1251,7 +1404,8 @@ struct Triangle {
 
     pd circumcenter() {
         double D = 2 * (A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y));
-        T A2 = A.x * A.x + A.y * A.y, B2 = B.x * B.x + B.y * B.y, C2 = C.x * C.x + C.y * C.y;
+        T A2 = A.x * A.x + A.y * A.y, B2 = B.x * B.x + B.y * B.y,
+                                      C2 = C.x * C.x + C.y * C.y;
         double x = (A2 * (B.y - C.y) + B2 * (C.y - A.y) + C2 * (A.y - B.y)) / D;
         double y = (A2 * (C.x - B.x) + B2 * (A.x - C.x) + C2 * (B.x - A.x)) / D;
         return {x, y};
@@ -1380,7 +1534,7 @@ private:
         T a = S.y - R.y, b = R.x - S.x, c = S.x * R.y - R.x * S.y;
         T u = abs(a * P.x + b * P.y + c);
         T v = abs(a * Q.x + b * Q.y + c);
-        return {(P.x * v + Q.x * u) / (u + v), (P.y * v + Q.y * u) / (u + v)};
+        return { (P.x * v + Q.x * u) / (u + v), (P.y * v + Q.y * u) / (u + v) };
     }
 
     vector<pair<T, T>> vs;
@@ -1407,7 +1561,7 @@ struct Mi {
     friend Mi operator+(Mi a, Mi b) { return a += b; }
     friend Mi operator-(Mi a, Mi b) { return a -= b; }
     friend Mi operator*(Mi a, Mi b) { return a *= b; }
-    friend Mi pow(Mi a, Mi b) {
+    static Mi pow(Mi a, Mi b) {
         return (!b.v ? 1 : pow(a * a, b.v / 2) * (b.v & 1 ? a.v : 1));
     }
 };
@@ -1478,12 +1632,16 @@ ll ceilDiv(ll a, ll b) { return a / b + ((a ^ b) > 0 && a % b != 0); }
 ### Compressão de coordenadas
 
 ```c++
-void compress(vll& xs) {
+unordered_map<ll, ll> compress(vll& xs) {
     ll c = 0;
     set<ll> ys(xs.begin(), xs.end());
     unordered_map<ll, ll> mp;
-    for (ll y : ys) mp[y] = c++;
+    for (ll y : ys) {
+        pm[c] = y;
+        mp[y] = c++;
+    }
     for (ll& x : xs) x = mp[x];
+    return pm;
 }
 ```
 
@@ -1494,11 +1652,16 @@ void compress(vll& xs) {
 > `a + b = a ^ b + 2 * (a & b)`
 
 > Sendo `A` a área da treliça, `I` a quantidade de pontos interiores
-com coordenadas inteiras e `B` os pontos da borda com coordenadas
-inteiras, `A = I + B / 2 - 1`. Assim como, `I = (2A + 2 - B) / 2`
+  com coordenadas inteiras e `B` os pontos da borda com coordenadas
+  inteiras, `A = I + B / 2 - 1`. Assim como, `I = (2A + 2 - B) / 2`
 
 > Sendo `y/x` o coeficiente angular de uma reta com coordenadas
-inteiras, `gcd(y, x)` representa a quantidade de pontos inteiros nela
+  inteiras, `gcd(y, x)` representa a quantidade de pontos inteiros nela
+
+> Ao trabalhar com distância de Manhattam podemos fazer a transformação
+  `(x, y) -> (x + y, x - y)` para transformar os pontos e ter uma equivalência
+  com a distância de Chebyshev, de forma que agora conseguimos tratar `x` e `y`
+  separadamente, fazer boundig boxes, etc
 
 > Maior quantidade de divisores de um número `< 10^18` é `107520`
 
@@ -1509,16 +1672,17 @@ inteiras, `gcd(y, x)` representa a quantidade de pontos inteiros nela
 > Maior quantidade de elementos na fatoração de um número `< 10^6` é `19`
 
 > A quantidade de divisores de um número é a multiplicação de cada potência
-  da fatoração + 1
+  da fatoração `+ 1`
 
 > Princípio da inclusão e exclusão: a união de `n` conjuntos é
-a soma de todas as interseções de um número ímpar de conjuntos menos
-a soma de todas as interseções de um número par de conjuntos
+  a soma de todas as interseções de um número ímpar de conjuntos menos
+  a soma de todas as interseções de um número par de conjuntos
 
-> Ao trabalhar com distância de Manhattam podemos fazer a transformação
-`(x, y) -> (x + y, x - y)` para transformar os pontos e ter uma equivalência
-com a distância de Chebyshev, de forma que agora conseguimos tratar `x` e `y`
-separadamente, fazer boundig boxes, etc
+> Sejam `p` e `q` dois períodos de uma string `s`. Se `p + q − mdc(p, q) ≤ |s|`,
+  então `mdc(p, q)` também é período de `s`
+
+> Relação entre bordas e períodos: A sequência `|s| − |border(s)|, |s| − |border^2(s)|, ..., |s| − |border^k(s)|`
+  é a sequência crescente de todos os possíveis períodos de `s`
 
 ### Igualdade flutuante
 
@@ -1549,7 +1713,7 @@ vll closests(const vll& xs) {
     vll closest(xs.size(), -1)
     stack<ll> prevs;
     // 0 .. n: closest to the left
-    for (ll i = 0; i < xs.size(); ++i) { // change to >= if want the smallest
+    for (ll i = 0; i < xs.size(); ++i) { //       >= if want the smallest
         while (!prevs.empty() and xs[prevs.top()] <= xs[i])
             prevs.pop();
         if (!prevs.empty()) next[i] = prevs.top();
