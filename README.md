@@ -70,6 +70,7 @@ css: |-
   * Igualdade flutuante
   * Intervalos com soma S
   * Próximo maior/menor elemento
+  * Soma de todos os intervalos
 
 # Template
 
@@ -340,7 +341,7 @@ Parâmetros:
 Retorna: `k` ancestral do nó `u`
 
 ```c++
-const ll LOG = 31; // aproximate log of n, + 1
+const ll LOG = 31; // ceil log of n
 
 vvll parent;
 vll depth;
@@ -1720,5 +1721,18 @@ vll closests(const vll& xs) {
         prevs.emplace(i);
     }
     return closest;
+}
+```
+
+### Soma de todos os intervalos
+
+```c++
+ll sumAllIntervals(const vll& xs) {
+    ll sum = 0, opens = 0;
+    for (ll i = 0; i < xs.size(); ++i) {
+        opens += xs.size() - 2 * i;
+        sum += xs[i] * opens;
+    }
+    return sum;
 }
 ```
