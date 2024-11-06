@@ -457,22 +457,28 @@ vll spfa(const vvpll& g, ll s) {
     vll ds(g.size(), LLONG_MAX), cnt(g.size());
     vector<bool> in_queue(g.size());
     queue<ll> q;
-    d[s] = 0; q.emplace(s);
+    ds[s] = 0; q.emplace(s);
     in_queue[s] = true;
     while (!q.empty()) {
         ll u = q.front(); q.pop();
         in_queue[u] = false;
-        for (auto [w, v] : g[u])
-            if (ds[u] + w < ds[v]) {
-                ds[v] = d[u] + w;
+        for (auto [w, v] : g[u]) {
+            if (ds[u] == LLONG_MIN) {
+                if (ds[v] != LLONG_MIN)
+                    q.emplace(v);
+                ds[v] = LLONG_MIN;
+            }
+            else if (ds[u] + w < ds[v]) {
+                ds[v] = ds[u] + w;
                 if (!in_queue[v]) {
                     q.emplace(v);
                     in_queue[v] = true;
                     cnt[v]++;
                     if (cnt[v] > g.size())
-                        return {}; // negative cycle
+                        ds[v] = LLONG_MIN; // negative cycle
                 }
             }
+        }
     }
     return ds;
 }
@@ -555,12 +561,14 @@ vvll floydWarshall(const vvpll& g) {
     ll n = g.size();
     vvll ds(n + 1, vll(n + 1, INT_MAX));
 
-    for (ll u = 1; u < n; u++)
+    for (ll u = 1; u < n; u++) {
+        ds[u][u] = 0;
         for (auto [w, v] : g[u]) {
-            ds[u][v] = w;
-            if (ds[v][v] < 0)
-                ds[v][v] = INT_MIN; // negative cycle
+            ds[u][v] = min(ds[u][v], w);
+            if (ds[u][u] < 0)
+                ds[u][u] = INT_MIN; // negative cycle
         }
+    }
 
     for (ll k = 1; k < n; k++)
         for (ll u = 1; u < n; u++)
@@ -570,8 +578,8 @@ vvll floydWarshall(const vvpll& g) {
                         ds[u][v] = INT_MIN;
                     else {
                         ds[u][v] = min(ds[u][v], ds[u][k] + ds[k][v]);
-                        if (ds[v][v] < 0)
-                            ds[v][v] = INT_MIN;
+                        if (ds[u][u] < 0)
+                            ds[u][u] = INT_MIN;
                     }
                 }
 
@@ -889,8 +897,8 @@ Retorna: Vetor desordenado com todos os divisores
 
 ```c++
 vll divisors(ll x) {
-    vll ds {1};
-    for (ll i = 2; i * i <= x; ++i)
+    vll ds;
+    for (ll i = 1; i * i <= x; ++i)
         if (x % i == 0) {
             ds.emplace_back(i);
             if (i * i != x) ds.emplace_back(x / i);
