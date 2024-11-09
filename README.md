@@ -78,43 +78,46 @@ css: |-
 #include <bits/stdc++.h>
 using namespace std;
 
-#ifdef LOCAL
-#include "dbg.h"
+#ifdef whereistheorganization
+#include "dbg/dbg.h"
 #else
 #define dbg(...)
 #endif
 
-using ll = long long;
-using vll = vector<ll>;
-using vvll = vector<vll>;
-using pll = pair<ll, ll>;
-using vpll = vector<pll>;
+using ll    = long long;
+using vll   = vector<ll>;
+using vvll  = vector<vll>;
+using pll   = pair<ll, ll>;
+using vpll  = vector<pll>;
 using vvpll = vector<vpll>;
-using tll = tuple<ll, ll, ll>;
-using vtll = vector<tll>;
-using pd = pair<double, double>;
+using tll   = tuple<ll, ll, ll>;
+using vtll  = vector<tll>;
+using pd    = pair<double, double>;
 
-#define all(xs) xs.begin(), xs.end()
+#define all(xs)       xs.begin(),   xs.end()
 #define found(x, xs) (xs.find(x) != xs.end())
 #define x first
 #define y second
+#define eb emplace_back
+#define e emplace
+#define rep(i, a, b) for (ll i = a; i  < b; ++i)
+#define per(i, a, b) for (ll i = a; i >= b; --i)
 
-void solve() {
-
+void startingtobeunreadable() {
 }
 
 signed main() {
     cin.tie(nullptr)->sync_with_stdio(false);
-    ll t_ = 1;
-    // cin >> t_;
-    while (t_--) solve();
+    ll t = 1;
+    // cin >> t;
+    while (t--) startingtobeunreadable();
 }
 ```
 
 # Flags
 
-`g++ -g -O0 -std=c++20 -fsanitize=undefined -Wall -Wshadow
--Wextra -Wno-sign-compare -DLOCAL -D_GLIBCXX_DEBUG -Idbg`
+`g++ -g -O0 -std=c++20 -fsanitize=undefined -Wall -Wshadow -Wextra
+-Wno-sign-compare -Winvalid-pch -Dwhereistheorganization -D_GLIBCXX_DEBUG`
 
 # Debug
 
@@ -450,11 +453,11 @@ Parâmetros:
 `(g)`: Grafo alvo
 `(s): Vértice inicial (menores distâncias em relação à ele)
 
-Retorna: Vetor com as menores distâncias de cada vértice para `s
+Retorna: Vetor com as menores distâncias de cada vértice para `s` e vetor de trajetos
 
 ```c++
-vll spfa(const vvpll& g, ll s) {
-    vll ds(g.size(), LLONG_MAX), cnt(g.size());
+pair<vll, vll> spfa(const vvpll& g, ll s) {
+    vll ds(g.size(), LLONG_MAX), cnt(g.size()), pre = cnt;
     vector<bool> in_queue(g.size());
     queue<ll> q;
     ds[s] = 0; q.emplace(s);
@@ -470,17 +473,20 @@ vll spfa(const vvpll& g, ll s) {
             }
             else if (ds[u] + w < ds[v]) {
                 ds[v] = ds[u] + w;
+                cnt[v]++;
+                pre[v] = u;
+                if (cnt[v] == g.size()) {
+                    ds[v] = LLONG_MIN;
+                    ds[0] = v; // a node that has -inf dist
+                }
                 if (!in_queue[v]) {
                     q.emplace(v);
                     in_queue[v] = true;
-                    cnt[v]++;
-                    if (cnt[v] > g.size())
-                        ds[v] = LLONG_MIN; // negative cycle
                 }
             }
         }
     }
-    return ds;
+    return { ds, pre };
 }
 ```
 
@@ -675,7 +681,7 @@ Retorna: Vetor com a ordenação topológica do grafo (vazio se houver ciclo)
 vll topologicalSort(vvll& g) {
     vll degree(g.size()), res;
     for (ll u = 1; u < g.size(); ++u)
-        for (ll v : g[i])
+        for (ll v : g[u])
             ++degree[v];
 
     // lower values bigger priorities
@@ -693,7 +699,7 @@ vll topologicalSort(vvll& g) {
                 pq.emplace(v);
     }
 
-    if (res.size() != g.size()) return {}; // cycle
+    if (res.size() != g.size() - 1) return {}; // cycle
     return res;
 }
 ```
@@ -1735,11 +1741,26 @@ vll closests(const vll& xs) {
 ### Soma de todos os intervalos
 
 ```c++
+// by counting in how many intervals an element appear
 ll sumAllIntervals(const vll& xs) {
     ll sum = 0, opens = 0;
     for (ll i = 0; i < xs.size(); ++i) {
         opens += xs.size() - 2 * i;
         sum += xs[i] * opens;
+    }
+    return sum;
+}
+```
+
+```c++
+// by adding each prefix sum
+ll sumAllIntervals(const vll& xs) {
+    ll sum = 0, csum = 0 ll n = xs.size();
+    for (ll i = 0; i < n; ++i)
+        csum += xs[i] * (n - i);
+    for (ll i = 0; i < n; ++i) {
+        sum += csum;
+        csum -= xs[i] * (n - i);
     }
     return sum;
 }
