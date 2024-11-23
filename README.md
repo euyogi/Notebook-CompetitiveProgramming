@@ -78,46 +78,86 @@ css: |-
 #include <bits/stdc++.h>
 using namespace std;
 
-#ifdef whereistheorganization
+#ifdef croquete
 #include "dbg/dbg.h"
 #else
 #define dbg(...)
 #endif
 
-using ll    = long long;
-using vll   = vector<ll>;
-using vvll  = vector<vll>;
-using pll   = pair<ll, ll>;
-using vpll  = vector<pll>;
-using vvpll = vector<vpll>;
-using tll   = tuple<ll, ll, ll>;
-using vtll  = vector<tll>;
-using pd    = pair<double, double>;
+#define ll    long long
+#define vll   vector<ll>
+#define vvll  vector<vll>
+#define pll   pair<ll, ll>
+#define vpll  vector<pll>
+#define vvpll vector<vpll>
+#define tll   tuple<ll, ll, ll>
+#define vtll  vector<tll>
+#define pd    pair<double, double>
+#define vs    vector<string>
+#define vb    vector<bool>
 
-#define all(xs)       xs.begin(),   xs.end()
+#define all(xs)      xs.begin(), xs.end()
 #define found(x, xs) (xs.find(x) != xs.end())
-#define x first
-#define y second
-#define eb emplace_back
-#define e emplace
-#define rep(i, a, b) for (ll i = a; i  < b; ++i)
-#define per(i, a, b) for (ll i = a; i >= b; --i)
+#define rep(i, a, b) for (ll i = (a); i < (ll)(b); ++i)
+#define per(i, a, b) for (ll i = (a); i >= (ll)(b); --i)
 
-void startingtobeunreadable() {
+#define x    first
+#define y    second
+#define eb   emplace_back
+#define endl '\n'
+
+struct Jump {};
+Jump jump;
+
+istream& operator>>(istream& in, Jump) {
+    in.iword(0) = 1;
+    return in;
 }
 
+ostream& operator<<(ostream& os, Jump) {
+    os.iword(0) = 1;
+    return os;
+}
+
+template <typename T>
+istream& operator>>(istream& in, pair<T, T>& a) {
+    return in >> a.x >> a.y;
+}
+
+template <typename T>
+ostream& operator<<(ostream& os, pair<T, T>& a) {
+    return os << a.x << ' ' << a.y;
+}
+
+template <typename T>
+istream& operator>>(istream& in, vector<T>& xs) {
+    assert(!xs.empty());
+    rep(i, in.iword(0), xs.size()) in >> xs[i];
+    in.iword(0) = 0;
+    return in;
+}
+
+template <typename T>
+ostream& operator<<(ostream& os, vector<T>& xs) {
+    rep(i, os.iword(0), xs.size() - 1) os << xs[i] << ' ';
+    os.iword(0) = 0;
+    return os << xs.back();
+}
+
+void pqnpassa() {}
+
 signed main() {
-    cin.tie(nullptr)->sync_with_stdio(false);
+    cin.tie(0)->sync_with_stdio(0);
     ll t = 1;
     // cin >> t;
-    while (t--) startingtobeunreadable();
+    while (t--) pqnpassa();
 }
 ```
 
 # Flags
 
 `g++ -g -O0 -std=c++20 -fsanitize=undefined -Wall -Wshadow -Wextra
--Wno-sign-compare -Winvalid-pch -Dwhereistheorganization -D_GLIBCXX_DEBUG`
+-Wno-sign-compare -Winvalid-pch -Dcroquete -D_GLIBCXX_DEBUG`
 
 # Debug
 
@@ -126,14 +166,14 @@ signed main() {
 #include <bits/stdc++.h>
 using namespace std;
 namespace DBG {
-    template<typename T>
+    template <typename T>
     void C(T x, int n = 4)  { cerr << fixed << "\033[9" << n << 'm' << x << "\033[m"; }
     void p(char x)          { C("\'" + string({x}) + "\'", 3); }
     void p(string x)        { C("\"" + x + "\"", 3); }
     void p(bool x)          { x ? C('T', 2) : C('F', 1); }
     void p(vector<bool> xs) { for (bool x : xs) p(x); }
     static int m = 0;
-    template<typename T>
+    template <typename T>
     void p(T x) {
         int i = 0;
         if constexpr (requires { begin(x); }) { // nested iterable
@@ -162,7 +202,7 @@ namespace DBG {
             C(')');
         } else C(x, 5);
     }
-    template<typename T, typename... V>
+    template <typename T, typename... V>
     void printer(const char* names, T head, V ...tail) {
         int i = 0;
         for (int bs = 0; names[i] && (names[i] != ',' || bs); ++i)
@@ -188,7 +228,7 @@ Parâmetros:
 Retorna: Menor ângulo entre os segmentos em radianos
 
 ```c++
-template<typename T>
+template <typename T>
 double angle(const pair<T, T>& P, const pair<T, T>& Q,
              const pair<T, T>& R, const pair<T, T>& S) {
     T ux = P.x - Q.x, uy = P.y - Q.y;
@@ -210,7 +250,7 @@ Parâmetros:
 Retorna: Distância entre os pontos
 
 ```c++
-template<typename T, typename S>
+template <typename T, typename S>
 double dist(const pair<T, T>& P, const pair<S, S>& Q) {
     return hypot(P.x - Q.x, P.y - Q.y);
 }
@@ -226,7 +266,7 @@ Retorna: Vetor dos pontos do envoltório convexo (repetindo ponto inicial,
 sentido anti-horário)
 
 ```c++
-template<typename T>
+template <typename T>
 vector<pair<T, T>> makeHull(vector<pair<T, T>>& ps) {
     vector<pair<T, T>> hull;
     for (auto& p : ps) {
@@ -240,7 +280,7 @@ vector<pair<T, T>> makeHull(vector<pair<T, T>>& ps) {
     return hull;
 }
 
-template<typename T>
+template <typename T>
 vector<pair<T, T>> monotoneChain(vector<pair<T, T>> ps) {
     vector<pair<T, T>> lower, upper;
     sort(all(ps));
@@ -269,7 +309,7 @@ Adendos:
 * `D < 0`: `P` À direita
 
 ```c++
-template<typename T>
+template <typename T>
 T D(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
     return (A.x * B.y + A.y * P.x + B.x * P.y) - (P.x * B.y + P.y * A.x + B.x * A.y);
 }
@@ -283,7 +323,7 @@ Retorna: Se o ponto `P` vem antes do ponto `Q` no sentido anti-horário em rela�
 centro
 
 ```c++
-template<typename T>
+template <typename T>
 bool ccw(pair<T, T> P, pair<T, T> Q, pair<T, T> O) {
     static const char qo[2][2] = { { 2, 3 }, { 1, 4 } };
     P.x -= O.x, P.y -= O.y, Q.x -= O.x, Q.y -= O.y, O.x = 0, O.y = 0;
@@ -304,7 +344,7 @@ Parâmetros:
 Retorna: Reta mediatriz ao segmento
 
 ```c++
-template<typename T>
+template <typename T>
 Line<T> perpendicularBisector(const pair<T, T>& P, const pair<T, T>& Q) {
     T a = 2 * (Q.x - P.x), b = 2 * (Q.y - P.y);
     T c = (P.x * P.x + P.y * P.y) - (Q.x * Q.x + Q.y * Q.y);
@@ -322,7 +362,7 @@ Parâmetros:
 Retorna: Ponto rotacionado
 
 ```c++
-template<typename T>
+template <typename T>
 pd rotate(const pair<T, T>& P, double radians) {
     double x = cos(radians) * P.x - sin(radians) * P.y;
     double y = sin(radians) * P.x + cos(radians) * P.y;
@@ -715,7 +755,7 @@ Parâmetros:
 Retorna: Tamanho da maior subsequência comum
 
 ```c++
-template<typename T>
+template <typename T>
 ll LCS(T& xs, T& ys) {
     vvll dp(xs.size() + 1, vll(ys.size() + 1));
     for (ll i = 1; i <= xs.size(); ++i)
@@ -990,7 +1030,7 @@ Adendos:
 
 using namespace __gnu_pbds;
 
-template<typename T>
+template <typename T>
 using RBT = tree<T, null_type, less<>,
 rb_tree_tag, tree_order_statistics_node_update>;
 ```
@@ -1009,7 +1049,7 @@ Métodos:
   correspondente à funcionalidade codificada
 
 ```c++
-template<typename T>
+template <typename T>
 struct Segtree {
     Segtree() = default;
     Segtree(ll n_) : seg(4 * n_, DEF), lzy(4 * n_), n(n_) {}
@@ -1120,7 +1160,7 @@ Métodos:
 * `closest(P)`: Retorna ponto na reta mais próximo de `P`
 
 ```c++
-template<typename T>
+template <typename T>
 struct Line {
     Line(const pair<T, T>& P, const pair<T, T>& Q)
             : a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y) {
@@ -1184,7 +1224,7 @@ Métodos:
 * `closest(P)`: Retorna ponto mais próximo no segmento de `P`
 
 ```c++
-template<typename T>
+template <typename T>
 struct Segment {
     Segment(const pair<T, T>& P, const pair<T, T>& Q) : A(P), B(Q) {}
 
@@ -1249,7 +1289,7 @@ Métodos:
 ```c++
 enum Position { IN, ON, OUT };
 
-template<typename T>
+template <typename T>
 struct Circle {
     Circle(const pair<T, T>& P, T r) : C(P), r(r) {}
 
@@ -1378,7 +1418,7 @@ Métodos:
 enum Class { EQUILATERAL, ISOSCELES, SCALENE };
 enum Angles { RIGHT, ACUTE, OBTUSE };
 
-template<typename T>
+template <typename T>
 struct Triangle {
     Triangle(pair<T, T> P, pair<T, T> Q, pair<T, T> R)
         : A(P), B(Q), C(R), a(dist(A, B)), b(dist(B, C)), c(dist(C, A)) {}
@@ -1467,7 +1507,7 @@ Métodos:
 * `apothem()`: Retorna valor da apótema
 
 ```c++
-template<typename T>
+template <typename T>
 struct Polygon {
     // should be clock ordered
     Polygon(const vector<pair<T, T>>& ps)
@@ -1647,16 +1687,13 @@ ll ceilDiv(ll a, ll b) { return a / b + ((a ^ b) > 0 && a % b != 0); }
 ### Compressão de coordenadas
 
 ```c++
-unordered_map<ll, ll> compress(vll& xs) {
+map<ll, ll> compress(vll& xs) {
     ll c = 0;
-    set<ll> ys(xs.begin(), xs.end());
-    unordered_map<ll, ll> mp;
-    for (ll y : ys) {
-        pm[c] = y;
+    set<ll> ys(all(xs));
+    map<ll, ll> mp;
+    for (ll y : ys)
         mp[y] = c++;
-    }
-    for (ll& x : xs) x = mp[x];
-    return pm;
+    return mp;
 }
 ```
 
@@ -1702,7 +1739,7 @@ unordered_map<ll, ll> compress(vll& xs) {
 ### Igualdade flutuante
 
 ```c++
-template<typename T, typename S>
+template <typename T, typename S>
 bool equals(T a, S b) { return abs(a - b) < 1e-9; }
 ```
 
@@ -1710,13 +1747,16 @@ bool equals(T a, S b) { return abs(a - b) < 1e-9; }
 
 ```c++
 // can change to count odd/even intervals
-unordered_map<ll> freq;
-ll ans = 0, psum = 0;
-freq[0] = 1;
-for (int x : xs) {
-    psum += x;
-    ans += freq[psum - s];
-    ++freq[psum];
+ll countIntervals(vll& xs, ll sum) {
+    map<ll, ll> freq;
+    ll ans = 0, psum = 0;
+    freq[0] = 1;
+    for (ll x : xs) {
+        psum += x;
+        ans += freq[psum - sum];
+        ++freq[psum];
+    }
+    return ans;
 }
 ```
 
@@ -1725,13 +1765,13 @@ for (int x : xs) {
 ```c++
 // get vector with indexes of closest biggest
 vll closests(const vll& xs) {
-    vll closest(xs.size(), -1)
+    vll closest(xs.size(), -1);
     stack<ll> prevs;
     // 0 .. n: closest to the left
     for (ll i = 0; i < xs.size(); ++i) { //       >= if want the smallest
         while (!prevs.empty() and xs[prevs.top()] <= xs[i])
             prevs.pop();
-        if (!prevs.empty()) next[i] = prevs.top();
+        if (!prevs.empty()) closest[i] = prevs.top();
         prevs.emplace(i);
     }
     return closest;
