@@ -93,7 +93,6 @@ using namespace std;
 #define tll   tuple<ll, ll, ll>
 #define vtll  vector<tll>
 #define pd    pair<double, double>
-#define vs    vector<string>
 #define vb    vector<bool>
 
 #define all(xs)      xs.begin(), xs.end()
@@ -101,35 +100,13 @@ using namespace std;
 #define rep(i, a, b) for (ll i = (a); i < (ll)(b); ++i)
 #define per(i, a, b) for (ll i = (a); i >= (ll)(b); --i)
 
-#define x    first
-#define y    second
-#define eb   emplace_back
-#define endl '\n'
+#define x     first
+#define y     second
+#define eb    eb
+#define cinj  (cin.iword(0) = 1, cin)
+#define coutj (cout.iword(0) = 1, cout)
 
-struct Jump {};
-Jump jump;
-
-istream& operator>>(istream& in, Jump) {
-    in.iword(0) = 1;
-    return in;
-}
-
-ostream& operator<<(ostream& os, Jump) {
-    os.iword(0) = 1;
-    return os;
-}
-
-template <typename T>
-istream& operator>>(istream& in, pair<T, T>& a) {
-    return in >> a.x >> a.y;
-}
-
-template <typename T>
-ostream& operator<<(ostream& os, pair<T, T>& a) {
-    return os << a.x << ' ' << a.y;
-}
-
-template <typename T>
+template <typename T>  // read vector
 istream& operator>>(istream& in, vector<T>& xs) {
     assert(!xs.empty());
     rep(i, in.iword(0), xs.size()) in >> xs[i];
@@ -137,7 +114,7 @@ istream& operator>>(istream& in, vector<T>& xs) {
     return in;
 }
 
-template <typename T>
+template <typename T>  // print vector
 ostream& operator<<(ostream& os, vector<T>& xs) {
     rep(i, os.iword(0), xs.size() - 1) os << xs[i] << ' ';
     os.iword(0) = 0;
@@ -275,7 +252,7 @@ vector<pair<T, T>> makeHull(vector<pair<T, T>>& ps) {
             hull.pop_back();
             sz = hull.size();
         }
-        hull.emplace_back(p);
+        hull.eb(p);
     }
     return hull;
 }
@@ -401,14 +378,14 @@ void populate(const vvll& g, ll n) {
             self(self, v, u);
     }; dfs(dfs, 1);
 
-    for (ll i = 1; i < LOG; ++i)
-        for (ll j = 1; j <= n; ++j)
+    rep(i, 1, LOG)
+        rep(j, 1, n + 1)
             parent[j][i] = parent[ parent[j][i - 1] ][i - 1];
 }
 
 ll kthAncestor(ll u, ll k) {
     if (k > depth[u]) return -1; // no kth ancestor
-    for (ll i = 0; i < LOG; ++i)
+    rep(i, 0, LOG)
         if (k & (1 << i))
             u = parent[u][i];
     return u;
@@ -477,7 +454,7 @@ ll LCA(ll u, ll v) {
     ll k = depth[u] - depth[v];
     u = kthAncestor(u, k);
     if (u == v) return u;
-    for (ll i = LOG - 1; i >= 0; --i)
+    per(i, LOG - 1, 0)
         if (parent[u][i] != parent[v][i])
             u = parent[u][i], v = parent[v][i];
     return parent[u][0];
@@ -549,7 +526,7 @@ vll bfs01(const vvpll& g, ll s) {
         for (ll v : g[u])
             if (ds[u] + w < ds[v]) {
                 ds[v] = ds[u] + w;
-                if (w == 1) dq.emplace_back(v)
+                if (w == 1) dq.eb(v)
                 else dq.emplace_front(v);
             }
     }
@@ -586,7 +563,7 @@ pair<vll, vll> dijkstra(const vvpll& g, ll s) {
 vll getPath(const vll& pre, ll s, ll u) {
     vll p { u };
     do {
-        p.emplace_back(pre[u]);
+        p.eb(pre[u]);
         u = pre[u];
     } while (u != s);
     reverse(all(p));
@@ -607,7 +584,7 @@ vvll floydWarshall(const vvpll& g) {
     ll n = g.size();
     vvll ds(n + 1, vll(n + 1, INT_MAX));
 
-    for (ll u = 1; u < n; u++) {
+    rep(u, 1, n)
         ds[u][u] = 0;
         for (auto [w, v] : g[u]) {
             ds[u][v] = min(ds[u][v], w);
@@ -616,9 +593,9 @@ vvll floydWarshall(const vvpll& g) {
         }
     }
 
-    for (ll k = 1; k < n; k++)
-        for (ll u = 1; u < n; u++)
-            for (ll v = 1; v < n; v++)
+    rep(k, 1, n)
+        rep(u, 1, n)
+            rep(v, 1, n)
                 if (ds[u][k] != INT_MAX and ds[k][v] != INT_MAX) {
                     if (ds[k][k] == INT_MIN)
                         ds[u][v] = INT_MIN;
@@ -652,13 +629,13 @@ pair<vvll, vvll> kosaraju(const vvll& g) {
         vs[u] = true;
         for (ll v : g[u]) if (!vs[v])
             repr = min(repr, self(self, g, out, v));
-        out.emplace_back(u);
+        out.eb(u);
         return repr;
     };
 
-    for (ll u = 1; u < g.size(); ++u) {
+    rep(u, 1, g.size()) {
         for (ll v : g[u])
-            g_inv[v].emplace_back(u);
+            g_inv[v].eb(u);
         if (!vs[u])
             dfs(dfs, g, order, u);
     }
@@ -670,15 +647,15 @@ pair<vvll, vvll> kosaraju(const vvll& g) {
         if (!vs[u]) {
             vll cc;
             ll repr = dfs(dfs, g_inv, cc, u);
-            scc.emplace_back(cc);
+            scc.eb(cc);
             for (ll v : cc)
                 reprs[v] = repr;
         }
 
-    for (ll u = 1; u < g.size(); ++u)
+    rep(u, 1, g.size())
         for (ll v : g[u])
             if (reprs[u] != reprs[v])
-                g_cond[reprs[u]].emplace_back(reprs[v]);
+                g_cond[reprs[u]].eb(reprs[v]);
 
     return { g_cond, scc };
 }
@@ -702,7 +679,7 @@ pair<vtll, ll> kruskal(vtll& edges, ll n) {
     sort(all(edges));
     for (auto [w, u, v] : edges) if (!dsu.sameSet(u, v)) {
         dsu.mergeSetsOf(u, v);
-        mst.emplace_back(w, u, v);
+        mst.eb(w, u, v);
         edges_sum += w;
     }
     return { mst, edges_sum };
@@ -720,20 +697,20 @@ Retorna: Vetor com a ordenação topológica do grafo (vazio se houver ciclo)
 ```c++
 vll topologicalSort(vvll& g) {
     vll degree(g.size()), res;
-    for (ll u = 1; u < g.size(); ++u)
+    rep(u, 1, g.size())
         for (ll v : g[u])
             ++degree[v];
 
     // lower values bigger priorities
     priority_queue<ll, vll, greater<>> pq;
-    for (ll u = 1; u < degree.size(); ++u)
+    rep(u, 1, degree.size())
         if (degree[u] == 0)
             pq.emplace(u);
 
     while (!pq.empty()) {
         ll u = pq.top();
         pq.pop();
-        res.emplace_back(u);
+        res.eb(u);
         for (ll v : g[u])
             if (--degree[v] == 0)
                 pq.emplace(v);
@@ -758,8 +735,8 @@ Retorna: Tamanho da maior subsequência comum
 template <typename T>
 ll LCS(T& xs, T& ys) {
     vvll dp(xs.size() + 1, vll(ys.size() + 1));
-    for (ll i = 1; i <= xs.size(); ++i)
-        for (ll j = 1; j <= ys.size(); ++j)
+    rep(i, 1, xs.size() + 1)
+        rep(j, 1, ys.size() + 1)
             if (xs[i - 1] == ys[j - 1])
                 dp[i][j] = 1 + dp[i - 1][j - 1];
             else
@@ -781,7 +758,7 @@ pll LIS(vll& xs) {
     vll ss;
     for (ll x : xs) {
         auto it = lower_bound(all(ss), x);
-        if (it == ss.end()) ss.emplace_back(x);
+        if (it == ss.end()) ss.eb(x);
         else *it = x;
     }
     return { ss.size(), ss.back() };
@@ -793,8 +770,8 @@ pll LIS(vll& xs) {
 ```c++
 struct Psum2D {
     Psum2D(const vvll& xs) : n(xs.size()), m(xs[0].size()), psum(n + 1, vll(m + 1)) {
-        for (ll i = 0; i < n; ++i)
-            for (ll j = 0; j < m; ++j) {
+        rep(i, 0, n)
+            rep(j, 0, m) {
                 // sum side and up rectangles, add element and remove intersection
                 psum[i + 1][j + 1] = psum[i + 1][j] + psum[i][j + 1];
                 psum[i + 1][j + 1] += xs[i][j] - psum[i][j];
@@ -820,9 +797,9 @@ struct Psum3D {
     Psum3D(const vvvll& xs)
             : n(xs.size()), m(xs[0].size()), o(xs[0][0].size()),
               psum(n + 1, vvll(m + 1, vll(o + 1)) {
-        for (ll i = 1; i <= n; ++i)
-            for (ll j = 1; j <= m; ++j)
-                for (ll k = 1; k <= o; ++k) {
+        rep(i, 1, n + 1)
+            rep(j, 1, m + 1)
+                rep(k, 1, o + 1) {
                     // sum cuboids from sides and down
                     psum[i][j][k] = psum[i - 1][j][k] + psum[i][j - 1][k] +
                                                         psum[i][j][k - 1];
@@ -863,7 +840,7 @@ ll binom(ll n, ll p) {
     static ll fac[MAXN + 1], inv[MAXN + 1], finv[MAXN + 1];
     if (fac[0] != 1) {
         fac[0] = fac[1] = inv[1] = finv[0] = finv[1] = 1;
-        for (int i = 2; i <= MAXN; i++) {
+        rep(i, 2, MAXN + 1) {
             fac[i] = fac[i - 1] * i % M;
             inv[i] = M - M / i * inv[M % i] % M;
             finv[i] = finv[i - 1] * inv[i] % M;
@@ -888,7 +865,7 @@ Retorna: Vetor com a representação de `x` na base `b`
 vll toBase(ll x, ll b) {
     vll res;
     while (x) {
-        res.emplace_back(x % b);
+        res.eb(x % b);
         x /= b;
     }
     reverse(all(res));
@@ -907,8 +884,8 @@ Retorna: Vetor com todos os primos no intervalo `[1, n]` e vetor de menor fator 
 ```c++
 pair<vll, vll> sieve(ll n) {
     vll ps, spf(n + 1);
-    for (ll i = 2; i <= n; i++) if (!spf[i]) {
-        ps.emplace_back(i);
+    rep(i, 2, n + 1) if (!spf[i]) {
+        ps.eb(i);
         for (ll j = i; j <= n; j += i)
             if (!spf[j]) spf[j] = i;
     }
@@ -922,7 +899,7 @@ Adendos:
 
 ```c++
 auto [ps, spf] = sieve(42);
-for (ll i = 0; i < q; ++i) {
+rep(i, 0, q) {
     ll v;
     cin >> v;
     while (v != 1) {
@@ -946,8 +923,8 @@ vll divisors(ll x) {
     vll ds;
     for (ll i = 1; i * i <= x; ++i)
         if (x % i == 0) {
-            ds.emplace_back(i);
-            if (i * i != x) ds.emplace_back(x / i);
+            ds.eb(i);
+            if (i * i != x) ds.eb(x / i);
         }
     return ds;
 }
@@ -966,10 +943,10 @@ vll factors(ll x) {
     vll fs;
     for (ll i = 2; i * i <= x; ++i)
         while (x % i == 0) {
-            fs.emplace_back(i);
+            fs.eb(i);
             x /= i;
         }
-    if (x > 1) fs.emplace_back(x);
+    if (x > 1) fs.eb(x);
     return fs;
 }
 ```
@@ -1039,7 +1016,9 @@ rb_tree_tag, tree_order_statistics_node_update>;
 
 Parâmetros:
 
-* `(n_)`: Intervalo máximo para operações `[0, n_)`
+* `(n)`: Intervalo máximo para operações `[0, n_)`
+* `(f)`: Função desejada (max, min, gcd, ...)
+* `(def)`: Valor padrão (INT_MIN se op = max, INT_MAX se op = min, ...)
 
 Métodos:
 
@@ -1048,31 +1027,39 @@ Métodos:
   somente quando queremos setar valores. retorna valor
   correspondente à funcionalidade codificada
 
+Adendos:
+
+* Por padrão faz range update e point query, se quisermos range update e point
+  query precisamos mudar o código manualmente, se quisermos lazy descomentar os
+  comentários lzy e se precisar ajustar a função unlazy de acordo com `op`.
+
 ```c++
-template <typename T>
+template <typename T, typename Op = function<T(T, T)>>
 struct Segtree {
     Segtree() = default;
-    Segtree(ll n_) : seg(4 * n_, DEF), lzy(4 * n_), n(n_) {}
+    Segtree(ll sz, Op f, T def)
+        : seg(4 * sz, DEF), lzy(4 * sz), n(sz), op(f), DEF(def) {}
 
     T setQuery(ll i, ll j, ll x = LLONG_MIN, ll l = 0, ll r = -1, ll node = 1) {
         if (r == -1) r = n - 1;
-        if (lzy[node]) unlazy(node, l, r);
+        // if (lzy[node]) unlazy(node, l, r); // lzy
         if (j < l or i > r) return DEF;
         if (i <= l and r <= j) {
-            if (x != LLONG_MIN) { // set
-                lzy[node] += x;
-                unlazy(node, l, r);
+            if (x != LLONG_MIN) {  // set
+                // lzy[node] += x; // lzy
+                // unlazy(node, l, r); // lzy
+                seg[node] += x;
             }
-            return seg[node]; // query
+            return seg[node];  // query
         }
         ll m = (l + r) / 2;
-        T op = (setQuery(i, j, x, l, m, 2 * node) +
-                setQuery(i, j, x, m + 1, r, 2 * node + 1));
-        seg[node] = (seg[2 * node] + seg[2 * node + 1]); // set
-        return op; // query
+        T q = op(setQuery(i, j, x, l, m, 2 * node),
+                 setQuery(i, j, x, m + 1, r, 2 * node + 1));
+        seg[node] = op(seg[2 * node], seg[2 * node + 1]);  // set
+        return q;                                          // query
     }
 
-private:
+   private:
     void unlazy(ll node, ll l, ll r) {
         // change accordingly
         seg[node] += (r - l + 1) * lzy[node];
@@ -1083,9 +1070,10 @@ private:
         lzy[node] = 0;
     }
 
-    T DEF = {}; // change accordingly
     vector<T> seg, lzy;
     ll n;
+    function<T(T, T)> op;
+    T DEF = {};
 };
 ```
 
@@ -1372,16 +1360,16 @@ struct Circle {
     static Circle<double> mec(vector<pair<T, T>>& ps) {
         random_shuffle(all(ps));
         Circle<double> c(ps[0], 0);
-        for (ll i = 0; i < ps.size(); ++i) {
+        rep(i, 0, ps.size()) {
             if (c.position(ps[i]) != OUT) continue;
             c = { ps[i], 0 };
-            for (ll j = 0; j < i; ++j) {
+            rep(j, 0, i) {
                 if (c.position(ps[j]) != OUT) continue;
                 c = {
                     { (ps[i].x + ps[j].x) / 2.0, (ps[i].y + ps[j].y) / 2.0 },
                        dist(ps[i], ps[j]) / 2.0
                 };
-                for (ll k = 0; k < j; ++k)
+                rep(k, 0, j)
                     if (c.position(ps[k]) == OUT)
                         c = from3(ps[i], ps[j], ps[k]);
             }
@@ -1511,13 +1499,13 @@ template <typename T>
 struct Polygon {
     // should be clock ordered
     Polygon(const vector<pair<T, T>>& ps)
-        : vs(ps), n(vs.size()) { vs.emplace_back(vs.front()); }
+        : vs(ps), n(vs.size()) { vs.eb(vs.front()); }
 
     bool convex() {
         if (n < 3) return false;
         ll P = 0, N = 0, Z = 0;
 
-        for (ll i = 0; i < n; ++i) {
+        rep(i, 0, n) {
             auto d = D(vs[i], vs[(i + 1) % n], vs[(i + 2) % n]);
             d ? (d > 0 ? ++P : ++N) : ++Z;
         }
@@ -1528,7 +1516,7 @@ struct Polygon {
     T area() { // double if lattice
         T a = 0;
 
-        for (ll i = 0; i < n; ++i)
+        rep(i, 0, n)
             a += vs[i].x * vs[i + 1].y - vs[i + 1].x * vs[i].y;
 
         if (is_floating_point_v<T>) return 0.5 * abs(a);
@@ -1537,7 +1525,8 @@ struct Polygon {
 
     double perimeter() {
         double p = 0;
-        for (ll i = 0; i < n; ++i) p += dist(vs[i], vs[i + 1]);
+        rep(i, 0, n)
+            p += dist(vs[i], vs[i + 1]);
         return p;
     }
 
@@ -1545,7 +1534,7 @@ struct Polygon {
         if (n < 3) return false;
         double sum = 0;
 
-        for (ll i = 0; i < n; ++i) {
+        rep(i, 0, n) {
             // border points are considered outside, should
             // use contains point in segment to count them
             auto d = D(vs[i], vs[i + 1], P);
@@ -1560,11 +1549,11 @@ struct Polygon {
         vector<pair<T, T>> points;
         double EPS { 1e-9 };
 
-        for (int i = 0; i < n; ++i) {
+        rep(i, 0, n) {
             auto d1 = D(P, Q, vs[i]), d2 = D(P, Q, vs[i + 1]);
-            if (d1 > -EPS) points.emplace_back(vs[i]);
+            if (d1 > -EPS) points.eb(vs[i]);
             if (d1 * d2 < -EPS)
-                points.emplace_back(intersection(vs[i], vs[i + 1], P, Q));
+                points.eb(intersection(vs[i], vs[i + 1], P, Q));
         }
 
         return { points };
@@ -1641,8 +1630,8 @@ struct Bi {
 
     Bi operator+=(const Bi& b) {
         bool c = false;
-        for (ll i = 0, x; i < max(v.size(), b.v.size()); ++i) {
-            x = c;
+        rep(i, 0, max(v.size(), b.v.size()) {
+            ll x = c;
             if (i < v.size()) x += v[i] - '0';
             if (i < b.v.size()) x += b.v[i] - '0';
             c = x >= 10, x -= 10 * (x >= 10);
@@ -1655,8 +1644,8 @@ struct Bi {
 
     // assumes a > b
     Bi operator-=(const Bi& b) {
-        for (ll i = 0, x; i < v.size(); ++i) {
-            x = v[i] - '0';
+        rep(i, 0, v.size()) {
+            ll x = v[i] - '0';
             if (i < b.v.size()) x -= b.v[i] - '0';
             if (x < 0) x += 10, --v[i + 1];
             v[i] = x + '0';
@@ -1723,6 +1712,8 @@ map<ll, ll> compress(vll& xs) {
 
 > Maior quantidade de elementos na fatoração de um número `< 10^6` é `19`
 
+> 2^31 + 11 é primo (maior que o limite de um int).
+
 > A quantidade de divisores de um número é a multiplicação de cada potência
   da fatoração `+ 1`
 
@@ -1768,7 +1759,7 @@ vll closests(const vll& xs) {
     vll closest(xs.size(), -1);
     stack<ll> prevs;
     // 0 .. n: closest to the left
-    for (ll i = 0; i < xs.size(); ++i) { //       >= if want the smallest
+    rep(i, 0, xs.size()) { //                     <= if want smallest
         while (!prevs.empty() and xs[prevs.top()] <= xs[i])
             prevs.pop();
         if (!prevs.empty()) closest[i] = prevs.top();
@@ -1784,7 +1775,7 @@ vll closests(const vll& xs) {
 // by counting in how many intervals an element appear
 ll sumAllIntervals(const vll& xs) {
     ll sum = 0, opens = 0;
-    for (ll i = 0; i < xs.size(); ++i) {
+    rep(i, 0, xs.size()) {
         opens += xs.size() - 2 * i;
         sum += xs[i] * opens;
     }
@@ -1796,9 +1787,9 @@ ll sumAllIntervals(const vll& xs) {
 // by adding each prefix sum
 ll sumAllIntervals(const vll& xs) {
     ll sum = 0, csum = 0 ll n = xs.size();
-    for (ll i = 0; i < n; ++i)
+    rep(i, 0, n)
         csum += xs[i] * (n - i);
-    for (ll i = 0; i < n; ++i) {
+    rep(i, 0, n) {
         sum += csum;
         csum -= xs[i] * (n - i);
     }
