@@ -34,6 +34,7 @@ css: |-
     * Bellman-Ford
     * BFS 0/1
     * Dijkstra
+    * Eulerian Cycle
     * Floyd-Warshall
     * Kosaraju
     * Kruskal (Árvore geradora mínima)
@@ -78,12 +79,11 @@ css: |-
 #include <bits/stdc++.h>
 using namespace std;
 
-#ifdef croquete
+#ifdef croquete  // BEGIN TEMPLATE ----------------------|
 #include "dbg/dbg.h"
 #else
 #define dbg(...)
 #endif
-
 #define ll    long long
 #define vll   vector<ll>
 #define vvll  vector<vll>
@@ -94,18 +94,15 @@ using namespace std;
 #define vtll  vector<tll>
 #define pd    pair<double, double>
 #define vb    vector<bool>
-
 #define all(xs)      xs.begin(), xs.end()
 #define found(x, xs) (xs.find(x) != xs.end())
 #define rep(i, a, b) for (ll i = (a); i < (ll)(b); ++i)
 #define per(i, a, b) for (ll i = (a); i >= (ll)(b); --i)
-
 #define x     first
 #define y     second
-#define eb    eb
+#define eb    emplace_back
 #define cinj  (cin.iword(0) = 1, cin)
 #define coutj (cout.iword(0) = 1, cout)
-
 template <typename T>  // read vector
 istream& operator>>(istream& in, vector<T>& xs) {
     assert(!xs.empty());
@@ -113,13 +110,12 @@ istream& operator>>(istream& in, vector<T>& xs) {
     in.iword(0) = 0;
     return in;
 }
-
 template <typename T>  // print vector
 ostream& operator<<(ostream& os, vector<T>& xs) {
     rep(i, os.iword(0), xs.size() - 1) os << xs[i] << ' ';
     os.iword(0) = 0;
     return os << xs.back();
-}
+}  // END TEMPLATE --------------------------------------|
 
 void pqnpassa() {}
 
@@ -475,7 +471,7 @@ Retorna: Vetor com as menores distâncias de cada vértice para `s` e vetor de t
 ```c++
 pair<vll, vll> spfa(const vvpll& g, ll s) {
     vll ds(g.size(), LLONG_MAX), cnt(g.size()), pre = cnt;
-    vector<bool> in_queue(g.size());
+    vb in_queue(g.size());
     queue<ll> q;
     ds[s] = 0; q.emplace(s);
     in_queue[s] = true;
@@ -543,6 +539,14 @@ Parâmetros:
 
 Retorna: Vetor com as menores distâncias de cada vértice para `s` e vetor de trajetos
 
+Adendos:
+
+* Perceba que quando pomos um vértice na fila não necessariamente será com o último
+  tempo que ele vai ter, então se estivermos modificando para conseguir, por exemplo,
+  a quantidade de menores caminhos ou a menor quantidade de vértices no menor caminho,
+  se a nova distância for menor vai ser necessário resetar qualquer resposta calculada
+  anteriormente
+
 ```c++
 pair<vll, vll> dijkstra(const vvpll& g, ll s) {
     vll ds(g.size(), LLONG_MAX), pre(g.size(), -1);
@@ -568,6 +572,59 @@ vll getPath(const vll& pre, ll s, ll u) {
     } while (u != s);
     reverse(all(p));
     return p;
+}
+```
+
+### Eulerian Cycle
+
+* `(g)`: Grafo alvo
+* `(s)`: Vértice inicial (inicia e termina nele)
+
+Retorna: Vetor com o ciclo euleriano, vazio se impossível ou se não houverem arestas
+
+Adendos:
+
+* Só funciona com grafos bidirecionados
+  
+```c++
+vll eulerianCycle(const vvll& g, ll s) {
+    vector<multiset<ll>> h(g.size());
+    vll res, degree(g.size());
+    stack<ll> st;
+    st.emplace(s);
+    
+    rep(u, 0, g.size())
+        for (auto v : g[u]) {
+            ++degree[v];
+            h[u].emplace(v);
+        }
+        
+    rep(u, 0, g.size())
+        if (degree[u] & 1)
+            return {};  // impossible
+        
+    while (!st.empty()) {
+        ll u = st.top();
+        if (degree[u] == 0) {
+            res.eb(u);
+            st.pop();
+        }
+        else {
+            auto it = h[u].begin();
+            ll v = *it;
+            h[u].erase(it);
+            h[v].erase(h[v].find(u));
+            --degree[u];
+            --degree[v];
+            st.emplace(v);
+        }
+    }
+    
+    rep(u, 0, g.size())
+        if (degree[u] != 0)
+            return {};  // impossible
+            
+    return res;
 }
 ```
 
@@ -619,16 +676,17 @@ Parâmetros:
 Retorna: Par com o grafo condensado e as componentes fortemente conectadas
 
 ```c++
-pair<vvll, vvll> kosaraju(const vvll& g) {
-    vvll g_inv(g.size()), g_cond(g.size()), scc;
-    vector<bool> vs(g.size());
+pair<vvll, map<ll, vll>> kosaraju(const vvll& g) {
+    vvll g_inv(g.size()), g_cond(g.size());
+    map<ll, vll> scc;
+    vb vs(g.size());
     vll order, reprs(g.size());
 
-    auto dfs = [&vs](auto&& self, const vvll& g, vll& out, ll u) -> ll {
+    auto dfs = [&vs](auto&& self, const vvll& h, vll& out, ll u) -> ll {
         ll repr = u;
         vs[u] = true;
-        for (ll v : g[u]) if (!vs[v])
-            repr = min(repr, self(self, g, out, v));
+        for (ll v : h[u]) if (!vs[v])
+            repr = min(repr, self(self, h, out, v));
         out.eb(u);
         return repr;
     };
@@ -647,7 +705,7 @@ pair<vvll, vvll> kosaraju(const vvll& g) {
         if (!vs[u]) {
             vll cc;
             ll repr = dfs(dfs, g_inv, cc, u);
-            scc.eb(cc);
+            scc[repr] = cc;
             for (ll v : cc)
                 reprs[v] = repr;
         }
@@ -1072,7 +1130,7 @@ struct Segtree {
 
     vector<T> seg, lzy;
     ll n;
-    function<T(T, T)> op;
+    Op op;
     T DEF = {};
 };
 ```
