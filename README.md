@@ -33,8 +33,8 @@ css: |-
   * Grafos
     * Bellman-Ford
     * BFS 0/1
+    * Caminho euleriano
     * Dijkstra
-    * Eulerian Cycle
     * Floyd-Warshall
     * Kosaraju
     * Kruskal (Árvore geradora mínima)
@@ -50,6 +50,7 @@ css: |-
     * Crivo de Eratóstenes
     * Divisores
     * Fatoração
+    * Quantidade de divisores
 * Estruturas
   * Árvores
     * Disjoint set union
@@ -530,6 +531,73 @@ vll bfs01(const vvpll& g, ll s) {
 }
 ```
 
+### Caminho euleriano
+
+* `(g)`: Grafo alvo
+* `(directed)`: Flag para indicar se é um grafo direcionado ou não
+* `(s)`: Vértice inicial
+* `(e)`: Vértice final (Apenas em caminho euleriano)
+
+Retorna: Vetor com o ciclo euleriano se só especificado `s`, se não caminho euleriano,
+vazio se impossível ou se não houverem arestas
+  
+Adendos:
+
+* Se só o vértice inicial for especificado procuraremos um ciclo euleriano
+* Testei com os problemas `Mail Delivery`, `De Bruijin Sequence` e `Teleporters Path`,
+  talvez seja necessário adicionar algumas checagens para ver se o caminho existe não
+  olhei bem ainda
+  
+```c++
+vll eulerianPath(const vvll& g, bool directed, ll s, ll e = -1) {
+    vector<multiset<ll>> h(g.size());
+    vll res, in_degree(g.size());
+    stack<ll> st;
+    st.emplace(s);  // start vertex
+
+    rep(u, 0, g.size())
+        for (auto v : g[u]) {
+            ++in_degree[v];
+            h[u].emplace(v);
+        }
+    
+    ll check = (in_degree[s] - (ll)h[s].size()) * (in_degree[e] - (ll)h[e].size());
+    if (e != -1 and check != -1)
+        return {};
+        
+    rep(u, 0, h.size()) {
+        if (e != -1 and (u == s or u == e)) continue;
+        if (in_degree[u] != h[u].size() or (!directed and in_degree[u] & 1))
+            return {};  // impossible
+    }
+        
+    while (!st.empty()) {
+        ll u = st.top();
+        if (h[u].empty()) {
+            res.eb(u);
+            st.pop();
+        }
+        else {
+            ll v = *h[u].begin();
+            h[u].erase(h[u].find(v));
+            --in_degree[v];
+            if (!directed) {
+                h[v].erase(h[v].find(u));
+                --in_degree[u];
+            }
+            st.emplace(v);
+        }
+    }
+    
+    rep(u, 0, g.size())
+        if (in_degree[u] != 0)
+            return {};  // impossible
+            
+    reverse(all(res));
+    return res;
+}
+```
+
 ### Dijkstra
 
 Parâmetros:
@@ -572,59 +640,6 @@ vll getPath(const vll& pre, ll s, ll u) {
     } while (u != s);
     reverse(all(p));
     return p;
-}
-```
-
-### Eulerian Cycle
-
-* `(g)`: Grafo alvo
-* `(s)`: Vértice inicial (inicia e termina nele)
-
-Retorna: Vetor com o ciclo euleriano, vazio se impossível ou se não houverem arestas
-
-Adendos:
-
-* Só funciona com grafos bidirecionados
-  
-```c++
-vll eulerianCycle(const vvll& g, ll s) {
-    vector<multiset<ll>> h(g.size());
-    vll res, degree(g.size());
-    stack<ll> st;
-    st.emplace(s);
-    
-    rep(u, 0, g.size())
-        for (auto v : g[u]) {
-            ++degree[v];
-            h[u].emplace(v);
-        }
-        
-    rep(u, 0, g.size())
-        if (degree[u] & 1)
-            return {};  // impossible
-        
-    while (!st.empty()) {
-        ll u = st.top();
-        if (degree[u] == 0) {
-            res.eb(u);
-            st.pop();
-        }
-        else {
-            auto it = h[u].begin();
-            ll v = *it;
-            h[u].erase(it);
-            h[v].erase(h[v].find(u));
-            --degree[u];
-            --degree[v];
-            st.emplace(v);
-        }
-    }
-    
-    rep(u, 0, g.size())
-        if (degree[u] != 0)
-            return {};  // impossible
-            
-    return res;
 }
 ```
 
@@ -953,18 +968,18 @@ pair<vll, vll> sieve(ll n) {
 
 Adendos:
 
-* Exemplo de fatoração em O(logN) com o vetor de menor fator primo:
+* Exemplo de fatoração em `O(logN)` com o vetor de menor fator primo:
 
 ```c++
 auto [ps, spf] = sieve(42);
 rep(i, 0, q) {
     ll v;
     cin >> v;
+    vll fv;
     while (v != 1) {
-        cout << spf[v] << ' ';
+        fv.eb(spf[v]);
         v /= spf[v];
     }
-    cout << '\n';
 }
 ```
 
@@ -1006,6 +1021,29 @@ vll factors(ll x) {
         }
     if (x > 1) fs.eb(x);
     return fs;
+}
+```
+
+### Quantidade de divisores
+
+Parâmetros:
+
+* `(x)`: Número alvo
+
+Adendos:
+
+* Primeira chamada realiza processamento `O(NlogN)`, depois retorna em O(1)
+
+```c++
+ll qntDivisors(ll x) {
+    const ll MAXN = 1e6;
+    static vll qnt(MAXN + 1);
+    if (qnt[1] != 1)
+        rep(i, 1, MAXN + 1)
+            for (ll j = i; j <= MAXN; j += i)
+                ++qnt[j];
+    assert(x >= 0 and x <= MAXN);
+    return qnt[x];
 }
 ```
 
