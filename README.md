@@ -51,6 +51,9 @@ css: |-
     * Divisores
     * Fatoração
     * Quantidade de divisores
+  * Strings
+    * Tamanhos das bordas
+    * KMP
 * Estruturas
   * Árvores
     * Disjoint set union
@@ -448,7 +451,7 @@ Adendos:
 * Necessário a técnica de binary lifting
 
 ```c++
-ll LCA(ll u, ll v) {
+ll lca(ll u, ll v) {
     if (depth[u] < depth[v]) swap(u, v);
     ll k = depth[u] - depth[v];
     u = kthAncestor(u, k);
@@ -808,7 +811,7 @@ Retorna: Tamanho da maior subsequência comum
 
 ```c++
 template <typename T>
-ll LCS(T& xs, T& ys) {
+ll lcs(T& xs, T& ys) {
     vvll dp(xs.size() + 1, vll(ys.size() + 1));
     rep(i, 1, xs.size() + 1)
         rep(j, 1, ys.size() + 1)
@@ -829,7 +832,7 @@ Parâmetros:
 Retorna: Tamanho da maior subsequência crescente e último elemento dela
 
 ```c++
-pll LIS(vll& xs) {
+pll lis(vll& xs) {
     vll ss;
     for (ll x : xs) {
         auto it = lower_bound(all(ss), x);
@@ -1034,7 +1037,7 @@ Parâmetros:
 
 Adendos:
 
-* Primeira chamada realiza processamento `O(NlogN)`, depois retorna em O(1)
+* Primeira chamada realiza processamento `O(NlogN)`, depois retorna em `O(1)`
 
 ```c++
 ll qntDivisors(ll x) {
@@ -1046,6 +1049,51 @@ ll qntDivisors(ll x) {
                 ++qnt[j];
     assert(x >= 0 and x <= MAXN);
     return qnt[x];
+}
+```
+
+## Strings
+
+### KMP
+
+Parâmetros:
+
+* `(s, p)`: Strings alvo
+
+Retorna: Quantidade de ocorrências de `p` em `s`, `O(N)`
+
+```c++
+// each prefix border size
+vll borders(const string& s, bool strong) {
+    ll n = s.size(), t = -1;
+    vll bs(n + 1, -1);
+
+    rep(j, 1, n + 1) {
+        while (t > -1 and s[t] != s[j - 1])
+            t = bs[t];
+        ++t;
+        bs[j] = (!strong or (j == n or s[t] != s[j])) ? t : bs[t];
+    }
+
+    return bs;
+}
+
+ll kmp(const string& s, const string& p) {
+    ll n = s.size(), m = p.size(), i = 0, j = 0, occ = 0;
+    vll bs = borders(p, true);
+
+    while (i <= n - m) {
+        while (j < m and p[j] == s[i + j])
+            ++j;
+
+        if (j == m) ++occ;
+
+        ll shift = j - bs[j];
+        i += shift;
+        j = max(0LL, j - shift);
+    } 
+
+    return occ;
 }
 ```
 
@@ -1684,7 +1732,7 @@ private:
 };
 ```
 
-# Strings
+## Strings
 
 ### Hash
 
@@ -1694,43 +1742,37 @@ Parâmetros:
 
 Métodos:
 
-* `h(i, j)`: Retorna o hash da substring `[i, j]`
+* `get(i, j)`: Retorna o hash da substring `[i, j]` em O(1)
 
 ```c++
 struct Hash {
     static const ll M1 = 1e9 + 7, M2 = 1e9 + 9, p1 = 31, p2 = 29;
     #define T pair<Mi<M1>, Mi<M2>>
     
-    Hash(const string& s) : n(s.size()), ps(n), inv(n) {
-        rep(i, 0, s.size()) {
-            ps[i] = h(s.substr(0, i + 1));
-            inv[i].x = 1 / Mi<M1>::pow(p1, i);
-            inv[i].y = 1 / Mi<M2>::pow(p2, i);
-        }
-    }
-    
-    pll h(ll i, ll j) {
-        T diff;
-        diff.x = i ? ps[j].x - ps[i - 1].x : ps[j].x;
-        diff.x *= inv[i].x;
-        diff.y = i ? ps[j].y - ps[i - 1].y : ps[j].y;
-        diff.y *= inv[i].y;
-        return { diff.x.v, diff.y.v };
-    }
-    
-private:
-    T h(const string& s) {
-        T res = { 0, 0 };
-        per(i, s.size() - 1, 0) {
+    Hash(const string& s) : n(s.size()), ps(n), pot(n) {
+        T res(0, 0), b(1, 1);
+        rep(i, 0, n) {
             ll v = s[i] - 'a' + 1;
             res.x *= p1, res.y *= p2;
             res.x += v, res.y += v;
+            ps[i] = res;
+            
+            b.x *= p1, b.y *= p2;
+            pot[i].x = b.x;
+            pot[i].y = b.y;
         }
-        return res;
+    }
+    
+    pll get(ll i, ll j) {
+        assert(i >= 0 and j >= 0 and i < n and j < n);
+        T diff;
+        diff.x = ps[j].x - (i ? ps[i - 1].x : 0) * pot[j - i].x;
+        diff.y = ps[j].y - (i ? ps[i - 1].y : 0) * pot[j - i].y;
+        return { diff.x.v, diff.y.v };
     }
     
     ll n;
-    vector<T> ps, inv;
+    vector<T> ps, pot;
 };
 ```
 # Utils
