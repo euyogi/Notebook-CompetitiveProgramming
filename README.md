@@ -63,6 +63,8 @@ css: |-
     * Segmento
     * Triângulo
     * Polígono
+  * Strings
+    * Hash
 * Utils
   * Aritmética modular
   * Big integer
@@ -1495,8 +1497,8 @@ Métodos:
 * `circumcenter()`: Retorna ponto de interseção entre as as retas perpendiculares que
                     interceptam nos pontos médios
 * `inradius()`: Retorna valor do raio da circunferência inscrita
-* `incenter(c)`: Retorna ponto de interseção entre as bissetrizes
-* `orthocenter(P, Q)`: Retorna ponto de interseção entre as alturas
+* `incenter()`: Retorna ponto de interseção entre as bissetrizes
+* `orthocenter()`: Retorna ponto de interseção entre as alturas
 
 ```c++
 enum Class { EQUILATERAL, ISOSCELES, SCALENE };
@@ -1585,8 +1587,8 @@ Métodos:
 * `convex()`: Retorna se o polígono é convexo
 * `area()`: Retorna área
 * `perimeter()`: Retorna perímetro
-* `contains()`: Retorna se o polígono contém o ponto `P`
-* `cut()`: Retorna polígono separado pela reta `PQ`
+* `contains(P)`: Retorna se o polígono contém o ponto `P`
+* `cut(P, Q)`: Retorna polígono separado pela reta `PQ`
 * `circumradius()`: Retorna valor do raio da circunferência circunscrita
 * `apothem()`: Retorna valor da apótema
 
@@ -1682,13 +1684,64 @@ private:
 };
 ```
 
+# Strings
+
+### Hash
+
+Parâmetros:
+
+* `(s)`: String alvo
+
+Métodos:
+
+* `h(i, j)`: Retorna o hash da substring `[i, j]`
+
+```c++
+struct Hash {
+    static const ll M1 = 1e9 + 7, M2 = 1e9 + 9, p1 = 31, p2 = 29;
+    #define T pair<Mi<M1>, Mi<M2>>
+    
+    Hash(const string& s) : n(s.size()), ps(n), inv(n) {
+        rep(i, 0, s.size()) {
+            ps[i] = h(s.substr(0, i + 1));
+            inv[i].x = 1 / Mi<M1>::pow(p1, i);
+            inv[i].y = 1 / Mi<M2>::pow(p2, i);
+        }
+    }
+    
+    pll h(ll i, ll j) {
+        T diff;
+        diff.x = i ? ps[j].x - ps[i - 1].x : ps[j].x;
+        diff.x *= inv[i].x;
+        diff.y = i ? ps[j].y - ps[i - 1].y : ps[j].y;
+        diff.y *= inv[i].y;
+        return { diff.x.v, diff.y.v };
+    }
+    
+private:
+    T h(const string& s) {
+        T res = { 0, 0 };
+        per(i, s.size() - 1, 0) {
+            ll v = s[i] - 'a' + 1;
+            res.x *= p1, res.y *= p2;
+            res.x += v, res.y += v;
+        }
+        return res;
+    }
+    
+    ll n;
+    vector<T> ps, inv;
+};
+```
 # Utils
 
 ### Aritmética modular
 
 ```c++
+const ll MOD = 1e9 + 7;
+template <ll M = MOD>
 struct Mi {
-    ll M = 1e9 + 7, v;
+    ll v;
     Mi() : v(0) {}
     Mi(ll x) : v(x % M) { v += (v < 0) * M; }
     friend bool operator==(Mi a, Mi b) { return a.v == b.v; }
@@ -1701,6 +1754,7 @@ struct Mi {
     friend Mi operator+(Mi a, Mi b) { return a += b; }
     friend Mi operator-(Mi a, Mi b) { return a -= b; }
     friend Mi operator*(Mi a, Mi b) { return a *= b; }
+    friend Mi operator/(Mi a, Mi b) { return a /= b; }
     static Mi pow(Mi a, Mi b) {
         return (!b.v ? 1 : pow(a * a, b.v / 2) * (b.v & 1 ? a.v : 1));
     }
