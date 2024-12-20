@@ -52,7 +52,6 @@ css: |-
     * Fatoração
     * Quantidade de divisores
   * Strings
-    * Tamanhos das bordas
     * KMP
 * Estruturas
   * Árvores
@@ -66,6 +65,8 @@ css: |-
     * Segmento
     * Triângulo
     * Polígono
+  * Matemática
+    * Matriz
   * Strings
     * Hash
 * Utils
@@ -1732,6 +1733,43 @@ private:
 };
 ```
 
+## Matemática
+
+### Matriz
+
+```c++
+template <typename T>
+struct Matrix {
+    Matrix(const vector<vector<T>>& matrix) : mat(matrix), n(mat.size()) {}
+    Matrix(ll m) : n(m) { mat.resize(n, vector<T>(n)); }
+    vector<T>& operator[](ll i) { return mat[i]; }
+    
+    Matrix operator*(Matrix& other) {
+        Matrix res(n);
+        rep(i, 0, n)
+            rep(j, 0, n)
+                rep(k, 0, n)
+                    res[i][k] += mat[i][j] * other[j][k];
+        return res;
+    }
+
+    static Matrix pow(const Matrix& matrix, ll exp) {
+        ll n = matrix.n;
+        Matrix tmp = matrix, res(n);
+        rep(i, 0, n) res[i][i] = 1;
+        while (exp > 0) {
+            if (exp & 1) res = res * tmp;
+            tmp = tmp * tmp;
+            exp /= 2;
+        }
+        return res;
+    }
+
+    vector<vector<T>> mat;
+    ll n;
+};
+```
+
 ## Strings
 
 ### Hash
@@ -1783,7 +1821,7 @@ struct Hash {
 const ll MOD = 1e9 + 7;
 template <ll M = MOD>
 struct Mi {
-    ll v;
+    ll v;   
     Mi() : v(0) {}
     Mi(ll x) : v(x % M) { v += (v < 0) * M; }
     friend bool operator==(Mi a, Mi b) { return a.v == b.v; }
@@ -1796,9 +1834,14 @@ struct Mi {
     friend Mi operator+(Mi a, Mi b) { return a += b; }
     friend Mi operator-(Mi a, Mi b) { return a -= b; }
     friend Mi operator*(Mi a, Mi b) { return a *= b; }
-    friend Mi operator/(Mi a, Mi b) { return a /= b; }
-    static Mi pow(Mi a, Mi b) {
-        return (!b.v ? 1 : pow(a * a, b.v / 2) * (b.v & 1 ? a.v : 1));
+    static Mi pow(Mi a, ll b) {
+        Mi res = 1;
+        while (b) {
+            if (b & 1) res *= a;
+            a *= a;
+            b /= 2;
+        }
+        return res;
     }
 };
 ```
