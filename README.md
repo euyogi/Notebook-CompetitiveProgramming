@@ -52,7 +52,7 @@ css: |-
     * Fatoração
     * Quantidade de divisores
   * Strings
-    * KMP
+    * Z-Function
 * Estruturas
   * Árvores
     * Disjoint set union
@@ -1055,46 +1055,25 @@ ll qntDivisors(ll x) {
 
 ## Strings
 
-### KMP
-
-Parâmetros:
-
-* `(s, p)`: Strings alvo
-
-Retorna: Quantidade de ocorrências de `p` em `s`, `O(N)`
+### Z-Function
 
 ```c++
-// each prefix border size
-vll borders(const string& s, bool strong) {
-    ll n = s.size(), t = -1;
-    vll bs(n + 1, -1);
+vll z(const string &s) {
+    ll n = s.size(), l = 0, r = 0;
+    vll zs(n);
 
-    rep(j, 1, n + 1) {
-        while (t > -1 and s[t] != s[j - 1])
-            t = bs[t];
-        ++t;
-        bs[j] = (!strong or (j == n or s[t] != s[j])) ? t : bs[t];
+    rep(i, 1, n) {
+        if (i <= r)
+            zs[i] = min(zs[i - l], r - i + 1);
+
+        while (zs[i] + i < n && s[zs[i]] == s[i + zs[i]])
+            zs[i]++;
+
+        if (r < i + zs[i] - 1)
+            l = i, r = i + zs[i] - 1;
     }
 
-    return bs;
-}
-
-ll kmp(const string& s, const string& p) {
-    ll n = s.size(), m = p.size(), i = 0, j = 0, occ = 0;
-    vll bs = borders(p, true);
-
-    while (i <= n - m) {
-        while (j < m and p[j] == s[i + j])
-            ++j;
-
-        if (j == m) ++occ;
-
-        ll shift = j - bs[j];
-        i += shift;
-        j = max(0LL, j - shift);
-    } 
-
-    return occ;
+    return zs;
 }
 ```
 
