@@ -405,6 +405,15 @@ Parâmetros:
 Retorna: Nova raiz na qual nenhuma outra subárvore tem mais que `n / 2` nós
 
 ```c++
+vll subtree;
+
+ll dfs(const vvll& g, ll u, ll p = 0) {
+    subtree[u] = 1;
+    for (ll v : g[u]) if (v != p)
+        subtree[u] += dfs(g, v, u);
+    return subtree[u];
+}
+
 ll centroid(const vvll& g, ll u, ll p = 0) {
     for (ll v : g[u]) if (v != p)
         if (subtree[v] * 2 > g.size() - 1)
