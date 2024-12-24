@@ -50,6 +50,8 @@ css: |-
     * Crivo de Eratóstenes
     * Divisores
     * Fatoração
+    * GCD
+    * LCM
     * Quantidade de divisores
   * Strings
     * Z-Function
@@ -440,7 +442,7 @@ ll timer = 0;
 vll st, et;
 void eulerTour(const vvll& g, ll u, ll p = 0) {
     if (st.empty())
-        st.resize(g.size(), et.resize(g.size());
+        st.resize(g.size()), et.resize(g.size());
     st[u] = timer++;
     for (ll v : g[u]) if (v != p)
         eulerTour(g, v, u);
@@ -538,7 +540,7 @@ vll bfs01(const vvpll& g, ll s) {
         for (ll v : g[u])
             if (ds[u] + w < ds[v]) {
                 ds[v] = ds[u] + w;
-                if (w == 1) dq.eb(v)
+                if (w == 1) dq.eb(v);
                 else dq.emplace_front(v);
             }
     }
@@ -972,6 +974,7 @@ Retorna: Vetor com todos os primos no intervalo `[1, n]` e vetor de menor fator 
 ```c++
 pair<vll, vll> sieve(ll n) {
     vll ps, spf(n + 1);
+    spf[1] = 1;
     rep(i, 2, n + 1) if (!spf[i]) {
         ps.eb(i);
         for (ll j = i; j <= n; j += i)
@@ -986,15 +989,13 @@ Adendos:
 * Exemplo de fatoração em `O(logN)` com o vetor de menor fator primo:
 
 ```c++
-auto [ps, spf] = sieve(42);
-rep(i, 0, q) {
-    ll v;
-    cin >> v;
-    vll fv;
-    while (v != 1) {
-        fv.eb(spf[v]);
-        v /= spf[v];
+vll factors(ll x, const vll& spf) {
+    vll fs;
+    while (x != 1) {
+        fs.eb(spf[x]);
+        x /= spf[x];
     }
+    return fs;
 }
 ```
 
@@ -1036,6 +1037,26 @@ vll factors(ll x) {
         }
     if (x > 1) fs.eb(x);
     return fs;
+}
+```
+
+### GCD
+
+```c++
+ll gcd(ll a, ll b) {
+    while (b) {
+        a %= b;
+        swap(a, b);
+    }
+    return a;
+}
+```
+
+### LCM
+
+```c++
+ll lcm(ll a, ll b) {
+    return a / gcd(a, b) * b;
 }
 ```
 
@@ -1151,7 +1172,7 @@ rb_tree_tag, tree_order_statistics_node_update>;
 
 Parâmetros:
 
-* `(n)`: Intervalo máximo para operações `[0, n_)`
+* `(sz)`: Intervalo máximo para operações `[0, sz)`
 * `(f)`: Função desejada (max, min, gcd, ...)
 * `(def)`: Valor padrão (INT_MIN se op = max, INT_MAX se op = min, ...)
 
@@ -1173,7 +1194,7 @@ template <typename T, typename Op = function<T(T, T)>>
 struct Segtree {
     Segtree() = default;
     Segtree(ll sz, Op f, T def)
-        : seg(4 * sz, DEF), lzy(4 * sz), n(sz), op(f), DEF(def) {}
+        : seg(4 * sz, def), lzy(4 * sz), n(sz), op(f), DEF(def) {}
 
     T setQuery(ll i, ll j, ll x = LLONG_MIN, ll l = 0, ll r = -1, ll node = 1) {
         if (r == -1) r = n - 1;
@@ -1853,7 +1874,7 @@ struct Bi {
 
     Bi operator+=(const Bi& b) {
         bool c = false;
-        rep(i, 0, max(v.size(), b.v.size()) {
+        rep(i, 0, max(v.size(), b.v.size())) {
             ll x = c;
             if (i < v.size()) x += v[i] - '0';
             if (i < b.v.size()) x += b.v[i] - '0';
@@ -1911,9 +1932,13 @@ map<ll, ll> compress(vll& xs) {
 
 ### Fatos
 
+Bitwise
+
 > `a + b = (a & b) + (a | b)`
 
 > `a + b = a ^ b + 2 * (a & b)`
+
+Geometria
 
 > Sendo `A` a área da treliça, `I` a quantidade de pontos interiores
   com coordenadas inteiras e `B` os pontos da borda com coordenadas
@@ -1927,28 +1952,40 @@ map<ll, ll> compress(vll& xs) {
   com a distância de Chebyshev, de forma que agora conseguimos tratar `x` e `y`
   separadamente, fazer boundig boxes, etc
 
-> Maior quantidade de divisores de um número `< 10^18` é `107520`
-
-> Maior quantidade de divisores de um número `< 10^6` é `239`
-
-> Maior diferença entre dois primos consecutivos `< 10^18` é `1476`
-
-> Maior quantidade de elementos na fatoração de um número `< 10^6` é `19`
-
-> 2^31 + 11 é primo (maior que o limite de um int).
+Matemática
 
 > A quantidade de divisores de um número é a multiplicação de cada potência
   da fatoração `+ 1`
 
-> Princípio da inclusão e exclusão: a união de `n` conjuntos é
-  a soma de todas as interseções de um número ímpar de conjuntos menos
-  a soma de todas as interseções de um número par de conjuntos
+> Maior quantidade de divisores de um número `< 10^18` é `107520`
+
+> Maior quantidade de divisores de um número `< 10^6` é `240`
+
+> Maior quantidade de divisores de um número `< 10^3` é `32`
+
+> Maior diferença entre dois primos consecutivos `< 10^18` é `1476`
+
+> Maior quantidade de primos na fatoração de um número `< 10^6` é `19`
+
+> Maior quantidade de primos na fatoração de um número `< 10^3` é `9`
+
+> Números primos interessantes: `2^31 - 1, 2^31 + 11, 1e18 - 11, 1e18 + 3`.
+
+> `gcd(a, b) = gcd(a, a - b)`, `gcd(a, b, c) = gcd(a, a - b, a - c)`
+
+Strings
 
 > Sejam `p` e `q` dois períodos de uma string `s`. Se `p + q − mdc(p, q) ≤ |s|`,
   então `mdc(p, q)` também é período de `s`
 
 > Relação entre bordas e períodos: A sequência `|s| − |border(s)|, |s| − |border^2(s)|, ..., |s| − |border^k(s)|`
   é a sequência crescente de todos os possíveis períodos de `s`
+
+Outros
+
+> Princípio da inclusão e exclusão: a união de `n` conjuntos é
+  a soma de todas as interseções de um número ímpar de conjuntos menos
+  a soma de todas as interseções de um número par de conjuntos
 
 ### Igualdade flutuante
 
