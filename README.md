@@ -75,6 +75,7 @@ css: |-
   * Aritmética modular
   * Big integer
   * Ceil division
+  * Conversão de índices
   * Compressão de coordenadas
   * Fatos
   * Igualdade flutuante
@@ -138,8 +139,9 @@ signed main() {
 
 # Flags
 
-`g++ -g -O0 -std=c++20 -fsanitize=undefined -Wall -Wshadow -Wextra
--Wno-sign-compare -Winvalid-pch -Dcroquete -D_GLIBCXX_DEBUG`
+`g++ -g -O2 -std=c++20 -fsanitize=undefined -fno-sanitize-recover -Wall -Wextra
+ -Wshadow -Wno-sign-compare -Wconversion -Wno-sign-conversion -Wduplicated-cond
+ -Winvalid-pch -Dcroquete -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -D_FORTIFY_SOURCE=2`
 
 # Debug
 
@@ -1150,12 +1152,8 @@ struct DSU {
 
 Métodos:
 
-* `find_by_order(k)`: Retorna um iterador para o `k`-ésimo elemento (à partir do 0)
-* `order_of_key(x)`:  Retorna quantos elementos existem menor que `x`
-
-Adendos:
-
-* Possui também a maioria dos métodos do `set`
+* `find_by_order(k)`: Retorna o elemento no índice `k`
+* `order_of_key(x)`:  Retorna quantos elementos existem estritamente menores que `x`
 
 ```c++
 #include <ext/pb_ds/assoc_container.hpp>
@@ -1164,6 +1162,32 @@ Adendos:
 using namespace __gnu_pbds;
 
 template <typename T>
+struct RBT {
+    void insert(T x) { rb.insert({ x, n++ }); }
+    ll order_of_key(T x) { return rb.order_of_key({ x, 0 }); }
+    ll size() { return rb.size(); };
+    bool empty() { return rb.empty(); };
+        
+    void erase(T x) {
+        auto it = rb.lower_bound({ x, 0 });
+        if (it == rb.end() or it->first != x) return;
+        rb.erase(it);
+    }
+    
+    T find_by_order(ll k) { 
+        auto it = rb.find_by_order(k);
+        if (it == rb.end()) return -1; // value for not found
+        return it->first;
+    }
+
+    ll n = 1;
+    tree<pair<T, ll>, null_type, less<>,
+    rb_tree_tag, tree_order_statistics_node_update> rb;
+};
+```
+
+```c++
+template <typename T> // unique elements (set)
 using RBT = tree<T, null_type, less<>,
 rb_tree_tag, tree_order_statistics_node_update>;
 ```
@@ -1915,6 +1939,14 @@ struct Bi {
 
 ```c++
 ll ceilDiv(ll a, ll b) { return a / b + ((a ^ b) > 0 && a % b != 0); }
+```
+
+### Conversão de índices
+
+```c++
+#define K(i, j) ((i) * w + (j))
+#define I(k)    ((k) / w)
+#define J(k)    ((k) % w)
 ```
 
 ### Compressão de coordenadas
