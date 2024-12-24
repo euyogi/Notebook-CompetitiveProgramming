@@ -57,6 +57,7 @@ css: |-
     * Z-Function
 * Estruturas
   * Árvores
+    * BIT tree 2D
     * Disjoint set union
     * Red-Black tree
     * Segment tree
@@ -80,6 +81,7 @@ css: |-
   * Fatos
   * Igualdade flutuante
   * Intervalos com soma S
+  * Kadane
   * Próximo maior/menor elemento
   * Soma de todos os intervalos
 
@@ -1113,6 +1115,46 @@ vll z(const string &s) {
 
 ## Árvores
 
+### BIT tree 2D
+
+Parâmetros:
+
+* `(h, w)`: Dimensões que definem os intervalos máximos para operações `[1, h]` e `[1, w]`
+
+Métodos:
+
+* `add(y, x, v)`: Adiciona `v` na posição `(y, x)`
+* `sum(ly, lx, hy, hx)`: Retorna a soma do retângulo demarcado pelos pontos `(ly, lx)` e `(hy, hx)`
+
+```c++
+template <typename T>
+struct BIT2D {
+    BIT2D(ll h, ll w) : n(h), m(w), bit(n + 1, vector<T>(m + 1)) {}
+    
+    void add(ll y, ll x, T v) {
+       	for (; y <= n; y += y & -y)
+            for (ll i = x; i <= m; i += i & -i)
+                bit[y][i] += v;
+    }
+    
+    T sum(ll y, ll x) {
+        T sum = 0;
+        for (; y > 0; y -= y & -y)
+            for (ll i = x; i > 0; i -= i & -i)
+                sum += bit[y][i];
+        return sum;
+    }
+    
+    T sum(ll ly, ll lx, ll hy, ll hx) {
+        return sum(hy, hx)     - sum(hy, lx - 1) -
+               sum(ly - 1, hx) + sum(ly - 1, lx - 1);
+    }
+    
+    ll n, m;
+    vector<vector<T>> bit;
+};
+```
+
 ### Disjoint set union
 
 Parâmetros:
@@ -1197,8 +1239,8 @@ rb_tree_tag, tree_order_statistics_node_update>;
 Parâmetros:
 
 * `(sz)`: Intervalo máximo para operações `[0, sz)`
-* `(f)`: Função desejada (max, min, gcd, ...)
-* `(def)`: Valor padrão (INT_MIN se op = max, INT_MAX se op = min, ...)
+* `(f)`: Função desejada `(max, min, gcd, ...)`
+* `(def)`: Valor padrão (`LLONG_MIN` se `op = max`, `LLONG_MAX` se `op = min`, ...)
 
 Métodos:
 
@@ -1209,45 +1251,42 @@ Métodos:
 
 Adendos:
 
-* Por padrão faz range update e point query, se quisermos range update e point
-  query precisamos mudar o código manualmente, se quisermos lazy descomentar os
-  comentários lzy e se precisar ajustar a função unlazy de acordo com `op`.
+* Dependendo da operação é necessário fazer ajustes
 
 ```c++
 template <typename T, typename Op = function<T(T, T)>>
 struct Segtree {
-    Segtree() = default;
     Segtree(ll sz, Op f, T def)
         : seg(4 * sz, def), lzy(4 * sz), n(sz), op(f), DEF(def) {}
 
-    T setQuery(ll i, ll j, ll x = LLONG_MIN, ll l = 0, ll r = -1, ll node = 1) {
+    T setQuery(ll i, ll j, ll x = LLONG_MIN, ll l = 0, ll r = -1, ll no = 1) {
         if (r == -1) r = n - 1;
-        // if (lzy[node]) unlazy(node, l, r); // lzy
+        if (lzy[no]) unlazy(no, l, r);
         if (j < l or i > r) return DEF;
         if (i <= l and r <= j) {
-            if (x != LLONG_MIN) {  // set
-                // lzy[node] += x; // lzy
-                // unlazy(node, l, r); // lzy
-                seg[node] += x;
+            if (x != LLONG_MIN) { 
+                lzy[no] += x;
+                unlazy(no, l, r);
             }
-            return seg[node];  // query
+            return seg[no]; 
         }
         ll m = (l + r) / 2;
-        T q = op(setQuery(i, j, x, l, m, 2 * node),
-                 setQuery(i, j, x, m + 1, r, 2 * node + 1));
-        seg[node] = op(seg[2 * node], seg[2 * node + 1]);  // set
-        return q;                                          // query
+        T q = op(setQuery(i, j, x, l, m, 2 * no),
+                 setQuery(i, j, x, m + 1, r, 2 * no + 1));
+        seg[no] = op(seg[2 * no], seg[2 * no + 1]); 
+        return q;                                         
     }
 
    private:
-    void unlazy(ll node, ll l, ll r) {
-        // change accordingly
-        seg[node] += (r - l + 1) * lzy[node];
+    void unlazy(ll no, ll l, ll r) {
+        if (seg[no] == DEF) seg[no] = 0;
+        seg[no] += (r - l + 1) * lzy[no]; // sum
+        // seg[no] += lzy[no]; // min/max
         if (l < r) {
-            lzy[2 * node] += lzy[node];
-            lzy[2 * node + 1] += lzy[node];
+            lzy[2 * no] += lzy[no];
+            lzy[2 * no + 1] += lzy[no];
         }
-        lzy[node] = 0;
+        lzy[no] = 0;
     }
 
     vector<T> seg, lzy;
@@ -1278,30 +1317,30 @@ Adendos:
 ```c++
 struct WaveletTree {
     WaveletTree(vll& xs, ll n) : wav(2 * n), n(n) {
-        auto build = [&](auto&& self, auto b, auto e, ll l, ll r, ll node) {
+        auto build = [&](auto&& self, auto b, auto e, ll l, ll r, ll no) {
             if (l == r) return;
             ll m = (l + r) / 2, i = 0;
-            wav[node].resize(e - b + 1);
+            wav[no].resize(e - b + 1);
             for (auto it = b; it != e; ++it, ++i)
-                wav[node][i + 1] = wav[node][i] + (*it <= m);
+                wav[no][i + 1] = wav[no][i] + (*it <= m);
             auto p = stable_partition(b, e, [m](ll i) { return i <= m; });
-            self(self, b, p, l, m, 2 * node);
-            self(self, p, e, m + 1, r, 2 * node + 1);
+            self(self, b, p, l, m, 2 * no);
+            self(self, p, e, m + 1, r, 2 * no + 1);
         };
         build(build, all(xs), 0, n - 1, 1);
     }
 
     ll kTh(ll i, ll j, ll k) {
         ++j;
-        ll l = 0, r = n - 1, node = 1;
+        ll l = 0, r = n - 1, no = 1;
         while (l != r) {
             ll m = (l + r) / 2;
-            ll seqm_l = wav[node][i], seqm_r = wav[node][j];
-            node *= 2;
+            ll seqm_l = wav[no][i], seqm_r = wav[no][j];
+            no *= 2;
             if (k <= seqm_r - seqm_l)
                 i = seqm_l, j = seqm_r, r = m;
             else
-                k -= seqm_r - seqm_l, i -= seqm_l, j -= seqm_r, l = m + 1, ++node;
+                k -= seqm_r - seqm_l, i -= seqm_l, j -= seqm_r, l = m + 1, ++no;
         }
         return l;
     }
@@ -2001,9 +2040,25 @@ Matemática
 
 > Maior quantidade de primos na fatoração de um número `< 10^3` é `9`
 
-> Números primos interessantes: `2^31 - 1, 2^31 + 11, 1e18 - 11, 1e18 + 3`.
+> Números primos interessantes: `2^31 - 1, 2^31 + 11, 10^18 - 11, 10^18 + 3`.
 
 > `gcd(a, b) = gcd(a, a - b)`, `gcd(a, b, c) = gcd(a, a - b, a - c)`
+
+> Divisibilidade por `3`: Soma dos algarismos divisível por `3`
+
+> Divisibilidade por `4`: Número formado pelos dois últimos algarismos divísivel por `4`
+
+> Divisibilidade por `6`: Par e divísivel por `3`
+
+> Divisibilidade por `7`: Dobro do último algarismo subtraído do número sem ele divisível por `7` (pode ir repetindo)
+
+> Divisibilidade por `8`: Número formado pelos três últimos algarismos divísivel por `8`
+
+> Divisibilidade por `9`: Soma dos algarismos divisível por `9`
+
+> Divisibilidade por `11`: Diferença entre soma dos algarismos de ordem ímpar e par divisível por `11`
+
+> Divisibilidade por `12`: Se for divisível por `3` e `4`
 
 Strings
 
@@ -2040,6 +2095,20 @@ ll countIntervals(vll& xs, ll sum) {
         ++freq[psum];
     }
     return ans;
+}
+```
+
+### Kadane
+
+```c++
+ll kadane(const vll& xs) {
+    ll res = 0, csum = 0;
+    rep(i, 0, xs.size()) {
+        csum += xs[i];
+        if (csum < 0) csum = 0;
+        res = max(res, csum);
+    }
+    return res;
 }
 ```
 
