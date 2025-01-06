@@ -12,6 +12,8 @@ css: |-
 
 # Notebook
 
+As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
+
 # Sumário
 
 * Template
@@ -43,7 +45,7 @@ css: |-
     * Maior subsequência comum (LCS)
     * Maior subsequência crescente (LIS)
   * Matemática
-    * Coeficiente binomial
+    * Coeficiente binomial 
     * Conversão de base
     * Crivo de Eratóstenes
     * Divisores
@@ -52,6 +54,7 @@ css: |-
     * Permutação com repetição
   * Strings
     * Z-Function
+    * Ocorrências de substring
 * Estruturas
   * Árvores
     * BIT tree 2D
@@ -103,10 +106,10 @@ using namespace std;
 #define vpll         vector<pll>
 #define all(xs)      xs.begin(), xs.end()
 #define found(x, xs) (xs.find(x) != xs.end())
-#define rep(i, a, b) for (ll i = (a); i < (ll)(b); ++i)
+#define rep(i, a, b) for (ll i = (a); i  < (ll)(b); ++i)
 #define per(i, a, b) for (ll i = (a); i >= (ll)(b); --i)
 #define eb           emplace_back
-#define cinj         (cin.iword(0) = 1, cin)
+#define cinj         (cin.iword(0)  = 1, cin)
 #define coutj        (cout.iword(0) = 1, cout)
 template <typename T>  // read vector
 istream& operator>>(istream& in, vector<T>& xs) {
@@ -122,17 +125,19 @@ ostream& operator<<(ostream& os, vector<T>& xs) {
     return os << xs.back();
 }  // END TEMPLATE --------------------------------------|
 
-void pqnpassa() {}
+void solve() {
+    
+}
 
-signed main() {
+signed main() {  // BEGIN TEST CASES --------------------|
     cin.tie(0)->sync_with_stdio(0);
     ll t = 1;
-    // cin >> t;
-    while (t--) pqnpassa();
-}
+    cin >> t;
+    while (t--) solve();
+}  // END TEST CASES ------------------------------------|
 ```
 
-Outros Defines
+### Outros Defines
 
 ```c++
 #define vvpll vector<vpll>
@@ -158,9 +163,9 @@ Outros Defines
 using namespace std;
 namespace DBG {
     template <typename T>
-    void C(T x, int n = 4)  { cerr << fixed << "\033[9" << n << 'm' << x << "\033[m"; }
-    void p(char x)          { C("\'" + string({x}) + "\'", 3); }
-    void p(string x)        { C("\"" + x + "\"", 3); }
+    void C(T x, int n = 4)  { cerr << fixed << "\e[9" << n << 'm' << x << "\e[m"; }
+    void p(char x)          { C("'" + string({x}) + "'", 3); }
+    void p(string x)        { C('"' + x + '"', 3); }
     void p(bool x)          { x ? C('T', 2) : C('F', 1); }
     void p(vector<bool> xs) { for (bool x : xs) p(x); }
     static int m = 0;
@@ -176,7 +181,7 @@ namespace DBG {
                     cerr << string(m, ' ') << setw(2) << left << i++, p(y), cerr << '\n';
                 cerr << string(m -= 2, ' ');
             } else  // normal iterable
-                for (auto y : x) i++ ? C(',') : C(""), p(y);
+                for (auto y : x) i++ ? C(',') : void(), p(y);
             C('}');
         } else if constexpr (requires { x.pop(); }) {  // stacks, queues
             C('{');
@@ -189,7 +194,7 @@ namespace DBG {
             C('}');
         } else if constexpr (requires { get<0>(x); }) {  // pairs, tuples
             C('(');
-            apply([&](auto... args) { ((i++ ? C(',') : C(""), p(args)), ...); }, x);
+            apply([&](auto... args) { ((i++ ? C(',') : void(), p(args)), ...); }, x);
             C(')');
         } else C(x, 5);
     }
@@ -206,9 +211,6 @@ namespace DBG {
 #define dbg(...) DBG::C(__LINE__), DBG::C(": "), DBG::printer(#__VA_ARGS__, __VA_ARGS__)
 ```
 
-!!! Em geral as complexidades são aproximadas e se houverem mais de uma variável eu
-considero como `N` também !!!
- 
 # Algoritmos
 
 ## Geometria
@@ -535,7 +537,7 @@ pair<vll, vll> spfa(const vvpll& g, ll s) {
                 ++cnt[v], pre[v] = u;
                 if (cnt[v] == g.size()) {
                     ds[v] = LLONG_MIN;
-                    ds[0] = v; // a node that has -inf dist
+                    ds[0] = v;  // a node that has -inf dist
                 }
                 if (!in_queue[v]) {
                     q.emplace(v);
@@ -554,7 +556,7 @@ pair<vll, vll> spfa(const vvpll& g, ll s) {
 /**
  *  @param  g  Graph (w, v).
  *  @param  s  Starting vertex.
- *  @return    Vectors with smallest distances from every vertex to s.
+ *  @return    Vector with smallest distances from every vertex to s.
  *
  *  The graph can only have weights 0 and 1.
  *
@@ -585,7 +587,7 @@ vll bfs01(const vvpll& g, ll s) {
  *  @param  d  Directed flag (true if g is directed).
  *  @param  s  Starting vertex.
  *  @param  e  Ending vertex.
- *  @return    Vectors with the eulerian path. If e is specified: eulerian cycle.
+ *  @return    Vector with the eulerian path. If e is specified: eulerian cycle.
  *
  *  Empty if impossible or no edges.
  *
@@ -698,11 +700,11 @@ vvll floydWarshall(const vvpll& g) {
     ll n = g.size();
     vvll ds(n + 1, vll(n + 1, INT_MAX));
 
-    rep(u, 1, n)
+    rep(u, 1, n) {
         ds[u][u] = 0;
         for (auto [w, v] : g[u]) {
             ds[u][v] = min(ds[u][v], w);
-            if (ds[u][u] < 0) ds[u][u] = INT_MIN; // negative cycle
+            if (ds[u][u] < 0) ds[u][u] = INT_MIN;  // negative cycle
         }
     }
 
@@ -885,12 +887,36 @@ vll lis(const vll& xs) {
 /**
  *  @param  n  First number.
  *  @param  k  Second number.
+ *  @return    Binomial coefficient.
+ *
+ *  Time complexity: O(N^2)/O(1)
+*/
+ll binom(ll n, ll k) {
+    const ll MAXN = 64 + 2;
+    static vvll dp(MAXN + 1, vll(MAXN + 1));
+    if (dp[0][0] != 1) {
+        dp[0][0] = 1;
+        for (ll i = 1; i <= MAXN; i++)
+            for (ll j = 0; j <= i; j++)
+                dp[i][j] = dp[i - 1][j] + (j ? (dp[i - 1][j - 1]) : 0);
+    }
+    if (n < k or n * k < 0) return 0;
+    return dp[n][k];
+}
+```
+
+### Coeficiente binomial mod
+
+```c++
+/**
+ *  @param  n  First number.
+ *  @param  k  Second number.
  *  @return    Binomial coefficient mod M.
  *
  *  Time complexity: O(N)/O(1)
 */
 ll binom(ll n, ll k) {
-    const ll MAXN = 3e6, M = 1e9 + 7; // check mod value!
+    const ll MAXN = 3e6, M = 1e9 + 7;  // check mod value!
     static vll fac(MAXN + 1), inv(MAXN + 1), finv(MAXN + 1);
     if (fac[0] != 1) {
         fac[0] = fac[1] = inv[1] = finv[0] = finv[1] = 1;
@@ -900,30 +926,8 @@ ll binom(ll n, ll k) {
             finv[i] = finv[i - 1] * inv[i] % M;
         }
     }
-    if (n < p or n * p < 0) return 0;
+    if (n < k or n * k < 0) return 0;
     return fac[n] * finv[k] % M * finv[n - k] % M;
-}
-```
-
-```c++
-/**
- *  @param  n  First number.
- *  @param  k  Second number.
- *  @return    Binomial coefficient.
- *
- *  Time complexity: O(N^2)/O(1)
-*/
-ll binom(ll n, ll p) {
-    const ll MAXN = 64 + 2;
-    static vvll dp(MAXN + 1, vll(MAXN + 1));
-    if (dp[0][0] != 1) {
-        dp[0][0] = 1;
-        for (ll i = 1; i <= MAXN; i++)
-            for (ll j = 0; j <= i; j++)
-                dp[i][j] = dp[i - 1][j] + (j ? (dp[i - 1][j - 1]) : 0);
-    }
-    if (n < p or n * p < 0) return 0;
-    return dp[n][p];
 }
 ```
 
@@ -961,7 +965,6 @@ vll toBase(ll x, ll b) {
 */
 pair<vll, vll> sieve(ll n) {
     vll ps, spf(n + 1);
-    spf[1] = 1;
     rep(i, 2, n + 1) if (!spf[i]) {
         ps.eb(i);
         for (ll j = i; j <= n; j += i)
@@ -996,7 +999,7 @@ vll divisors(ll x) {
 ```c++
 /**
  *  @param  x  Target.
- *  @return    Vectors with all prime factors of x.
+ *  @return    Vector with all prime factors of x.
  *
  *  Time complexity: O(sqrt(N))
 */
@@ -1012,11 +1015,13 @@ vll factors(ll x) {
 }
 ```
 
+### Fatoração com crivo
+
 ```c++
 /**
  *  @param  x    Target.
  *  @param  spf  Vector of smallest prime factors
- *  @return      Vectors with all prime factors of x.
+ *  @return      Vector with all prime factors of x.
  *
  *  Requires sieve.
  *
@@ -1064,7 +1069,7 @@ ll qntDivisors(ll x) {
 */
 template <typename T>
 ll rePerm(const map<T, ll>& hist) {
-    const ll MAXN = 3e6, M = 1e9 + 7; // check mod value!
+    const ll MAXN = 3e6, M = 1e9 + 7;  // check mod value!
     static vll fac(MAXN + 1), inv(MAXN + 1), finv(MAXN + 1);
     if (fac[0] != 1) {
         fac[0] = fac[1] = inv[1] = finv[0] = finv[1] = 1;
@@ -1096,8 +1101,8 @@ ll rePerm(const map<T, ll>& hist) {
  *  Time complexity: O(N)
 */
 vll z(const string& s) {
-    vll zs(s.size());
-    ll l = 0, r = 0;
+    ll n = s.size(), l = 0, r = 0;
+    vll zs(n);
 
     rep(i, 1, s.size()) {
         if (i <= r)
@@ -1111,6 +1116,28 @@ vll z(const string& s) {
     }
 
     return zs;
+}
+```
+
+### Ocorrências de substring
+
+```c++
+/**
+ *  @param  s  String.
+ *  @param  t  Substring.
+ *  @return    Vector with the first index of occurrences.
+ *
+ *  Requires Z-Function.
+ *
+ *  Time complexity: O(N)
+*/
+vll occur(const string& s, const string& t) {
+    auto zs = z(t + ';' + s);
+    vll is;
+    rep(i, 0, zs.size())
+        if (zs[i] == t.size())
+            is.eb(i - t.size() - 1);
+    return is;
 }
 ```
 
@@ -1266,7 +1293,7 @@ struct RBT {
     */
     T find_by_order(ll i) { 
         auto it = rb.find_by_order(i);
-        if (it == rb.end()) return -1; // value for not found
+        if (it == rb.end()) return -1;  // value for not found
         return it->first;
     }
 
@@ -1334,8 +1361,8 @@ struct Segtree {
 private:
     void unlazy(ll no, ll l, ll r) {
         if (seg[no] == DEF) seg[no] = 0;
-        seg[no] += (r - l + 1) * lzy[no]; // sum
-        // seg[no] += lzy[no]; // min/max
+        seg[no] += (r - l + 1) * lzy[no];  // sum
+        // seg[no] += lzy[no];  // min/max
         if (l < r) {
             lzy[2 * no] += lzy[no];
             lzy[2 * no + 1] += lzy[no];
@@ -1919,7 +1946,7 @@ struct Polygon {
             sum += d > 0 ? a : (d < 0 ? -a : 0);
         }
 
-        return equals(abs(sum), 2.0 * acos(-1.0)); // check precision
+        return equals(abs(sum), 2.0 * acos(-1.0));  // check precision
     }
 
     /**
@@ -2202,6 +2229,7 @@ struct Mi {
     friend Mi operator+(Mi a, Mi b) { return a += b; }
     friend Mi operator-(Mi a, Mi b) { return a -= b; }
     friend Mi operator*(Mi a, Mi b) { return a *= b; }
+    friend Mi operator/(Mi a, Mi b) { return a /= b; }
     static Mi pow(Mi a, ll b) {
         Mi res = 1;
         while (b) {
@@ -2320,17 +2348,20 @@ ll ceilDiv(ll a, ll b) { return a / b + ((a ^ b) > 0 && a % b != 0); }
 /**
  *  @brief      Compress values from a vector.
  *  @param  xs  Vector.
- *  @return     Map with the compressed values.
+ *  @return     Maps with the compressed values and uncompressed values.
  *
  *  Time complexity: O(NlogN)
 */
 template <typename T>
-map<T, ll> compress(vector<T>& xs) {
+pair<map<T, ll>, map<ll, T>> compress(vector<T>& xs) {
     ll i = 0;
     set<T> ys(all(xs));
+    map<ll, T> pm;
     map<T, ll> mp;
-    for (T y : ys)
+    for (T y : ys) {
+        pm[i] = y;
         mp[y] = i++;
+    }
     return mp;
 }
 ```
