@@ -41,6 +41,7 @@ As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
     * Kosaraju
     * Kruskal (Árvore geradora mínima)
     * Ordenação topológica
+    * Max flow/min cut (Dinic)
   * Outros
     * Maior subsequência comum (LCS)
     * Maior subsequência crescente (LIS)
@@ -137,9 +138,10 @@ signed main() {  // BEGIN TEST CASES --------------------|
 }  // END TEST CASES ------------------------------------|
 ```
 
-### Outros Defines
+### Outros defines
 
 ```c++
+//  BEGIN EXTRAS ----------------------------------------|
 #define vvpll vector<vpll>
 #define tll   tuple<ll, ll, ll>
 #define vtll  vector<tll>
@@ -147,6 +149,10 @@ signed main() {  // BEGIN TEST CASES --------------------|
 #define vb    vector<bool>
 #define x     first
 #define y     second
+vpll ds1 { {0, 1}, {1, 0}, {0, -1}, {-1, 0} };
+vpll ds2 { {0, 1}, {1, 0}, {0, -1}, {-1, 0}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1} };
+vpll ds3 { {1, 2}, {2, 1}, {-1, 2}, {-2, 1}, {1, -2}, {2, -1}, {-1, -2}, {-2, -1} };
+//  END EXTRAS ------------------------------------------|
 ```
 
 # Flags
@@ -280,7 +286,7 @@ vector<pair<T, T>> makeHull(const vector<pair<T, T>>& PS) {
  *  Convex hull will be sorted counter-clockwise.
  *  First and last point will be the same.
  *
- *  Time complexity: O(NlogN)
+ *  Time complexity: O(Nlog(N))
 */
 template <typename T>
 vector<pair<T, T>> monotoneChain(vector<pair<T, T>> PS) {
@@ -387,7 +393,7 @@ vll depth;
  *  @param  g  Tree.
  *  @param  n  Quantity of nodes.
  *
- *  Time complexity: O(NlogN)
+ *  Time complexity: O(Vlog(V))
 */
 void populate(const vvll& g, ll n) {
     parent.resize(n + 1, vll(LOG));
@@ -413,9 +419,10 @@ void populate(const vvll& g, ll n) {
  *
  *  Requires that depth and parent are populated.
  *
- *  Time complexity: O(logN)
+ *  Time complexity: O(log(V))
 */
 ll kthAncestor(ll u, ll k) {
+    assert(k > 0 and u > 0 and u < parent.size());
     if (k > depth[u]) return -1;  // no kth ancestor
     rep(i, 0, LOG)
         if (k & (1LL << i))
@@ -442,7 +449,7 @@ ll dfs(const vvll& g, ll u, ll p = 0) {
  *  @param  u  Root.
  *  @return    A new root that makes the size of all subtrees be n/2 or less.
  *
- *  Time complexity: O(N)
+ *  Time complexity: O(E)
 */
 ll centroid(const vvll& g, ll u, ll p = 0) {
     if (subtree.empty()) dfs(g, u, p);
@@ -467,7 +474,7 @@ vll st, et;
  *  each subtree, with those we can use stuff like segtrees on
  *  the subtrees.
  *
- *  Time complexity: O(N)
+ *  Time complexity: O(E)
 */
 void eulerTour(const vvll& g, ll u, ll p = 0) {
     if (st.empty()) st.resize(g.size()), et.resize(g.size());
@@ -488,9 +495,10 @@ void eulerTour(const vvll& g, ll u, ll p = 0) {
  *
  *  Requires binary lifting pre-processing technique.
  *
- *  Time complexity: O(logN)
+ *  Time complexity: O(log(V))
 */
 ll lca(ll u, ll v) {
+    assert(u > 0 and v > 0 and u < parent.size() and v < parent.size());
     if (depth[u] < depth[v]) swap(u, v);
     ll k = depth[u] - depth[v];
     u = kthAncestor(u, k);
@@ -515,7 +523,7 @@ ll lca(ll u, ll v) {
  *  Weights can be negative.
  *  Can detect negative cycles.
  *
- *  Time complexity: O(N^2)
+ *  Time complexity: O(EV)
 */
 pair<vll, vll> spfa(const vvpll& g, ll s) {
     vll ds(g.size(), LLONG_MAX), cnt(g.size()), pre = cnt;
@@ -560,7 +568,7 @@ pair<vll, vll> spfa(const vvpll& g, ll s) {
  *
  *  The graph can only have weights 0 and 1.
  *
- *  Time complexity: O(N)
+ *  Time complexity: O(E)
 */
 vll bfs01(const vvpll& g, ll s) {
     vll ds(g.size(), LLONG_MAX);
@@ -591,7 +599,7 @@ vll bfs01(const vvpll& g, ll s) {
  *
  *  Empty if impossible or no edges.
  *
- *  Time complexity: O(NlogN)
+ *  Time complexity: O(EVlog(EV))
 */
 vll eulerianPath(const vvll& g, bool d, ll s, ll e = -1) {
     vector<multiset<ll>> h(g.size());
@@ -655,7 +663,7 @@ vll eulerianPath(const vvll& g, bool d, ll s, ll e = -1) {
  *  it probably won't be the best, remember to reset calculations
  *  if a better is found.
  *
- *  Time complexity: O(NlogN)
+ *  Time complexity: O((Elog(V))
 */
 pair<vll, vll> dijkstra(const vvpll& g, ll s) {
     vll ds(g.size(), LLONG_MAX), pre(g.size(), -1);
@@ -694,7 +702,7 @@ vll getPath(const vll& pre, ll s, ll u) {
  *  Weights can be negative.
  *  Can detect negative cycles.
  *
- *  Time complexity: O(N^3)
+ *  Time complexity: O(V^3)
 */
 vvll floydWarshall(const vvpll& g) {
     ll n = g.size();
@@ -728,7 +736,7 @@ vvll floydWarshall(const vvpll& g) {
  *  @param  g  Directed graph.
  *  @return    Condensed graph and strongly connected components.
  *
- *  Time complexity: O(NlogN)
+ *  Time complexity: O((Elog(V))
 */
 pair<vvll, map<ll, vll>> kosaraju(const vvll& g) {
     vvll g_inv(g.size()), g_cond(g.size());
@@ -782,7 +790,7 @@ pair<vvll, map<ll, vll>> kosaraju(const vvll& g) {
  *  @param  n      Quantity of vertex.
  *  @return        Edges of mst, or forest if not connected and sum of weights.
  *
- *  Time complexity: O(NlogN)
+ *  Time complexity: O(Elog(E))
 */
 pair<vtll, ll> kruskal(vtll& edges, ll n) {
     DSU dsu(n);
@@ -805,7 +813,7 @@ pair<vtll, ll> kruskal(vtll& edges, ll n) {
  *  @param  g  Directed graph.
  *  @return    Vector with vertexes in topological order or empty if has cycle.
  *
- *  Time complexity: O(NlogN)
+ *  Time complexity: O(EVlog(V))
 */
 vll topologicalSort(const vvll& g) {
     vll degree(g.size()), res;
@@ -830,6 +838,69 @@ vll topologicalSort(const vvll& g) {
 
     if (res.size() != g.size() - 1) return {};  // cycle
     return res;
+}
+```
+
+### Max flow/min cut (Dinic)
+
+```c++
+/**
+ *  @param  g  Graph (w, v).
+ *  @param  s  Source.
+ *  @param  t  Sink.
+ *  @return    Max flow/min cut and graph with residuals.
+ *
+ *  If want the cut edges do a dfs, after, for every visited
+ *  node if it has edge to v but this is not visited then it
+ *  was a cut.
+ *
+ *  Time complexity: O(EV^2) but there is cases
+ *                   where it's better.
+*/
+pair<ll, vector<vtll>> maxFlow(const vvpll& g, ll s, ll t) {
+    ll n = g.size();
+    vector<vtll> h(n);  // (w, v, rev)
+    vll lvl(n), ptr(n), q(n);
+    
+    rep(u, 1, n)
+        for (auto [w, v] : g[u]) {
+            h[u].eb(w, v, h[v].size());
+            h[v].eb(0, u, h[u].size() - 1);
+        }
+
+    auto dfs = [&](auto&& self, ll u, ll nf) -> ll {
+        if (u == t or nf == 0) return nf;
+        for (ll& i = ptr[u]; i < h[u].size(); i++) {
+            auto& [w, v, rev] = h[u][i];
+            if (lvl[v] == lvl[u] + 1)
+                if (ll p = self(self, v, min(nf, w))) {
+                    auto& [wv, _, __] = h[v][rev];
+                    w -= p, wv += p;
+                    return p;
+                }
+        }
+        return 0;
+    };
+    
+    ll f = 0;
+    q[0] = s;
+    
+    rep(l, 0, 31)
+        do {
+            lvl = ptr = vll(n);
+            ll qi = 0, qe = lvl[s] = 1;
+            while (qi < qe and !lvl[t]) {
+                ll u = q[qi++];
+                for (auto [w, v, rev] : h[u])
+                    if (!lvl[v] and w >> (30 - l))
+                        q[qe++] = v, lvl[v] = lvl[u] + 1;
+            }
+
+            while (ll nf = dfs(dfs, s, LLONG_MAX))
+                f += nf;
+        } while (lvl[t]);
+        
+    return { f, h };
 }
 ```
 
@@ -862,20 +933,32 @@ ll lcs(const T& xs, const T& ys) {
 
 ```c++
 /**
- *  @param  xs  Vector.
- *  @return     Longest increasing subsequence.
+ *  @param  xs      Vector.
+ *  @param  values  True if want values, indexes otherwise.
+ *  @return         Longest increasing subsequence as values or indexes.
  *
- *  Time complexity: O(NlogN)
+ *  Time complexity: O(Nlog(N))
 */
-vll lis(const vll& xs) {
-    vll ss;
-    for (ll x : xs) {
-        // change upper_bound if want not decreasing
-        auto it = lower_bound(all(ss), x);
-        if (it == ss.end()) ss.eb(x);
-        else *it = x;
+vll lis(const vll& xs, bool values) {
+    assert(!xs.empty());
+    vll ss, idx, pre(xs.size());
+    rep(i, 0, xs.size()) {
+        // change to upper_bound if want not decreasing
+        ll j = lower_bound(all(ss), xs[i]) - ss.begin();
+        if (j == ss.size()) idx.eb(), ss.eb();
+        if (j == 0) pre[i] = -1;
+        else        pre[i] = idx[j - 1];
+        idx[j] = i;
+        ss[j]  = xs[i];
     }
-    return ss;
+    vll ys;
+    ll i = idx.back();
+    while (i != -1) {
+        ys.eb((values ? xs[i] : i));
+        i = pre[i];
+    }
+    reverse(all(ys));
+    return ys;
 }
 ```
 
@@ -941,9 +1024,10 @@ ll binom(ll n, ll k) {
  *
  *  Example: (x = 6, b = 2): { 1, 1, 0 }
  *
- *  Time complexity: O(logN)
+ *  Time complexity: O(log(N))
 */
 vll toBase(ll x, ll b) {
+    assert(b != 0);
     vll res;
     while (x) {
         res.eb(x % b);
@@ -961,7 +1045,7 @@ vll toBase(ll x, ll b) {
  *  @param  n  Bound.
  *  @return    Vectors with primes from [1, n] and smallest prime factors.
  *
- *  Time complexity: O(NlogN)
+ *  Time complexity: O(Nlog(N))
 */
 pair<vll, vll> sieve(ll n) {
     vll ps, spf(n + 1);
@@ -1025,7 +1109,7 @@ vll factors(ll x) {
  *
  *  Requires sieve.
  *
- *  Time complexity: O(logN)
+ *  Time complexity: O(log(N))
 */
 vll factors(ll x, const vll& spf) {
     vll fs;
@@ -1044,7 +1128,7 @@ vll factors(ll x, const vll& spf) {
  *  @param  x  Target.
  *  @return    Quantity of divisors of x.
  *
- *  Time complexity: O(NlogN)/O(1)
+ *  Time complexity: O(Nlog(N))/O(1)
 */
 ll qntDivisors(ll x) {
     const ll MAXN = 1e6;
@@ -1167,17 +1251,17 @@ struct BIT2D {
      *
      *  1-indexed
      *
-     *  Time complexity: O(logN)
+     *  Time complexity: O(log(N))
     */
     void add(ll y, ll x, T v) {
-        assert(y > 1 and x > 1 and y <= n and x <= m)
+        assert(y > 0 and x > 0 and y <= n and x <= m)
        	for (; y <= n; y += y & -y)
             for (ll i = x; i <= m; i += i & -i)
                 bit[y][i] += v;
     }
     
     T sum(ll y, ll x) {
-        assert(y > 1 and x > 1 and y <= n and x <= m)
+        assert(y > 0 and x > 0 and y <= n and x <= m)
         T sum = 0;
         for (; y > 0; y -= y & -y)
             for (ll i = x; i > 0; i -= i & -i)
@@ -1194,7 +1278,7 @@ struct BIT2D {
      *
      *  1-indexed
      *
-     *  Time complexity: O(logN)
+     *  Time complexity: O(log(N))
     */
     T sum(ll ly, ll lx, ll hy, ll hx) {
         return sum(hy, hx)     - sum(hy, lx - 1) -
@@ -1281,7 +1365,7 @@ struct RBT {
     *
     *  Can also interpret as quantity of elements smaller than x.
     *
-    *  Time complexity: O(logN)
+    *  Time complexity: O(log(N))
     */
     ll order_of_key(T x) { return rb.order_of_key({ x, 0 }); }
     
@@ -1289,7 +1373,7 @@ struct RBT {
     *  @param  i  Index.
     *  @return    Element at index i.
     *
-    *  Time complexity: O(logN)
+    *  Time complexity: O(log(N))
     */
     T find_by_order(ll i) { 
         auto it = rb.find_by_order(i);
@@ -1338,7 +1422,7 @@ struct Segtree {
     *
     *  It's a query if x is specified.
     *
-    *  Time complexity: O(logN)
+    *  Time complexity: O(log(N))
     */
     T setQuery(ll i, ll j, ll x = LLONG_MIN, ll l = 0, ll r = -1, ll no = 1) {
         if (r == -1) r = n - 1;
@@ -1387,7 +1471,7 @@ struct WaveletTree {
     *
     *  Sorts xs in the process.
     *
-    *  Time complexity: O(NlogN)
+    *  Time complexity: O(Nlog(N))
     */
     WaveletTree(vll& xs, ll n) : wav(2 * n), n(n) {
         auto build = [&](auto&& self, auto b, auto e, ll l, ll r, ll no) {
@@ -1409,7 +1493,7 @@ struct WaveletTree {
     *  @param  k  Value, starts from 1.
     *  @return    k-th smallest element in [i, j].
     *
-    *  Time complexity: O(logN)
+    *  Time complexity: O(log(N))
     */
     ll kTh(ll i, ll j, ll k) {
         ++j;
@@ -2032,7 +2116,7 @@ struct Matrix {
      *  @param  b       Exponent.
      *  @return         Matrix^b.
      *
-     *  Time complexity: O(N^3 * logB)
+     *  Time complexity: O(N^3 * log(B))
     */
     static Matrix pow(const Matrix& matrix, ll b) {
         ll n = matrix.n;
@@ -2331,7 +2415,7 @@ struct Bi {
  *
  *  Time complexity: O(1)
 */
-ll ceilDiv(ll a, ll b) { return a / b + ((a ^ b) > 0 && a % b != 0); }
+ll ceilDiv(ll a, ll b) { assert(b != 0); return a / b + ((a ^ b) > 0 && a % b != 0); }
 ```
 
 ### Conversão de índices
@@ -2350,7 +2434,7 @@ ll ceilDiv(ll a, ll b) { return a / b + ((a ^ b) > 0 && a % b != 0); }
  *  @param  xs  Vector.
  *  @return     Maps with the compressed values and uncompressed values.
  *
- *  Time complexity: O(NlogN)
+ *  Time complexity: O(Nlog(N))
 */
 template <typename T>
 pair<map<T, ll>, map<ll, T>> compress(vector<T>& xs) {
@@ -2441,6 +2525,11 @@ Outros
 > Princípio da inclusão e exclusão: a união de `n` conjuntos é
   a soma de todas as interseções de um número ímpar de conjuntos menos
   a soma de todas as interseções de um número par de conjuntos
+  
+> A regra de Warnsdorf é uma heurística para encontrar um caminho em
+  que o cavalo passa por todas as casas uma única vez: sempre escolher
+  o próximo movimento para a casa com o menor número de casas alcançáveis.
+  Talvez funcione em outros cenários.
 
 ### Igualdade flutuante
 
@@ -2466,18 +2555,18 @@ bool equals(T a, S b) { return abs(a - b) < 1e-9; }
  *
  *  Can change to count odd/even intervals
  *
- *  Time complexity: O(NlogN)
+ *  Time complexity: O(Nlog(N))
 */
 template <typename T>
 ll countIntervals(const vector<T>& xs, ll sum) {
     map<T, ll> hist;
     hist[0] = 1;
     ll ans = 0;
-    T psum = 0;
+    T csum = 0;
     for (T x : xs) {
-        psum += x;
-        ans += hist[psum - sum];
-        ++hist[psum];
+        csum += x;
+        ans += hist[csum - sum];
+        ++hist[csum];
     }
     return ans;
 }
@@ -2489,22 +2578,22 @@ ll countIntervals(const vector<T>& xs, ll sum) {
 /**
  *  @param  xs  Vector.
  *  @param  mx  Maximum Flag (true if want max).
- *  @return     Max/min contiguous sum.
+ *  @return     Max/min contiguous sum and smallest interval inclusive.
  *
  *  We consider valid an empty sum.
  *
  *  Time complexity: O(N)
 */
 template <typename T>
-T kadane(const vector<T>& xs, bool mx = true) {
-    T res = 0, csum = 0;
+tuple<T, ll, ll> kadane(const vector<T>& xs, bool mx = true) {
+    T res = 0, csum = 0, l = -1, r = -1, j = 0;
     rep(i, 0, xs.size()) {
-        if (!mx) csum -= xs[i];
-        else csum += xs[i];
-        if (csum < 0) csum = 0;
-        res = max(res, csum);
+        csum += xs[i] * (mx ? 1 : -1);
+        if (csum < 0) csum = 0, j = i + 1;  //            > if wants biggest interval
+        else if (csum > res or (csum == res and i - j + 1 < r - l + 1))
+            res = csum, l = j, r = i;
     }
-    return res * (mx ? 1 : -1);
+    return { res * (mx ? 1 : -1), l, r };
 }
 ```
 
