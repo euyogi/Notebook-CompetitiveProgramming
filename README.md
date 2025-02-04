@@ -54,6 +54,7 @@ As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
     * Quantidade de divisores
     * Permutação com repetição
   * Strings
+    * Distância de edição
     * Z-Function
     * Ocorrências de substring
 * Estruturas
@@ -73,6 +74,7 @@ As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
     * Matriz
   * Strings
     * Hash
+    * Suffix Automaton
   * Outros
     * Soma de prefixo 2D
     * Soma de prefixo 3D
@@ -86,10 +88,12 @@ As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
   * Igualdade flutuante
   * Intervalos com soma S
   * Kadane
+  * Overflow check
+  * Pares com gcd x
   * Próximo maior/menor elemento
   * Soma de todos os intervalos
 
-# Template
+### Template
 
 ```c++
 #include <bits/stdc++.h>
@@ -107,7 +111,7 @@ using namespace std;
 #define vpll         vector<pll>
 #define all(xs)      xs.begin(), xs.end()
 #define found(x, xs) (xs.find(x) != xs.end())
-#define rep(i, a, b) for (ll i = (a); i  < (ll)(b); ++i)
+#define rep(i, a, b) for (ll i = (a); i < (ll)(b); ++i)
 #define per(i, a, b) for (ll i = (a); i >= (ll)(b); --i)
 #define eb           emplace_back
 #define cinj         (cin.iword(0)  = 1, cin)
@@ -118,30 +122,27 @@ istream& operator>>(istream& in, vector<T>& xs) {
     rep(i, in.iword(0), xs.size()) in >> xs[i];
     in.iword(0) = 0;
     return in;
-}
-template <typename T>  // print vector
+} template <typename T>  // print vector
 ostream& operator<<(ostream& os, vector<T>& xs) {
     rep(i, os.iword(0), xs.size() - 1) os << xs[i] << ' ';
     os.iword(0) = 0;
     return os << xs.back();
+} void solve();
+signed main() {
+    cin.tie(0)->sync_with_stdio(0);
+    ll t = 1;
+    // cin >> t;
+    while (t--) solve();
 }  // END TEMPLATE --------------------------------------|
 
 void solve() {
-    
 }
-
-signed main() {  // BEGIN TEST CASES --------------------|
-    cin.tie(0)->sync_with_stdio(0);
-    ll t = 1;
-    cin >> t;
-    while (t--) solve();
-}  // END TEST CASES ------------------------------------|
 ```
 
 ### Outros defines
 
 ```c++
-//  BEGIN EXTRAS ----------------------------------------|
+// BEGIN EXTRAS ----------------------------------------|
 #define vvpll vector<vpll>
 #define tll   tuple<ll, ll, ll>
 #define vtll  vector<tll>
@@ -149,10 +150,13 @@ signed main() {  // BEGIN TEST CASES --------------------|
 #define vb    vector<bool>
 #define x     first
 #define y     second
-vpll ds1 { {0, 1}, {1, 0}, {0, -1}, {-1, 0} };
+map<char, pll> ds1 {
+    {'R', {0, 1}},  {'D', {1, 0}},
+    {'L', {0, -1}}, {'U', {-1, 0}}
+};
 vpll ds2 { {0, 1}, {1, 0}, {0, -1}, {-1, 0}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1} };
 vpll ds3 { {1, 2}, {2, 1}, {-1, 2}, {-2, 1}, {1, -2}, {2, -1}, {-1, -2}, {-2, -1} };
-//  END EXTRAS ------------------------------------------|
+// END EXTRAS ------------------------------------------|
 ```
 
 # Flags
@@ -478,6 +482,7 @@ vll st, et;
 */
 void eulerTour(const vvll& g, ll u, ll p = 0) {
     if (st.empty()) st.resize(g.size()), et.resize(g.size());
+    assert(u < st.size());
     st[u] = timer++;
     for (ll v : g[u]) if (v != p)
         eulerTour(g, v, u);
@@ -686,6 +691,7 @@ vll getPath(const vll& pre, ll s, ll u) {
     do {
         p.eb(pre[u]);
         u = pre[u];
+        if (u == 0) return {};
     } while (u != s);
     reverse(all(p));
     return p;
@@ -853,6 +859,10 @@ vll topologicalSort(const vvll& g) {
  *  If want the cut edges do a dfs, after, for every visited
  *  node if it has edge to v but this is not visited then it
  *  was a cut.
+ *
+ *  If want all the paths from source to sink, make a bfs,
+ *  only traverse if there is a path from u to v and w is 0.
+ *  When getting the path set each w in the path to 1.
  *
  *  Time complexity: O(EV^2) but there is cases
  *                   where it's better.
@@ -1078,6 +1088,36 @@ vll divisors(ll x) {
 }
 ```
 
+### Divisores de vários números
+
+```c++
+/**
+ *  @param  xs  Target vector.
+ *  @param  x   Number.
+ *  @return     Divisors of x.
+ *
+ *  Time complexity: O(Nlog(N))
+*/
+vll divisors(const vll& xs, ll x) {
+    static ll MAXN = 1e6 + 2;
+    static vll hist(MAXN);
+    static vvll ds(MAXN);
+    if (MAXN == 1e6 + 2) {
+        MAXN = 0;
+        for (ll y : xs) {
+            assert(y <= 1e6);
+            MAXN = max(MAXN, y + 1);
+            ++hist[y];
+        }
+        
+        rep(i, 1, MAXN)
+            for (ll j = i; j < MAXN; j += i)
+                if (hist[j]) ds[j].eb(i);
+    }
+    return ds[x];
+}
+``
+
 ### Fatoração
 
 ```c++
@@ -1175,6 +1215,65 @@ ll rePerm(const map<T, ll>& hist) {
 
 ## Strings
 
+### Distância de edição
+
+```c++
+/**
+ *  @param  s  First string.
+ *  @param  t  Second string.
+ *  @return    Edit distance to transform s in t and operations.
+ *
+ *  Can change costs.
+ *  -      Deletion
+ *  c      Insertion of c
+ *  =      Keep
+ *  [c->d] Substitute c to d.
+ *
+ *  Time complexity: O(MN)
+*/
+pair<ll, string> edit(const string& s,  string& t) {
+    ll ci = 1, cr = 1, cs = 1, m = s.size(), n = t.size();
+    vvll dp(m + 1, vll(n + 1));
+    vvll pre = dp;
+
+    rep(i, 0, m + 1)
+        dp[i][0] = i*cr, pre[i][0] = 'r';
+
+    rep(j, 0, n + 1)
+        dp[0][j] = j*ci, pre[0][j] = 'i';
+
+    rep(i, 1, m + 1)
+        rep(j, 1, n + 1) {
+            ll ins = dp[i][j - 1] + ci, del = dp[i - 1][j] + cr;
+            ll subs = dp[i - 1][j - 1] + cs * (s[i - 1] != t[j - 1]);
+            dp[i][j] = min({ ins, del, subs });
+            pre[i][j] = (dp[i][j] == ins ? 'i' : (dp[i][j] == del ? 'r' : 's'));
+        }
+
+    ll i = m, j = n;
+    string ops;
+
+    while (i or j) {
+        if (pre[i][j] == 'i')
+            ops += t[--j];
+        else if (pre[i][j] == 'r') {
+            ops += '-';
+            --i;
+        }
+        else {
+            --i, --j;
+            if (s[i] == t[j])
+                ops += '=';
+            else
+                ops += "]", ops += t[j], ops += ">-", ops += s[i], ops += "[";
+        }
+    }
+    
+    reverse(all(ops));
+    return { dp[m][n], ops };
+}
+```
+
 ### Z-Function
 
 ```c++
@@ -1193,7 +1292,7 @@ vll z(const string& s) {
             zs[i] = min(zs[i - l], r - i + 1);
 
         while (zs[i] + i < n && s[zs[i]] == s[i + zs[i]])
-            zs[i]++;
+            ++zs[i];
 
         if (r < i + zs[i] - 1)
             l = i, r = i + zs[i] - 1;
@@ -1424,14 +1523,15 @@ struct Segtree {
     *
     *  Time complexity: O(log(N))
     */
-    T setQuery(ll i, ll j, ll x = LLONG_MIN, ll l = 0, ll r = -1, ll no = 1) {
+    T setQuery(ll i, ll j, T x = LLONG_MIN, ll l = 0, ll r = -1, ll no = 1) {
+        assert(i >= 0 and j >= 0 and i < n and j < n);
         if (r == -1) r = n - 1;
-        if (lzy[no]) unlazy(no, l, r);
+        if (lzy[no]) unlazy(l, r, no);
         if (j < l or i > r) return DEF;
         if (i <= l and r <= j) {
             if (x != LLONG_MIN) { 
                 lzy[no] += x;
-                unlazy(no, l, r);
+                unlazy(l, r, no);
             }
             return seg[no]; 
         }
@@ -1443,7 +1543,7 @@ struct Segtree {
     }
 
 private:
-    void unlazy(ll no, ll l, ll r) {
+    void unlazy(ll l, ll r, ll no) {
         if (seg[no] == DEF) seg[no] = 0;
         seg[no] += (r - l + 1) * lzy[no];  // sum
         // seg[no] += lzy[no];  // min/max
@@ -1458,6 +1558,32 @@ private:
     ll n;
     Op op;
     T DEF = {};
+};
+```
+
+### 3 Maiores valores
+
+```c++
+// not tested
+struct MX3 {
+    ll first, second, third;
+    MX3(ll a, ll b, ll c) : first(a), second(b), third(c) {}
+    MX3(ll x)             : first(x), second(x), third(x) {}
+    MX3() = default;
+    MX3 operator+=(MX3 other) {
+        auto [a, b, c] = other;
+        first += a, second += a, third += a;
+        return *this;
+    }
+    bool operator!=(ll x) { return first != x; }
+    operator bool() { return first; }
+};
+
+MX3 f(MX3 a, MX3 b) {
+    vll xs { a.first, a.second, a.third, b.first, b.second, b.third };
+    sort(all(xs), greater<>());
+    xs.erase(unique(all(xs)), xs.end());
+    return { xs[0], (xs.size() > 1 ? xs[1] : 0), (xs.size() > 2 ? xs[2] : 0) };
 };
 ```
 
@@ -2186,6 +2312,191 @@ struct Hash {
 };
 ```
 
+### Suffix Automaton
+
+```c++
+struct SuffixAutomaton {
+    /**
+    *  @param  s  String.
+    *
+    *  Time complexity: O(Nlog(N))
+    */
+    SuffixAutomaton(const string &s) {
+        make_node();
+        for (auto c : s) add(c);
+        
+        // preprocessing for count of countAndFirst
+        vector<pll> order(sz - 1);
+        rep(i, 1, sz) order[i - 1] = {len[i], i};
+        sort(all(order), greater<>());
+        for (auto [_, i] : order) cnt[lnk[i]] += cnt[i];
+        
+        // preprocessing for kThSub and kThDSub
+        dfs(0);
+    }
+
+    /**
+    *  @param  t  String.
+    *  @return    Pair with how many times substring t
+    *             appears and index of first occurrence.
+    *
+    *  Time complexity: O(M)
+    */
+    pll countAndFirst(const string &t) {
+        ll u = 0;
+        for (auto c : t) {
+            ll v = next[u][c - 'a'];
+            if (!v) return {0, -1};
+            u = v;
+        }
+        return {cnt[u], fpos[u] - t.size() + 1};
+    }
+
+    /**
+    *  @returns  Quantity of distinct substrings. 
+    *
+    *  Time complexity: O(N)
+    */
+    ll dSubs() {
+        ll res = 0;
+        rep(i, 1, sz)
+            res += len[i] - len[lnk[i]];
+        return res;
+    }
+
+    /**
+    *  @returns  Vector with quantity of distinct substrings of each size. 
+    *
+    *  Time complexity: O(N)
+    */
+    vll dSubsBySz() {
+        vll hs(sz, -1);
+        hs[0] = 0;
+        queue<ll> q;
+        q.emplace(0);
+        ll mx = 0;
+        while (!q.empty()) {
+            ll u = q.front();
+            q.pop();
+            rep(i, 0, alpha) {
+                ll v = next[u][i];
+                if (!v) continue;
+                if (hs[v] == -1) {
+                    q.emplace(v);
+                    hs[v] = hs[u] + 1;
+                    mx    = max(mx, len[v]);
+                }
+            }
+        }
+
+        vll res(mx);
+        rep(i, 1, sz) {
+            ++res[hs[i] - 1];
+            if (len[i] < mx) --res[len[i]];
+        }
+        rep(i, 1, mx) res[i] += res[i - 1];
+        return res;
+    }
+
+    /**
+    *  @param  k  Value, starts from 0.
+    *  @return    k-th substring lexographically. 
+    *
+    *  Time complexity: O(N)
+    */
+    string kThSub(ll k) {
+        k += n;
+        string res;
+        ll u = 0;
+        while (k >= cnt[u]) {
+            k -= cnt[u];
+            rep(i, 0, alpha) {
+                ll v = next[u][i];
+                if (!v) continue;
+                if (rcnt[v] > k) {
+                    res += i + 'a', u = v;
+                    break;
+                }
+                k -= rcnt[v];
+            }
+        }
+        return res;
+    }
+
+    /**
+    *  @param  k  Value, starts from 0.
+    *  @return    k-th distinct substring lexographically. 
+    *
+    *  Time complexity: O(N)
+    */
+    string kThDSub(ll k) {
+        string res;
+        ll u = 0;
+        while (k >= 0) {
+            rep(i, 0, alpha) {
+                ll v = next[u][i];
+                if (!v) continue;
+                if (dcnt[v] > k) {
+                    res += i + 'a', --k, u = v;
+                    break;
+                }
+                k -= dcnt[v];
+            }
+        }
+        return res;
+    }
+
+private:
+    ll make_node(ll _len = 0, ll _fpos = -1, ll _lnk = -1, ll _cnt = 0,
+                 ll _rcnt = 0, ll _dcnt = 0) {
+        next.eb(vll(alpha));
+        len.eb(_len), fpos.eb(_fpos), lnk.eb(_lnk);
+        cnt.eb(_cnt), rcnt.eb(_rcnt), dcnt.eb(_dcnt);
+        return sz++;
+    }
+
+    void add(char c) {
+        c -= 'a', ++n;
+        ll u = make_node(len[last] + 1, len[last], 0, 1);
+        ll p = last;
+        while (p != -1 and !next[p][c]) {
+            next[p][c] = u;
+            p = lnk[p];
+        }
+        if (p == -1) lnk[u] = 0;
+        else {
+            ll q = next[p][c];
+            if (len[p] + 1 == len[q]) lnk[u] = q;
+            else {
+                ll v = make_node(len[p] + 1, fpos[q], lnk[q]);
+                next[v] = next[q];
+                while (p != -1 and next[p][c] == q) {
+                    next[p][c] = v;
+                    p = lnk[p];
+                }
+                lnk[q] = lnk[u] = v;
+            }
+        }
+        last = u;
+    }
+
+    void dfs(ll u) {
+        dcnt[u] = 1, rcnt[u] = cnt[u];
+        rep(i, 0, alpha) {
+            ll v = next[u][i];
+            if (!v) continue;
+            if (!dcnt[v]) dfs(v);
+            dcnt[u] += dcnt[v];
+            rcnt[u] += rcnt[v];
+        }
+    }
+
+    vvll next;
+    vll len, fpos, lnk, cnt, rcnt, dcnt;
+    ll sz = 0, last = 0, n = 0, alpha = 26;
+};
+```
+
 ## Outros
 
 ### Soma de prefixo 2D
@@ -2307,7 +2618,7 @@ struct Mi {
     friend bool operator!=(Mi a, Mi b) { return a.v != b.v; }
     friend ostream& operator<<(ostream& os, Mi a) { return os << a.v; }
     Mi operator+=(Mi b) { return v += b.v - (v + b.v >= M) * M; }
-    Mi operator-=(Mi b) { return v -= b.v + (v - b.v < 0) * M; }
+    Mi operator-=(Mi b) { return v -= b.v - (v - b.v  < 0) * M; }
     Mi operator*=(Mi b) { return v = v * b.v % M; }
     Mi operator/=(Mi b) & { return *this *= pow(b, M - 2); }
     friend Mi operator+(Mi a, Mi b) { return a += b; }
@@ -2553,7 +2864,9 @@ bool equals(T a, S b) { return abs(a - b) < 1e-9; }
  *  @param  sum  Desired sum.
  *  @return      Quantity of contiguous intervals with sum S.
  *
- *  Can change to count odd/even intervals
+ *  Can change to count odd/even sum intervals (hist of even and odd).
+ *  Also could change to get contiguos intervals with sum bigger equal,
+ *  using an ordered-set.
  *
  *  Time complexity: O(Nlog(N))
 */
@@ -2594,6 +2907,55 @@ tuple<T, ll, ll> kadane(const vector<T>& xs, bool mx = true) {
             res = csum, l = j, r = i;
     }
     return { res * (mx ? 1 : -1), l, r };
+}
+```
+
+### Overflow check
+
+```c++
+// BEGIN OVERFLOW CHECK --------------------------------|
+ll mult(ll a, ll b) {
+    if (abs(a) >= LLONG_MAX / abs(b))
+        return LLONG_MAX;  // overflow
+    return a * b;
+}
+
+ll sum(ll a, ll b) {
+    if (abs(a) >= LLONG_MAX - abs(b))
+        return LLONG_MAX;  // overflow
+    return a + b;
+}
+// END OVERFLOW CHECK ----------------------------------|
+```
+
+### Pares com gcd x
+
+```c++
+/**
+ *  @param  xs  Target.
+ *  @param  x   Desired gcd.
+ *  @return     Quantity of pairs with gcd equals x.
+ *
+ *  Time complexity: O(Nlog(N))/O(1)
+*/
+vll gcdPairs(const vll& xs, ll x) {
+    const ll MAXN = 1e6 + 1;
+    static vll dp(MAXN, -1), ms(MAXN), hist(MAXN);
+    if (dp[1] == -1) {
+        for (ll x : xs)
+            ++hist[x];
+        
+        rep(i, 1, MAXN)
+            for (ll j = i; j < MAXN; j += i)
+                ms[i] += hist[j];
+        
+        per(i, MAXN - 1, 1) {
+            dp[i] = ms[i] * (ms[i] - 1) / 2;
+            for (ll j = 2 * i; j < MAXN; j += i)
+                dp[i] -= dp[j];
+        }
+    }
+    return dp[x];
 }
 ```
 
