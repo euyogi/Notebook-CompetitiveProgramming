@@ -55,8 +55,12 @@ As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
     * Permutação com repetição
   * Strings
     * Distância de edição
+    * Suffix array
+    * Comparador de substring com suffix array
+    * Maior prefixo comum com suffix array (LCP)
+    * Ocorrências de substring com suffix array
     * Z-Function
-    * Ocorrências de substring
+    * Ocorrências de substring com Z-Function
 * Estruturas
   * Árvores
     * BIT tree 2D
@@ -88,6 +92,7 @@ As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
   * Igualdade flutuante
   * Intervalos com soma S
   * Kadane
+  * Mex
   * Overflow check
   * Pares com gcd x
   * Próximo maior/menor elemento
@@ -1116,7 +1121,7 @@ vll divisors(const vll& xs, ll x) {
     }
     return ds[x];
 }
-``
+```
 
 ### Fatoração
 
@@ -1274,6 +1279,135 @@ pair<ll, string> edit(const string& s,  string& t) {
 }
 ```
 
+### Suffix array
+
+```c++
+template <typename T>
+void cSort(const T& xs, vll& is, ll alpha) {
+    vll hist(alpha + 1);
+    for (auto x : xs) ++hist[x];
+    rep(i, 1, alpha + 1) hist[i] += hist[i - 1];
+    per(i, is.size() - 1, 0) is[--hist[xs[i]]] = i;
+}
+
+template <typename T>
+vll getEqClass(const vll& is, const T& xs) {
+    vll cs(xs.size());
+    rep(i, 1, is.size())
+        cs[is[i]] = cs[is[i - 1]] + (xs[is[i - 1]] != xs[is[i]]);
+    return cs;
+}
+
+/**
+ *  @param  s  String.
+ *  @return    Suffix array (lexographically sorted suffix indexes).
+ *
+ *  Time complexity: O(Nlog(N))
+ */
+pair<vll, vvll> suffixArray(string s) {
+    s += ';';
+    ll n = s.size();
+    vll is(n), rs(n), xs(n);
+    cSort(s, is, 256);
+    vpll ys(n);
+    vvll cs = {getEqClass(is, s)};
+    for (ll mask = 1, k = 0; mask < n; mask *= 2, ++k) {
+        rep(i, 0, n) {
+            rs[i] = (is[i] + n - mask) % n;
+            xs[i] = cs[k][rs[i]];
+            ys[i] = {cs[k][i], cs[k][(i + mask) % n]};
+        }
+        cSort(xs, is, cs[k][is.back()] + 1);
+        rep(i, 0, n) is[i] = rs[is[i]];
+        cs.eb(getEqClass(is, ys));
+    }
+    is.erase(is.begin());
+    return { is, cs };
+}
+```
+
+### Comparador de substring com suffix array
+
+```c++
+/**
+ *  @param  i   First index.
+ *  @param  j   Second index.
+ *  @param  m   Size of subarray.
+ *  @param  cs  Equivalence classes from suffix array.
+ *  @return     0 if equal, -1 if smaller or 1 if bigger.
+ *
+ *  Requires suffix array.
+ *  Both substrings start in the given index and have size m.
+ *
+ *  Time complexity: O(1)
+ */
+ll compare(ll i, ll j, ll m, const vector<vector<int>>& cs) {
+    ll k = 0;  // move outside to speed up a little bit
+    while ((1 << (k + 1)) <= m) ++k;
+    pll a = { cs[k][i], cs[k][i + m - (1 << k)] };
+    pll b = { cs[k][j], cs[k][j + m - (1 << k)] };
+    return a == b ? 0 : (a < b ? -1 : 1);
+}
+```
+
+### Maior prefixo comum com suffix array (LCP)
+
+```c++
+/**
+ *  @param  s   String.
+ *  @param  sa  Suffix array.
+ *  @return     Vector with lcp.
+ *
+ *  Requires suffix array.
+ *  lcp[i]: largest common prefix between suffix sa[i]
+ *  and sa[i + 1]. To get lcp(i, j), do min({lcp[i], ..., lcp[j - 1]}).
+ *  That would be lcp between suffix sa[i] and suffix sa[j].
+ *
+ *  Time complexity: O(N)
+ */
+vll getLcp(const string& s, const vll& sa) {
+    ll n = s.size(), k = 0;
+    vll rank(n), lcp(n - 1);
+    rep(i, 0, n) rank[sa[i]] = i;
+    rep(i, 0, n) {
+        if (rank[i] == n - 1) {
+            k = 0;
+            continue;
+        }
+        ll j = sa[rank[i] + 1];
+        while (i + k < n and j + k < n and s[i + k] == s[j + k])
+            ++k;
+        lcp[rank[i]] = k;
+        if (k) --k;
+    }
+    return lcp;
+}
+```
+
+### Ocorrências de substring com suffix array
+
+```c++
+/**
+ *  @param  s   String.
+ *  @param  t   Substring.
+ *  @param  sa  Suffix array.
+ *  @return     Quantity of occurrences.
+ *
+ *  Requires suffix array.
+ *
+ *  Time complexity: O(Mlog(N))
+ */
+ll count(const string& s, const string& t, const vll& sa) {
+    auto it1 = lower_bound(all(sa), t, [&](ll i, const string& r) {
+        return s.compare(i, r.size(), r) < 0;
+    });
+    auto it2 = upper_bound(all(sa), t, [&](const string& r, ll i) {
+        return s.compare(i, r.size(), r) > 0;
+    });
+    return it2 - it1;
+}
+```
+
 ### Z-Function
 
 ```c++
@@ -1302,7 +1436,7 @@ vll z(const string& s) {
 }
 ```
 
-### Ocorrências de substring
+### Ocorrências de substring com Z-Function
 
 ```c++
 /**
@@ -2757,7 +2891,7 @@ pair<map<T, ll>, map<ll, T>> compress(vector<T>& xs) {
         pm[i] = y;
         mp[y] = i++;
     }
-    return mp;
+    return { mp, pm };
 }
 ```
 
@@ -2907,6 +3041,24 @@ tuple<T, ll, ll> kadane(const vector<T>& xs, bool mx = true) {
             res = csum, l = j, r = i;
     }
     return { res * (mx ? 1 : -1), l, r };
+}
+```
+
+### Mex
+
+```c++
+/**
+ *  @param  xs  Vector.
+ *  @return     Mex of xs.
+ *
+ *  Time complexity: O(N)
+*/
+ll mex(const vll& xs) {
+    ll at = 0;
+    for (ll x : xs)
+        if (x != at++)
+            return at - 1;
+    return at;
 }
 ```
 
