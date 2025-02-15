@@ -51,16 +51,16 @@ As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
     * Crivo de Eratóstenes
     * Divisores
     * Fatoração
-    * Quantidade de divisores
     * Permutação com repetição
+    * Quantidade de divisores
   * Strings
+    * Comparador de substring
     * Distância de edição
+    * Maior prefixo comum (LCP)
+    * Ocorrências de substring (suffix array)
+    * Ocorrências de substring (Z-Function)
     * Suffix array
-    * Comparador de substring com suffix array
-    * Maior prefixo comum com suffix array (LCP)
-    * Ocorrências de substring com suffix array
     * Z-Function
-    * Ocorrências de substring com Z-Function
 * Estruturas
   * Árvores
     * BIT tree 2D
@@ -92,7 +92,7 @@ As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
   * Igualdade flutuante
   * Intervalos com soma S
   * Kadane
-  * Mex
+  * Listar combinações
   * Overflow check
   * Pares com gcd x
   * Próximo maior/menor elemento
@@ -129,9 +129,10 @@ istream& operator>>(istream& in, vector<T>& xs) {
     return in;
 } template <typename T>  // print vector
 ostream& operator<<(ostream& os, vector<T>& xs) {
-    rep(i, os.iword(0), xs.size() - 1) os << xs[i] << ' ';
+    rep(i, os.iword(0), xs.size())
+        os << xs[i] << (i == xs.size() ? "" : " ");
     os.iword(0) = 0;
-    return os << xs.back();
+    return os;
 } void solve();
 signed main() {
     cin.tie(0)->sync_with_stdio(0);
@@ -1166,27 +1167,6 @@ vll factors(ll x, const vll& spf) {
 }
 ```
 
-### Quantidade de divisores
-
-```c++
-/**
- *  @param  x  Target.
- *  @return    Quantity of divisors of x.
- *
- *  Time complexity: O(Nlog(N))/O(1)
-*/
-ll qntDivisors(ll x) {
-    const ll MAXN = 1e6;
-    static vll qnt(MAXN + 1);
-    if (qnt[1] != 1)
-        rep(i, 1, MAXN + 1)
-            for (ll j = i; j <= MAXN; j += i)
-                ++qnt[j];
-    assert(x >= 0 and x <= MAXN);
-    return qnt[x];
-}
-```
-
 ### Permutação com repetição
 
 ```c++
@@ -1218,7 +1198,52 @@ ll rePerm(const map<T, ll>& hist) {
 }
 ```
 
+### Quantidade de divisores
+
+```c++
+/**
+ *  @param  x  Target.
+ *  @return    Quantity of divisors of x.
+ *
+ *  Time complexity: O(Nlog(N))/O(1)
+*/
+ll qntDivisors(ll x) {
+    const ll MAXN = 1e6;
+    static vll qnt(MAXN + 1);
+    if (qnt[1] != 1)
+        rep(i, 1, MAXN + 1)
+            for (ll j = i; j <= MAXN; j += i)
+                ++qnt[j];
+    assert(x >= 0 and x <= MAXN);
+    return qnt[x];
+}
+```
+
 ## Strings
+
+### Comparador de substring
+
+```c++
+/**
+ *  @param  i   First index.
+ *  @param  j   Second index.
+ *  @param  m   Size of subarray.
+ *  @param  cs  Equivalence classes from suffix array.
+ *  @return     0 if equal, -1 if smaller or 1 if bigger.
+ *
+ *  Requires suffix array.
+ *  Both substrings start in the given index and have size m.
+ *
+ *  Time complexity: O(1)
+ */
+ll compare(ll i, ll j, ll m, const vector<vector<int>>& cs) {
+    ll k = 0;  // move outside to speed up a little bit
+    while ((1 << (k + 1)) <= m) ++k;
+    pll a = { cs[k][i], cs[k][i + m - (1 << k)] };
+    pll b = { cs[k][j], cs[k][j + m - (1 << k)] };
+    return a == b ? 0 : (a < b ? -1 : 1);
+}
+```
 
 ### Distância de edição
 
@@ -1279,6 +1304,86 @@ pair<ll, string> edit(const string& s,  string& t) {
 }
 ```
 
+### Maior prefixo comum (LCP)
+
+```c++
+/**
+ *  @param  s   String.
+ *  @param  sa  Suffix array.
+ *  @return     Vector with lcp.
+ *
+ *  Requires suffix array.
+ *  lcp[i]: largest common prefix between suffix sa[i]
+ *  and sa[i + 1]. To get lcp(i, j), do min({lcp[i], ..., lcp[j - 1]}).
+ *  That would be lcp between suffix sa[i] and suffix sa[j].
+ *
+ *  Time complexity: O(N)
+ */
+vll getLcp(const string& s, const vll& sa) {
+    ll n = s.size(), k = 0;
+    vll rank(n), lcp(n - 1);
+    rep(i, 0, n) rank[sa[i]] = i;
+    rep(i, 0, n) {
+        if (rank[i] == n - 1) {
+            k = 0;
+            continue;
+        }
+        ll j = sa[rank[i] + 1];
+        while (i + k < n and j + k < n and s[i + k] == s[j + k])
+            ++k;
+        lcp[rank[i]] = k;
+        if (k) --k;
+    }
+    return lcp;
+}
+```
+
+### Ocorrências de substring (suffix array)
+
+```c++
+/**
+ *  @param  s   String.
+ *  @param  t   Substring.
+ *  @param  sa  Suffix array.
+ *  @return     Quantity of occurrences.
+ *
+ *  Requires suffix array.
+ *
+ *  Time complexity: O(Mlog(N))
+ */
+ll count(const string& s, const string& t, const vll& sa) {
+    auto it1 = lower_bound(all(sa), t, [&](ll i, const string& r) {
+        return s.compare(i, r.size(), r) < 0;
+    });
+    auto it2 = upper_bound(all(sa), t, [&](const string& r, ll i) {
+        return s.compare(i, r.size(), r) > 0;
+    });
+    return it2 - it1;
+}
+```
+
+### Ocorrências de substring (Z-Function)
+
+```c++
+/**
+ *  @param  s  String.
+ *  @param  t  Substring.
+ *  @return    Vector with the first index of occurrences.
+ *
+ *  Requires Z-Function.
+ *
+ *  Time complexity: O(N)
+*/
+vll occur(const string& s, const string& t) {
+    auto zs = z(t + ';' + s);
+    vll is;
+    rep(i, 0, zs.size())
+        if (zs[i] == t.size())
+            is.eb(i - t.size() - 1);
+    return is;
+}
+```
+
 ### Suffix array
 
 ```c++
@@ -1326,88 +1431,6 @@ pair<vll, vvll> suffixArray(string s) {
 }
 ```
 
-### Comparador de substring com suffix array
-
-```c++
-/**
- *  @param  i   First index.
- *  @param  j   Second index.
- *  @param  m   Size of subarray.
- *  @param  cs  Equivalence classes from suffix array.
- *  @return     0 if equal, -1 if smaller or 1 if bigger.
- *
- *  Requires suffix array.
- *  Both substrings start in the given index and have size m.
- *
- *  Time complexity: O(1)
- */
-ll compare(ll i, ll j, ll m, const vector<vector<int>>& cs) {
-    ll k = 0;  // move outside to speed up a little bit
-    while ((1 << (k + 1)) <= m) ++k;
-    pll a = { cs[k][i], cs[k][i + m - (1 << k)] };
-    pll b = { cs[k][j], cs[k][j + m - (1 << k)] };
-    return a == b ? 0 : (a < b ? -1 : 1);
-}
-```
-
-### Maior prefixo comum com suffix array (LCP)
-
-```c++
-/**
- *  @param  s   String.
- *  @param  sa  Suffix array.
- *  @return     Vector with lcp.
- *
- *  Requires suffix array.
- *  lcp[i]: largest common prefix between suffix sa[i]
- *  and sa[i + 1]. To get lcp(i, j), do min({lcp[i], ..., lcp[j - 1]}).
- *  That would be lcp between suffix sa[i] and suffix sa[j].
- *
- *  Time complexity: O(N)
- */
-vll getLcp(const string& s, const vll& sa) {
-    ll n = s.size(), k = 0;
-    vll rank(n), lcp(n - 1);
-    rep(i, 0, n) rank[sa[i]] = i;
-    rep(i, 0, n) {
-        if (rank[i] == n - 1) {
-            k = 0;
-            continue;
-        }
-        ll j = sa[rank[i] + 1];
-        while (i + k < n and j + k < n and s[i + k] == s[j + k])
-            ++k;
-        lcp[rank[i]] = k;
-        if (k) --k;
-    }
-    return lcp;
-}
-```
-
-### Ocorrências de substring com suffix array
-
-```c++
-/**
- *  @param  s   String.
- *  @param  t   Substring.
- *  @param  sa  Suffix array.
- *  @return     Quantity of occurrences.
- *
- *  Requires suffix array.
- *
- *  Time complexity: O(Mlog(N))
- */
-ll count(const string& s, const string& t, const vll& sa) {
-    auto it1 = lower_bound(all(sa), t, [&](ll i, const string& r) {
-        return s.compare(i, r.size(), r) < 0;
-    });
-    auto it2 = upper_bound(all(sa), t, [&](const string& r, ll i) {
-        return s.compare(i, r.size(), r) > 0;
-    });
-    return it2 - it1;
-}
-```
-
 ### Z-Function
 
 ```c++
@@ -1433,28 +1456,6 @@ vll z(const string& s) {
     }
 
     return zs;
-}
-```
-
-### Ocorrências de substring com Z-Function
-
-```c++
-/**
- *  @param  s  String.
- *  @param  t  Substring.
- *  @return    Vector with the first index of occurrences.
- *
- *  Requires Z-Function.
- *
- *  Time complexity: O(N)
-*/
-vll occur(const string& s, const string& t) {
-    auto zs = z(t + ';' + s);
-    vll is;
-    rep(i, 0, zs.size())
-        if (zs[i] == t.size())
-            is.eb(i - t.size() - 1);
-    return is;
 }
 ```
 
@@ -1530,7 +1531,7 @@ struct DSU {
     /**
      *  @param  n  Size.
     */
-    DSU(ll n) : parent(n + 1), size(n + 1, 1) {
+    DSU(ll n) : parent(n), size(n, 1) {
         iota(all(parent), 0);
     }
 
@@ -1554,7 +1555,7 @@ struct DSU {
         ll a = setOf(x), b = setOf(y);
         if (size[a] > size[b]) swap(a, b);
         parent[a] = b;
-        if (a != b) size[b] += size[a];
+        if (a != b) size[b] += size[a], size[a] = 0;
     }
 
     /**
@@ -1620,7 +1621,14 @@ struct RBT {
 };
 ```
 
+### Red-Black tree apenas distintos
+
 ```c++
+#include <ext/pb_ds/assoc_container.hpp>
+#include <ext/pb_ds/tree_policy.hpp>
+
+using namespace __gnu_pbds;
+
 /**
 *  @brief Like a set but with indexes.
 */
@@ -1776,6 +1784,300 @@ struct WaveletTree {
 ```
 
 ## Geometria
+
+### Círculo
+
+```c++
+enum Position { IN, ON, OUT };
+
+template <typename T>
+struct Circle {
+    /**
+    *  @param  P  Origin point.
+    *  @param  r  Radius length.
+    */
+    Circle(const pair<T, T>& P, T r) : C(P), r(r) {}
+
+    /**
+    *  Time complexity: O(1)
+    */
+    double area() { return acos(-1.0) * r * r; }
+    double perimeter() { return 2.0 * acos(-1.0) * r; }
+    double arc(double radians) { return radians * r; }
+    double chord(double radians) { return 2.0 * r * sin(radians / 2.0); }
+    double sector(double radians) { return (radians * r * r) / 2.0; }
+
+    /**
+    *  @param  a  Angle in radians.
+    *  @return    Circle segment.
+    *
+    *  Time complexity: O(1)
+    */
+    double segment(double a) {
+        double c = chord(a);
+        double s = (r + r + c) / 2.0;
+        double t = sqrt(s) * sqrt(s - r) * sqrt(s - r) * sqrt(s - c);
+        return sector(a) - t;
+    }
+
+    /**
+    *  @param  P  Point.
+    *  @return    Value that represents orientation of P to this circle.
+    *
+    *  Time complexity: O(1)
+    */
+    Position position(const pair<T, T>& P) {
+        double d = dist(P, C);
+        return equals(d, r) ? ON : (d < r ? IN : OUT);
+    }
+
+    /**
+    *  @param  c  Circle.
+    *  @return    Intersection/s point between c and this circle.
+    *
+    *  Time complexity: O(1)
+    */
+    vector<pair<T, T>> intersection(const Circle& c) {
+        double d = dist(c.C, C);
+
+        // no intersection or same
+        if (d > c.r + r or d < abs(c.r - r) or (equals(d, 0) and equals(c.r, r)))
+            return {};
+
+        double a = (c.r * c.r - r * r + d * d) / (2.0 * d);
+        double h = sqrt(c.r * c.r - a * a);
+        double x = c.C.x + (a / d) * (C.x - c.C.x);
+        double y = c.C.y + (a / d) * (C.y - c.C.y);
+        pd p1, p2;
+        p1.x = x + (h / d) * (C.y - c.C.y);
+        p1.y = y - (h / d) * (C.x - c.C.x);
+        p2.x = x - (h / d) * (C.y - c.C.y);
+        p2.y = y + (h / d) * (C.x - c.C.x);
+        return p1 == p2 ? vector<pair<T, T>> { p1 } : vector<pair<T, T>> { p1, p2 };
+    }
+
+    /**
+    *  @param  P  First point
+    *  @param  Q  Second point
+    *  @return    Intersection point/s between line PQ and this circle.
+    *
+    *  Time complexity: O(1)
+    */
+    vector<pd> intersection(pair<T, T> P, pair<T, T> Q) {
+        P.x -= C.x, P.y -= C.y, Q.x -= C.x, Q.y -= C.y;
+        double a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y);
+        double x0 = -a * c / (a * a + b * b), y0 = -b * c / (a * a + b * b);
+        if (c*c > r*r * (a*a + b*b) + 1e-9) return {};
+        if (equals(c*c, r*r * (a*a + b*b))) return { { x0, y0 } };
+        double d = r * r - c * c / (a * a + b * b);
+        double mult = sqrt(d / (a * a + b * b));
+        double ax = x0 + b * mult + C.x;
+        double bx = x0 - b * mult + C.x;
+        double ay = y0 - a * mult + C.y;
+        double by = y0 + a * mult + C.y;
+        return { { ax, ay }, { bx, by } };
+    }
+
+    /**
+    *  @return Tangent points looking from origin.
+    *
+    *  Time complexity: O(1)
+    */
+    pair<pd, pd> tanPoints() {
+        double b = hypot(C.x, C.y), th = acos(r / b);
+        double d = atan2(-C.y, -C.x), d1 = d + th, d2 = d - th;
+        return { {C.x + r * cos(d1), C.y + r * sin(d1)},
+                 {C.x + r * cos(d2), C.y + r * sin(d2)} };
+    }
+
+    /**
+    *  @param  P  First point
+    *  @param  Q  Second point
+    *  @param  R  Third point
+    *  @return Circle defined by those 3 points.
+    *
+    *  Time complexity: O(1)
+    */
+    static Circle<double> from3(const pair<T, T>& P, const pair<T, T>& Q,
+                                                     const pair<T, T>& R) {
+        T a = 2 * (Q.x - P.x), b = 2 * (Q.y - P.y);
+        T c = 2 * (R.x - P.x), d = 2 * (R.y - P.y);
+        double det = a * d - b * c;
+
+        // collinear points
+        if (equals(det, 0)) return { { 0, 0 }, 0 };
+
+        T k1 = (Q.x * Q.x + Q.y * Q.y) - (P.x * P.x + P.y * P.y);
+        T k2 = (R.x * R.x + R.y * R.y) - (P.x * P.x + P.y * P.y);
+        double cx = (k1 * d - k2 * b) / det;
+        double cy = (a * k2 - c * k1) / det;
+        return { { cx, cy }, dist(P, { cx, cy }) };
+    }
+
+    /**
+    *  @param  PS  Points
+    *  @return     Minimum enclosing circle with those points.
+    *
+    *  Time complexity: O(N)
+    */
+    static Circle<double> mec(vector<pair<T, T>>& PS) {
+        random_shuffle(all(PS));
+        Circle<double> c(PS[0], 0);
+        rep(i, 0, PS.size()) {
+            if (c.position(PS[i]) != OUT) continue;
+            c = { PS[i], 0 };
+            rep(j, 0, i) {
+                if (c.position(PS[j]) != OUT) continue;
+                c = {
+                    { (PS[i].x + PS[j].x) / 2.0, (PS[i].y + PS[j].y) / 2.0 },
+                       dist(PS[i], PS[j]) / 2.0
+                };
+                rep(k, 0, j)
+                    if (c.position(PS[k]) == OUT)
+                    c = from3(PS[i], PS[j], PS[k]);
+            }
+        }
+        return c;
+    }
+
+    pair<T, T> C;
+    T r;
+};
+```
+
+### Polígono
+
+```c++
+template <typename T>
+struct Polygon {
+    /**
+    *  @param  PS  Clock-wise points.
+    */
+    Polygon(const vector<pair<T, T>>& PS)
+        : vs(PS), n(vs.size()) { vs.eb(vs.front()); }
+
+    /**
+    *  @return True if is convex.
+    *
+    *  Time complexity: O(N)
+    */
+    bool convex() {
+        if (n < 3) return false;
+        ll P = 0, N = 0, Z = 0;
+
+        rep(i, 0, n) {
+            auto d = D(vs[i], vs[(i + 1) % n], vs[(i + 2) % n]);
+            d ? (d > 0 ? ++P : ++N) : ++Z;
+        }
+
+        return P == n or N == n;
+    }
+
+    /**
+    *  @return Area. If points are integer, double the area.
+    *
+    *  Time complexity: O(N)
+    */
+    T area() {
+        T a = 0;
+        rep(i, 0, n) a += vs[i].x * vs[i + 1].y - vs[i + 1].x * vs[i].y;
+        if (is_floating_point_v<T>) return 0.5 * abs(a);
+        return abs(a);
+    }
+    
+    /**
+    *  @return Perimeter.
+    *
+    *  Time complexity: O(N)
+    */
+    double perimeter() {
+        double P = 0;
+        rep(i, 0, n) P += dist(vs[i], vs[i + 1]);
+        return P;
+    }
+
+    /**
+    *  @param  P  Point
+    *  @return    True if P inside polygon.
+    *
+    *  Doesn't consider border points.
+    *
+    *  Time complexity: O(N)
+    */
+    bool contains(const pair<T, T>& P) {
+        if (n < 3) return false;
+        double sum = 0;
+
+        rep(i, 0, n) {
+            // border points are considered outside, should
+            // use contains point in segment to count them
+            auto d = D(vs[i], vs[i + 1], P);
+            double a = angle(P, vs[i], P, vs[i + 1]);
+            sum += d > 0 ? a : (d < 0 ? -a : 0);
+        }
+
+        return equals(abs(sum), 2.0 * acos(-1.0));  // check precision
+    }
+
+    /**
+    *  @param  P  First point.
+    *  @param  Q  Second point.
+    *  @return    One of the polygons generated through the cut of the line PQ.
+    *
+    *  Time complexity: O(N)
+    */
+    Polygon cut(const pair<T, T>& P, const pair<T, T>& Q) {
+        vector<pair<T, T>> points;
+        double EPS { 1e-9 };
+
+        rep(i, 0, n) {
+            auto d1 = D(P, Q, vs[i]), d2 = D(P, Q, vs[i + 1]);
+            if (d1 > -EPS) points.eb(vs[i]);
+            if (d1 * d2 < -EPS)
+                points.eb(intersection(vs[i], vs[i + 1], P, Q));
+        }
+
+        return { points };
+    }
+
+    /**
+    *  @return Circumradius length.
+    *
+    *  Regular polygon.
+    *
+    *  Time complexity: O(1)
+    */
+    double circumradius() {
+        double s = dist(vs[0], vs[1]);
+        return (s / 2.0) * (1.0 / sin(acos(-1.0) / n));
+    }
+
+    /**
+    *  @return Apothem length.
+    *
+    *  Regular polygon.
+    *
+    *  Time complexity: O(1)
+    */
+    double apothem() {
+        double s = dist(vs[0], vs[1]);
+        return (s / 2.0) * (1.0 / tan(acos(-1.0) / n));
+    }
+
+private:
+    // lines intersection
+    pair<T, T> intersection(const pair<T, T>& P, const pair<T, T>& Q,
+                            const pair<T, T>& R, const pair<T, T>& S) {
+        T a = S.y - R.y, b = R.x - S.x, c = S.x * R.y - R.x * S.y;
+        T u = abs(a * P.x + b * P.y + c);
+        T v = abs(a * Q.x + b * Q.y + c);
+        return { (P.x * v + Q.x * u) / (u + v), (P.y * v + Q.y * u) / (u + v) };
+    }
+
+    vector<pair<T, T>> vs;
+    ll n;
+};
+```
 
 ### Reta
 
@@ -1940,166 +2242,6 @@ struct Segment {
 };
 ```
 
-### Círculo
-
-```c++
-enum Position { IN, ON, OUT };
-
-template <typename T>
-struct Circle {
-    /**
-    *  @param  P  Origin point.
-    *  @param  r  Radius length.
-    */
-    Circle(const pair<T, T>& P, T r) : C(P), r(r) {}
-
-    /**
-    *  Time complexity: O(1)
-    */
-    double area() { return acos(-1.0) * r * r; }
-    double perimeter() { return 2.0 * acos(-1.0) * r; }
-    double arc(double radians) { return radians * r; }
-    double chord(double radians) { return 2.0 * r * sin(radians / 2.0); }
-    double sector(double radians) { return (radians * r * r) / 2.0; }
-
-    /**
-    *  @param  a  Angle in radians.
-    *  @return    Circle segment.
-    *
-    *  Time complexity: O(1)
-    */
-    double segment(double a) {
-        double c = chord(a);
-        double s = (r + r + c) / 2.0;
-        double t = sqrt(s) * sqrt(s - r) * sqrt(s - r) * sqrt(s - c);
-        return sector(a) - t;
-    }
-
-    /**
-    *  @param  P  Point.
-    *  @return    Value that represents orientation of P to this circle.
-    *
-    *  Time complexity: O(1)
-    */
-    Position position(const pair<T, T>& P) {
-        double d = dist(P, C);
-        return equals(d, r) ? ON : (d < r ? IN : OUT);
-    }
-
-    /**
-    *  @param  c  Circle.
-    *  @return    Intersection/s point between c and this circle.
-    *
-    *  Time complexity: O(1)
-    */
-    vector<pair<T, T>> intersection(const Circle& c) {
-        double d = dist(c.C, C);
-
-        // no intersection or same
-        if (d > c.r + r or d < abs(c.r - r) or (equals(d, 0) and equals(c.r, r)))
-            return {};
-
-        double a = (c.r * c.r - r * r + d * d) / (2.0 * d);
-        double h = sqrt(c.r * c.r - a * a);
-        double x = c.C.x + (a / d) * (C.x - c.C.x);
-        double y = c.C.y + (a / d) * (C.y - c.C.y);
-        pd p1, p2;
-        p1.x = x + (h / d) * (C.y - c.C.y);
-        p1.y = y - (h / d) * (C.x - c.C.x);
-        p2.x = x - (h / d) * (C.y - c.C.y);
-        p2.y = y + (h / d) * (C.x - c.C.x);
-        return p1 == p2 ? vector<pair<T, T>> { p1 } : vector<pair<T, T>> { p1, p2 };
-    }
-
-    /**
-    *  @param  P  First point
-    *  @param  Q  Second point
-    *  @return    Intersection point/s between line PQ and this circle.
-    *
-    *  Time complexity: O(1)
-    */
-    vector<pd> intersection(pair<T, T> P, pair<T, T> Q) {
-        P.x -= C.x, P.y -= C.y, Q.x -= C.x, Q.y -= C.y;
-        double a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y);
-        double x0 = -a * c / (a * a + b * b), y0 = -b * c / (a * a + b * b);
-        if (c*c > r*r * (a*a + b*b) + 1e-9) return {};
-        if (equals(c*c, r*r * (a*a + b*b))) return { { x0, y0 } };
-        double d = r * r - c * c / (a * a + b * b);
-        double mult = sqrt(d / (a * a + b * b));
-        double ax = x0 + b * mult + C.x;
-        double bx = x0 - b * mult + C.x;
-        double ay = y0 - a * mult + C.y;
-        double by = y0 + a * mult + C.y;
-        return { { ax, ay }, { bx, by } };
-    }
-
-    /**
-    *  @return Tangent points looking from origin.
-    *
-    *  Time complexity: O(1)
-    */
-    pair<pd, pd> tanPoints() {
-        double b = hypot(C.x, C.y), th = acos(r / b);
-        double d = atan2(-C.y, -C.x), d1 = d + th, d2 = d - th;
-        return { {C.x + r * cos(d1), C.y + r * sin(d1)},
-                 {C.x + r * cos(d2), C.y + r * sin(d2)} };
-    }
-
-    /**
-    *  @param  P  First point
-    *  @param  Q  Second point
-    *  @param  R  Third point
-    *  @return Circle defined by those 3 points.
-    *
-    *  Time complexity: O(1)
-    */
-    static Circle<double> from3(const pair<T, T>& P, const pair<T, T>& Q,
-                                                     const pair<T, T>& R) {
-        T a = 2 * (Q.x - P.x), b = 2 * (Q.y - P.y);
-        T c = 2 * (R.x - P.x), d = 2 * (R.y - P.y);
-        double det = a * d - b * c;
-
-        // collinear points
-        if (equals(det, 0)) return { { 0, 0 }, 0 };
-
-        T k1 = (Q.x * Q.x + Q.y * Q.y) - (P.x * P.x + P.y * P.y);
-        T k2 = (R.x * R.x + R.y * R.y) - (P.x * P.x + P.y * P.y);
-        double cx = (k1 * d - k2 * b) / det;
-        double cy = (a * k2 - c * k1) / det;
-        return { { cx, cy }, dist(P, { cx, cy }) };
-    }
-
-    /**
-    *  @param  PS  Points
-    *  @return     Minimum enclosing circle with those points.
-    *
-    *  Time complexity: O(N)
-    */
-    static Circle<double> mec(vector<pair<T, T>>& PS) {
-        random_shuffle(all(PS));
-        Circle<double> c(PS[0], 0);
-        rep(i, 0, PS.size()) {
-            if (c.position(PS[i]) != OUT) continue;
-            c = { PS[i], 0 };
-            rep(j, 0, i) {
-                if (c.position(PS[j]) != OUT) continue;
-                c = {
-                    { (PS[i].x + PS[j].x) / 2.0, (PS[i].y + PS[j].y) / 2.0 },
-                       dist(PS[i], PS[j]) / 2.0
-                };
-                rep(k, 0, j)
-                    if (c.position(PS[k]) == OUT)
-                    c = from3(PS[i], PS[j], PS[k]);
-            }
-        }
-        return c;
-    }
-
-    pair<T, T> C;
-    T r;
-};
-```
-
 ### Triângulo
 
 ```c++
@@ -2216,140 +2358,6 @@ struct Triangle {
 
     pair<T, T> A, B, C;
     T a, b, c;
-};
-```
-
-### Polígono
-
-```c++
-template <typename T>
-struct Polygon {
-    /**
-    *  @param  PS  Clock-wise points.
-    */
-    Polygon(const vector<pair<T, T>>& PS)
-        : vs(PS), n(vs.size()) { vs.eb(vs.front()); }
-
-    /**
-    *  @return True if is convex.
-    *
-    *  Time complexity: O(N)
-    */
-    bool convex() {
-        if (n < 3) return false;
-        ll P = 0, N = 0, Z = 0;
-
-        rep(i, 0, n) {
-            auto d = D(vs[i], vs[(i + 1) % n], vs[(i + 2) % n]);
-            d ? (d > 0 ? ++P : ++N) : ++Z;
-        }
-
-        return P == n or N == n;
-    }
-
-    /**
-    *  @return Area. If points are integer, double the area.
-    *
-    *  Time complexity: O(N)
-    */
-    T area() {
-        T a = 0;
-        rep(i, 0, n) a += vs[i].x * vs[i + 1].y - vs[i + 1].x * vs[i].y;
-        if (is_floating_point_v<T>) return 0.5 * abs(a);
-        return abs(a);
-    }
-    
-    /**
-    *  @return Perimeter.
-    *
-    *  Time complexity: O(N)
-    */
-    double perimeter() {
-        double P = 0;
-        rep(i, 0, n) P += dist(vs[i], vs[i + 1]);
-        return P;
-    }
-
-    /**
-    *  @param  P  Point
-    *  @return    True if P inside polygon.
-    *
-    *  Doesn't consider border points.
-    *
-    *  Time complexity: O(N)
-    */
-    bool contains(const pair<T, T>& P) {
-        if (n < 3) return false;
-        double sum = 0;
-
-        rep(i, 0, n) {
-            // border points are considered outside, should
-            // use contains point in segment to count them
-            auto d = D(vs[i], vs[i + 1], P);
-            double a = angle(P, vs[i], P, vs[i + 1]);
-            sum += d > 0 ? a : (d < 0 ? -a : 0);
-        }
-
-        return equals(abs(sum), 2.0 * acos(-1.0));  // check precision
-    }
-
-    /**
-    *  @param  P  First point.
-    *  @param  Q  Second point.
-    *  @return    One of the polygons generated through the cut of the line PQ.
-    *
-    *  Time complexity: O(N)
-    */
-    Polygon cut(const pair<T, T>& P, const pair<T, T>& Q) {
-        vector<pair<T, T>> points;
-        double EPS { 1e-9 };
-
-        rep(i, 0, n) {
-            auto d1 = D(P, Q, vs[i]), d2 = D(P, Q, vs[i + 1]);
-            if (d1 > -EPS) points.eb(vs[i]);
-            if (d1 * d2 < -EPS)
-                points.eb(intersection(vs[i], vs[i + 1], P, Q));
-        }
-
-        return { points };
-    }
-
-    /**
-    *  @return Circumradius length.
-    *
-    *  Regular polygon.
-    *
-    *  Time complexity: O(1)
-    */
-    double circumradius() {
-        double s = dist(vs[0], vs[1]);
-        return (s / 2.0) * (1.0 / sin(acos(-1.0) / n));
-    }
-
-    /**
-    *  @return Apothem length.
-    *
-    *  Regular polygon.
-    *
-    *  Time complexity: O(1)
-    */
-    double apothem() {
-        double s = dist(vs[0], vs[1]);
-        return (s / 2.0) * (1.0 / tan(acos(-1.0) / n));
-    }
-
-private:
-    // lines intersection
-    pair<T, T> intersection(const pair<T, T>& P, const pair<T, T>& Q,
-                            const pair<T, T>& R, const pair<T, T>& S) {
-        T a = S.y - R.y, b = R.x - S.x, c = S.x * R.y - R.x * S.y;
-        T u = abs(a * P.x + b * P.y + c);
-        T v = abs(a * Q.x + b * Q.y + c);
-        return { (P.x * v + Q.x * u) / (u + v), (P.y * v + Q.y * u) / (u + v) };
-    }
-
-    vector<pair<T, T>> vs;
-    ll n;
 };
 ```
 
@@ -3044,21 +3052,29 @@ tuple<T, ll, ll> kadane(const vector<T>& xs, bool mx = true) {
 }
 ```
 
-### Mex
+### Listar combinações
 
 ```c++
 /**
- *  @param  xs  Vector.
- *  @return     Mex of xs.
+ *  @brief Lists all combinations n choose k.
+ *  @param  i  Index.
+ *  @param  k  Remaining elements to be chosen.
  *
- *  Time complexity: O(N)
+ *  When calling try to call on min(k, n - k) if
+ *  can make the reverse logic to guarantee efficiency.
+ *
+ *  Time complexity: O(K(binom(n, k)))
 */
-ll mex(const vll& xs) {
-    ll at = 0;
-    for (ll x : xs)
-        if (x != at++)
-            return at - 1;
-    return at;
+void binom(ll i, ll k, vll& ks, const vll& xs) {
+    if (k == 0) {
+        cout << ks << '\n';
+        return;
+    }
+    if (i == xs.size()) return;
+    ks.eb(xs[i]);
+    binom(i + 1, k - 1, ks, xs);
+    ks.pop_back();
+    binom(i + 1, k, ks, xs);
 }
 ```
 
