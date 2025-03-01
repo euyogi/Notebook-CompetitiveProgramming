@@ -57,8 +57,10 @@ As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
     * Comparador de substring
     * Distância de edição
     * Maior prefixo comum (LCP)
+    * Menor rotação
     * Ocorrências de substring (suffix array)
     * Ocorrências de substring (Z-Function)
+    * Períodos
     * Suffix array
     * Z-Function
 * Estruturas
@@ -148,7 +150,7 @@ void solve() {
 ### Outros defines
 
 ```c++
-// BEGIN EXTRAS ----------------------------------------|
+// BEGIN EXTRAS -----------------------------------------|
 #define vvpll vector<vpll>
 #define tll   tuple<ll, ll, ll>
 #define vtll  vector<tll>
@@ -162,7 +164,7 @@ map<char, pll> ds1 {
 };
 vpll ds2 { {0, 1}, {1, 0}, {0, -1}, {-1, 0}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1} };
 vpll ds3 { {1, 2}, {2, 1}, {-1, 2}, {-2, 1}, {1, -2}, {2, -1}, {-1, -2}, {-2, -1} };
-// END EXTRAS ------------------------------------------|
+// END EXTRAS -------------------------------------------|
 ```
 
 # Flags
@@ -747,6 +749,10 @@ vvll floydWarshall(const vvpll& g) {
 /**
  *  @param  g  Directed graph.
  *  @return    Condensed graph and strongly connected components.
+ *
+ *  A single vertex is a strongly connected component.
+ *  The component is ordered in the sense that if we have {a, b},
+ *  then there is a edge from a to b.
  *
  *  Time complexity: O((Elog(V))
 */
@@ -1338,6 +1344,37 @@ vll getLcp(const string& s, const vll& sa) {
 }
 ```
 
+### Menor rotação
+
+```c++
+/**
+ *  @param  s   String.
+ *  @return     Index of the minimum rotation.
+ *
+ *  Time complexity: O(N)
+ */
+ll minRotation(const string& s) {
+    ll n = s.size(), k = 0;
+    vll f(2 * n, -1);
+    rep(j, 1, 2 * n) {
+        ll i = f[j - k - 1];
+        while (i != -1 and s[j % n] != s[(k + i + 1) % n]) {
+            if (s[j % n] < s[(k + i + 1) % n])
+                k = j - i - 1;
+            i = f[i];
+        }
+        if (i == -1 and s[j % n] != s[(k + i + 1) % n]) {
+            if (s[j % n] < s[(k + i + 1) % n])
+                k = j;
+            f[j - k] = -1;
+        }
+        else
+            f[j - k] = i + 1;
+    }
+    return k;
+}
+```
+
 ### Ocorrências de substring (suffix array)
 
 ```c++
@@ -1384,50 +1421,77 @@ vll occur(const string& s, const string& t) {
 }
 ```
 
+### Períodos
+
+```c++
+/**
+ *  @param  s  String.
+ *  @return    Vector with the periods.
+ *
+ *  Requires Z-Function.
+ *  Includes period of size n.
+ *
+ *  Time complexity: O(N)
+*/
+vll periods(const string& s) {
+    ll n = s.size();
+    vll zs = z(s), ps;
+    rep(i, 0, n)
+        if (zs[i] == n - i)
+            ps.eb(i);
+    ps.eb(n);
+    return ps;
+}
+```
+
 ### Suffix array
 
 ```c++
 template <typename T>
-void cSort(const T& xs, vll& is, ll alpha) {
+void cSort(const T& xs, vll& ps, ll alpha) {
     vll hist(alpha + 1);
     for (auto x : xs) ++hist[x];
     rep(i, 1, alpha + 1) hist[i] += hist[i - 1];
-    per(i, is.size() - 1, 0) is[--hist[xs[i]]] = i;
+    per(i, ps.size() - 1, 0) ps[--hist[xs[i]]] = i;
 }
 
 template <typename T>
-vll getEqClass(const vll& is, const T& xs) {
-    vll cs(xs.size());
-    rep(i, 1, is.size())
-        cs[is[i]] = cs[is[i - 1]] + (xs[is[i - 1]] != xs[is[i]]);
-    return cs;
+void updEqClass(vll& cs, const vll& ps, const T& xs) {
+    cs[0] = 0;
+    rep(i, 1, ps.size())
+        cs[ps[i]] = cs[ps[i - 1]] + (xs[ps[i - 1]] != xs[ps[i]]);
 }
 
 /**
  *  @param  s  String.
- *  @return    Suffix array (lexographically sorted suffix indexes).
+ *  @param  k  log of M (M is size of substring to compare).
+ *  @return    Suffix array or equivalence classes.
+ *
+ *  Suffix array is a vector with the lexographically sorted suffix indexes.
+ *  If want to use the compare() function that requires suffix array,
+ *  pass k to this function to have the equivalence classes vector.
  *
  *  Time complexity: O(Nlog(N))
  */
-pair<vll, vvll> suffixArray(string s) {
+vll suffixArray(string s, ll k = LLONG_MAX) {
     s += ';';
     ll n = s.size();
-    vll is(n), rs(n), xs(n);
-    cSort(s, is, 256);
+    vll ps(n), rs(n), xs(n), cs(n);
+    cSort(s, ps, 256);
     vpll ys(n);
-    vvll cs = {getEqClass(is, s)};
-    for (ll mask = 1, k = 0; mask < n; mask *= 2, ++k) {
+    updEqClass(cs, ps, s);
+    for (ll mask = 1; mask < n and k > 0; mask *= 2, --k) {
         rep(i, 0, n) {
-            rs[i] = (is[i] + n - mask) % n;
-            xs[i] = cs[k][rs[i]];
-            ys[i] = {cs[k][i], cs[k][(i + mask) % n]};
+            rs[i] = ps[i] - mask + (ps[i] < mask) * n;
+            xs[i] = cs[rs[i]];
+            ys[i] = {cs[i], cs[i + mask - (i + mask >= n) * n]};
         }
-        cSort(xs, is, cs[k][is.back()] + 1);
-        rep(i, 0, n) is[i] = rs[is[i]];
-        cs.eb(getEqClass(is, ys));
+        cSort(xs, ps, cs[ps.back()] + 1);
+        rep(i, 0, n) ps[i] = rs[ps[i]];
+        updEqClass(cs, ps, ys);
     }
-    is.erase(is.begin());
-    return { is, cs };
+    ps.erase(ps.begin());
+    return (k == 0 ? cs : ps);
 }
 ```
 
@@ -1443,18 +1507,14 @@ pair<vll, vvll> suffixArray(string s) {
 vll z(const string& s) {
     ll n = s.size(), l = 0, r = 0;
     vll zs(n);
-
     rep(i, 1, s.size()) {
         if (i <= r)
             zs[i] = min(zs[i - l], r - i + 1);
-
         while (zs[i] + i < n && s[zs[i]] == s[i + zs[i]])
             ++zs[i];
-
         if (r < i + zs[i] - 1)
             l = i, r = i + zs[i] - 1;
     }
-
     return zs;
 }
 ```
@@ -2366,12 +2426,30 @@ struct Triangle {
 ### Matriz
 
 ```c++
+/**
+ *  @brief This speeds up constant space dp.
+ *
+ *  The matrix will be the coefficients of the dp.
+ *  Like ndp[i] += dp[j] * m[i][j].
+ *
+ *  If the dp doesn't look like that it may still work but
+ *  probably will need to have a custom product.
+*/
 template <typename T>
 struct Matrix {
     Matrix(const vector<vector<T>>& matrix) : mat(matrix), n(mat.size()) {}
     Matrix(ll m) : n(m) { mat.resize(n, vector<T>(n)); }
     vector<T>& operator[](ll i) { return mat[i]; }
     
+    /**
+     *  @param  other  Other matrix.
+     *  @return        Product of matrices.
+     *
+     *  It may happen that this needs to be custom.
+     *  Think of it as a transition like on Floyd-Warshall.
+     *
+     *  Time complexity: O(N^3)
+    */
     Matrix operator*(Matrix& other) {
         Matrix res(n);
         rep(i, 0, n) rep(j, 0, n) rep(k, 0, n)
@@ -2380,22 +2458,19 @@ struct Matrix {
     }
     
     /**
-     *  @param  matrix  Matrix.
-     *  @param  b       Exponent.
-     *  @return         Matrix^b.
+     *  @param  b  Exponent.
      *
      *  Time complexity: O(N^3 * log(B))
     */
-    static Matrix pow(const Matrix& matrix, ll b) {
-        ll n = matrix.n;
-        Matrix tmp = matrix, res(n);
+    void pow(ll b) {
+        Matrix &self = *this, res(n);
         rep(i, 0, n) res[i][i] = 1;
         while (b > 0) {
-            if (b & 1) res = res * tmp;
-            tmp = tmp * tmp;
+            if (b & 1) res = res * self;
+            self = self * self;
             b /= 2;
         }
-        return res;
+        self = res;
     }
 
     vector<vector<T>> mat;
@@ -2417,6 +2492,8 @@ struct Hash {
     
     /**
      *  @param  s  String.
+     *
+     *  p^n + p^n-1 + ... + p^0.
      *
      *  Time complexity: O(N)
     */
@@ -2762,7 +2839,7 @@ struct Mi {
     Mi operator+=(Mi b) { return v += b.v - (v + b.v >= M) * M; }
     Mi operator-=(Mi b) { return v -= b.v - (v - b.v  < 0) * M; }
     Mi operator*=(Mi b) { return v = v * b.v % M; }
-    Mi operator/=(Mi b) & { return *this *= pow(b, M - 2); }
+    Mi operator/=(Mi b) { return *this *= pow(b, M - 2); }
     friend Mi operator+(Mi a, Mi b) { return a += b; }
     friend Mi operator-(Mi a, Mi b) { return a -= b; }
     friend Mi operator*(Mi a, Mi b) { return a *= b; }
@@ -2964,6 +3041,8 @@ ou a soma alternada de blocos de três algarismos divisível por `7`
 > Divisibilidade por `11`: Soma alternada dos algarismos divisível por `11`
 
 > Divisibilidade por `12`: Se for divisível por `3` e `4`
+
+> Ao realizar operações com aritmética modular a paridade (sem módulo) não é preservada.
 
 Strings
 
