@@ -55,6 +55,7 @@ As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
     * Quantidade de divisores
   * Strings
     * Comparador de substring
+    * Borda de prefixos
     * Distância de edição
     * Maior prefixo comum (LCP)
     * Menor rotação
@@ -82,6 +83,7 @@ As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
     * Hash
     * Suffix Automaton
   * Outros
+    * RMQ
     * Soma de prefixo 2D
     * Soma de prefixo 3D
 * Utils
@@ -124,15 +126,14 @@ using namespace std;
 #define cinj         (cin.iword(0)  = 1, cin)
 #define coutj        (cout.iword(0) = 1, cout)
 template <typename T>  // read vector
-istream& operator>>(istream& in, vector<T>& xs) {
+istream& operator>>(istream& is, vector<T>& xs) {
     assert(!xs.empty());
-    rep(i, in.iword(0), xs.size()) in >> xs[i];
-    in.iword(0) = 0;
-    return in;
+    rep(i, is.iword(0), xs.size()) is >> xs[i];
+    is.iword(0) = 0;
+    return is;
 } template <typename T>  // print vector
 ostream& operator<<(ostream& os, vector<T>& xs) {
-    rep(i, os.iword(0), xs.size())
-        os << xs[i] << (i == xs.size() ? "" : " ");
+    rep(i, os.iword(0), xs.size()) os << xs[i] << ' ';
     os.iword(0) = 0;
     return os;
 } void solve();
@@ -169,9 +170,9 @@ vpll ds3 { {1, 2}, {2, 1}, {-1, 2}, {-2, 1}, {1, -2}, {2, -1}, {-1, -2}, {-2, -1
 
 # Flags
 
-`g++ -g -O2 -std=c++20 -fsanitize=undefined -fno-sanitize-recover -Wall -Wextra
- -Wshadow -Wno-sign-compare -Wconversion -Wno-sign-conversion -Wduplicated-cond
- -Winvalid-pch -Dcroquete -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -D_FORTIFY_SOURCE=2`
+`g++ -g -std=c++20 -fsanitize=undefined -fno-sanitize-recover -Wall -Wextra -Wshadow
+ -Wconversion -Wduplicated-cond -Winvalid-pch -Wno-sign-compare -Wno-sign-conversion
+ -Dcroquete -D_GLIBCXX_ASSERTIONS -fmax-errors=1`
 
 # Debug
 
@@ -179,54 +180,31 @@ vpll ds3 { {1, 2}, {2, 1}, {-1, 2}, {-2, 1}, {1, -2}, {2, -1}, {-1, -2}, {-2, -1
 #pragma once
 #include <bits/stdc++.h>
 using namespace std;
-namespace DBG {
-    template <typename T>
-    void C(T x, int n = 4)  { cerr << fixed << "\e[9" << n << 'm' << x << "\e[m"; }
-    void p(char x)          { C("'" + string({x}) + "'", 3); }
-    void p(string x)        { C('"' + x + '"', 3); }
-    void p(bool x)          { x ? C('T', 2) : C('F', 1); }
-    void p(vector<bool> xs) { for (bool x : xs) p(x); }
-    static int m = 0;
-    template <typename T>
-    void p(T x) {
-        int i = 0;
-        if constexpr (requires { begin(x); }) {  // nested iterable
-            C('{');
-            if (size(x) && requires { begin(*begin(x)); }) {
-                cerr << '\n';
-                m += 2;
-                for (auto y : x)
-                    cerr << string(m, ' ') << setw(2) << left << i++, p(y), cerr << '\n';
-                cerr << string(m -= 2, ' ');
-            } else  // normal iterable
-                for (auto y : x) i++ ? C(',') : void(), p(y);
-            C('}');
-        } else if constexpr (requires { x.pop(); }) {  // stacks, queues
-            C('{');
-            while (!x.empty()) {
-                if (i++) C(',');
-                if constexpr (requires { x.top(); }) p(x.top());
+template <typename T> 
+void p(T x) {
+    int f = 0;
+    #define DEL(d) cerr << "\e[94m" << (f++ ? d : "")
+    if constexpr (requires {cout << x;}) DEL("") << x;
+    else {
+        cerr << '{';
+        if constexpr (requires {get<0>(x);})
+            apply([&](auto... args) {((DEL(","), p(args)), ...);}, x);
+        else if constexpr (requires {x.pop();})
+            while (size(x)) {
+                DEL(",");
+                if constexpr (requires {x.top();}) p(x.top());
                 else p(x.front());
                 x.pop();
             }
-            C('}');
-        } else if constexpr (requires { get<0>(x); }) {  // pairs, tuples
-            C('(');
-            apply([&](auto... args) { ((i++ ? C(',') : void(), p(args)), ...); }, x);
-            C(')');
-        } else C(x, 5);
-    }
-    template <typename T, typename... V>
-    void printer(const char* names, T head, V ...tail) {
-        int i = 0;
-        for (int bs = 0; names[i] && (names[i] != ',' || bs); ++i)
-            bs += !strchr(")>}", names[i]) - !strchr("(<{", names[i]);
-        cerr.write(names, i), C(" = "), p(head);
-        if constexpr (sizeof...(tail)) C(" |"), printer(names + i + 1, tail...);
-        else cerr << '\n';
+        else if (size(x) && requires {begin(*begin(x));})
+            for (auto i : x) cerr << '\n', p(i);
+        else for (auto i : x) DEL(","), p(i);
+        cerr << '}';
     }
 }
-#define dbg(...) DBG::C(__LINE__), DBG::C(": "), DBG::printer(#__VA_ARGS__, __VA_ARGS__)
+template <typename... A>
+void _p(A... a) {int f = 0; ((DEL(" | "), p(a)), ...); cerr << "\e[m\n";}
+#define dbg(...) cerr << __LINE__ << ": [" << #__VA_ARGS__ << "] = "; _p(__VA_ARGS__);
 ```
 
 # Algoritmos
@@ -434,7 +412,7 @@ void populate(const vvll& g, ll n) {
  *  Time complexity: O(log(V))
 */
 ll kthAncestor(ll u, ll k) {
-    assert(k > 0 and u > 0 and u < parent.size());
+    assert(0 < u and u < parent.size() and k > 0);
     if (k > depth[u]) return -1;  // no kth ancestor
     rep(i, 0, LOG)
         if (k & (1LL << i))
@@ -511,7 +489,7 @@ void eulerTour(const vvll& g, ll u, ll p = 0) {
  *  Time complexity: O(log(V))
 */
 ll lca(ll u, ll v) {
-    assert(u > 0 and v > 0 and u < parent.size() and v < parent.size());
+    assert(0 < u and u < parent.size() and 0 < v and v < parent.size());
     if (depth[u] < depth[v]) swap(u, v);
     ll k = depth[u] - depth[v];
     u = kthAncestor(u, k);
@@ -1111,13 +1089,13 @@ vll divisors(ll x) {
  *  Time complexity: O(Nlog(N))
 */
 vll divisors(const vll& xs, ll x) {
-    static ll MAXN = 1e6 + 2;
+    static ll MAXN = (ll)1e6 + 2;
     static vll hist(MAXN);
     static vvll ds(MAXN);
-    if (MAXN == 1e6 + 2) {
+    if (MAXN == (ll)1e6 + 2) {
         MAXN = 0;
         for (ll y : xs) {
-            assert(y <= 1e6);
+            assert(y <= (ll)1e6);
             MAXN = max(MAXN, y + 1);
             ++hist[y];
         }
@@ -1248,6 +1226,27 @@ ll compare(ll i, ll j, ll m, const vector<vector<int>>& cs) {
     pll a = { cs[k][i], cs[k][i + m - (1 << k)] };
     pll b = { cs[k][j], cs[k][j + m - (1 << k)] };
     return a == b ? 0 : (a < b ? -1 : 1);
+}
+```
+
+### Borda de prefixos
+
+```c++
+/**
+ *  @param  s  String.
+ *  @return    Vector with the border size for each prefix size.
+ *
+ *  Time complexity: O(N)
+*/
+vll prefixBorder(const string& s) {
+    vll bs(s.size() + 1, -1);
+    ll t = -1;
+    rep(i, 0, s.size()) {
+        while (t > -1 and s[t] != s[i])
+            t = bs[t];
+        bs[i + 1] = ++t;
+    }
+    return bs;
 }
 ```
 
@@ -1716,10 +1715,10 @@ struct Segtree {
         : seg(4 * sz, def), lzy(4 * sz), n(sz), op(f), DEF(def) {}
 
     /**
-    *  @param  i  First interval extreme.
+    *  @param  i  First  interval extreme.
     *  @param  j  Second interval extreme.
     *  @param  x  Value to add (if it's a query).
-    *  @return    f of [i, j] (if it's a query).
+    *  @return    f of interval [i, j] (if it's a query).
     *
     *  It's a query if x is specified.
     *
@@ -1816,7 +1815,7 @@ struct WaveletTree {
     }
 
     /**
-    *  @param  i  First interval extreme.
+    *  @param  i  First  interval extreme.
     *  @param  j  Second interval extreme.
     *  @param  k  Value, starts from 1.
     *  @return    k-th smallest element in [i, j].
@@ -2512,14 +2511,14 @@ struct Hash {
     }
     
     /**
-     *  @param  i  First interval extreme.
+     *  @param  i  First  interval extreme.
      *  @param  j  Second interval extreme.
      *  @return    Pair of integers that represents the substring [i, j].
      *
      *  Time complexity: O(1)
     */
     pll get(ll i, ll j) {
-        assert(i >= 0 and j >= 0 and i < n and j < n);
+        assert(0 <= i and i <= j and j < n);
         T diff;
         diff.x = ps[j].x - (i ? ps[i - 1].x : 0) * pot[j - i].x;
         diff.y = ps[j].y - (i ? ps[i - 1].y : 0) * pot[j - i].y;
@@ -2717,6 +2716,43 @@ private:
 ```
 
 ## Outros
+
+### RMQ
+
+```c++
+template <typename T>
+struct RMQ {
+    /**
+    *  @param  xs  Target vector.
+    *
+    *  Time complexity: O(Nlog(N))
+    */
+    RMQ(const vector<T>& xs)
+        : n(xs.size()), st(LOG, vector<T>(n)) {
+        st[0] = xs;
+
+        rep(i, 1, LOG)
+            for (ll j = 0; j + (1 << i) <= n; ++j)
+                st[i][j] = min(st[i - 1][j], st[i - 1][j + (1 << (i - 1))]);
+    }
+
+    /**
+    *  @param  i  First  interval extreme.
+    *  @param  j  Second interval extreme.
+    *  @return    Minimum value in interval [i, j].
+    *
+    *  Time complexity: O(1)
+    */
+    T query(ll l, ll r) {
+        assert(0 <= l and l <= r and r < n);
+        ll lg = (ll)log2(r - l + 1);
+        return min(st[lg][l], st[lg][r - (1 << lg) + 1]);
+    }
+    
+    ll n, LOG = 25;
+    vector<vector<T>> st;
+};
+```
 
 ### Soma de prefixo 2D
 
@@ -2984,79 +3020,93 @@ pair<map<T, ll>, map<ll, T>> compress(vector<T>& xs) {
 
 Bitwise
 
-> `a + b = (a & b) + (a | b)`
+> `a + b = (a & b) + (a | b)`.
 
-> `a + b = a ^ b + 2 * (a & b)`
+> `a + b = a ^ b + 2 * (a & b)`.
 
 Geometria
 
 > Sendo `A` a área da treliça, `I` a quantidade de pontos interiores
   com coordenadas inteiras e `B` os pontos da borda com coordenadas
-  inteiras, `A = I + B / 2 - 1`. Assim como, `I = (2A + 2 - B) / 2`
+  inteiras, `A = I + B / 2 - 1`. Assim como, `I = (2A + 2 - B) / 2`.
 
 > Sendo `y/x` o coeficiente angular de uma reta com coordenadas
-  inteiras, `gcd(y, x)` representa a quantidade de pontos inteiros nela
+  inteiras, `gcd(y, x)` representa a quantidade de pontos inteiros nela.
 
 > Ao trabalhar com distância de Manhattam podemos fazer a transformação
   `(x, y) -> (x + y, x - y)` para transformar os pontos e ter uma equivalência
   com a distância de Chebyshev, de forma que agora conseguimos tratar `x` e `y`
-  separadamente, fazer boundig boxes, etc
+  separadamente, fazer boundig boxes, etc...
 
 Matemática
 
-> A quantidade de divisores de um número é a multiplicação de cada potência
-  da fatoração `+ 1`
+> A quantidade de divisores de um número é o produtório de `(a + 1)`,
+  onde `a` é o expoente do `i`-ésimo fator primo.
 
-> Maior quantidade de divisores de um número `< 10^18` é `107520`
+> A soma dos divisores de um número é o produtório de (p^(a + 1) - 1)/(p - 1)`,
+  onde `p` é o `i`-ésimo fator primo e `a` o seu expoente.
+  
+> O produto dos divisores de `x` é `x^(qd(x)/2)`, onde `qd(x)` é
+  a quantidade de divisores de `x`.
 
-> Maior quantidade de divisores de um número `< 10^6` é `240`
+> Maior quantidade de divisores de um número `< 10^18` é `107520`.
 
-> Maior quantidade de divisores de um número `< 10^3` é `32`
+> Maior quantidade de divisores de um número `< 10^6` é `240`.
+
+> Maior quantidade de divisores de um número `< 10^3` é `32`.
 
 > Maior diferença entre dois primos consecutivos `< 10^18` é `1476`
   (Podemos concluir também que a partir de um número arbitrário a 
-   distância para um coprimo é bem menor que esse valor)
+   distância para um coprimo é bem menor que esse valor).
 
-> Maior quantidade de primos na fatoração de um número `< 10^6` é `19`
+> Maior quantidade de primos na fatoração de um número `< 10^6` é `19`.
 
-> Maior quantidade de primos na fatoração de um número `< 10^3` é `9`
+> Maior quantidade de primos na fatoração de um número `< 10^3` é `9`.
 
 > Números primos interessantes: `2^31 - 1, 2^31 + 11, 10^18 - 11, 10^18 + 3`.
 
-> `gcd(a, b) = gcd(a, a - b)`, `gcd(a, b, c) = gcd(a, a - b, a - c)`
+> `gcd(a, b) = gcd(a, a - b)`, `gcd(a, b, c) = gcd(a, a - b, a - c)`.
 
-> Divisibilidade por `3`: Soma dos algarismos divisível por `3`
+> Divisibilidade por `3`: Soma dos algarismos divisível por `3`.
 
-> Divisibilidade por `4`: Número formado pelos dois últimos algarismos divísivel por `4`
+> Divisibilidade por `4`: Número formado pelos dois últimos algarismos divísivel por `4`.
 
-> Divisibilidade por `6`: Par e divísivel por `3`
+> Divisibilidade por `6`: Par e divísivel por `3`.
 
 > Divisibilidade por `7`: Dobro do último algarismo subtraído do número sem ele divisível por `7` (pode ir repetindo)
-ou a soma alternada de blocos de três algarismos divisível por `7`
+ou a soma alternada de blocos de três algarismos divisível por `7`.
 
-> Divisibilidade por `8`: Número formado pelos três últimos algarismos divísivel por `8`
+> Divisibilidade por `8`: Número formado pelos três últimos algarismos divísivel por `8`.
 
-> Divisibilidade por `9`: Soma dos algarismos divisível por `9`
+> Divisibilidade por `9`: Soma dos algarismos divisível por `9`.
 
-> Divisibilidade por `11`: Soma alternada dos algarismos divisível por `11`
+> Divisibilidade por `11`: Soma alternada dos algarismos divisível por `11`.
 
-> Divisibilidade por `12`: Se for divisível por `3` e `4`
+> Divisibilidade por `12`: Se for divisível por `3` e `4`.
+
+> A soma da progressão geométrica  é `(a_n * r - a_1) / (r - 1)`.
+
+> `1^2 + 2^2 + ... + n^2 = n(n + 1)(2n + 1) / 6`.
 
 > Ao realizar operações com aritmética modular a paridade (sem módulo) não é preservada.
+
+> `a^(b % p) % p != a^b % p`, então é necessário que `b` seja sempre menor que `p`, mas
+  devido ao Pequeno Teorema de Fermat podemos fazer `b % (p - 1)` isso vai garantir que
+  a operação tenha o valor correto.
 
 Strings
 
 > Sejam `p` e `q` dois períodos de uma string `s`. Se `p + q − mdc(p, q) ≤ |s|`,
-  então `mdc(p, q)` também é período de `s`
+  então `mdc(p, q)` também é período de `s`.
 
 > Relação entre bordas e períodos: A sequência `|s| − |border(s)|, |s| − |border^2(s)|, ..., |s| − |border^k(s)|`
-  é a sequência crescente de todos os possíveis períodos de `s`
+  é a sequência crescente de todos os possíveis períodos de `s`.
 
 Outros
 
 > Princípio da inclusão e exclusão: a união de `n` conjuntos é
   a soma de todas as interseções de um número ímpar de conjuntos menos
-  a soma de todas as interseções de um número par de conjuntos
+  a soma de todas as interseções de um número par de conjuntos.
   
 > A regra de Warnsdorf é uma heurística para encontrar um caminho em
   que o cavalo passa por todas as casas uma única vez: sempre escolher
