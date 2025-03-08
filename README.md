@@ -412,7 +412,7 @@ void populate(const vvll& g, ll n) {
  *  Time complexity: O(log(V))
 */
 ll kthAncestor(ll u, ll k) {
-    assert(0 < u and u < parent.size() and k > 0);
+    assert(1 <= u and u < parent.size() and k > 0);
     if (k > depth[u]) return -1;  // no kth ancestor
     rep(i, 0, LOG)
         if (k & (1LL << i))
@@ -458,22 +458,94 @@ vll st, et;
 
 /**
  *  @param  g  Tree.
- *  @param  u  Root.
  *
  *  Populates st and et, vectors that represents intervals of
  *  each subtree, with those we can use stuff like segtrees on
- *  the subtrees.
+ *  subtrees.
  *
  *  Time complexity: O(E)
 */
-void eulerTour(const vvll& g, ll u, ll p = 0) {
+void eulerTour(const vvll& g, ll u = 1, ll p = 0) {
     if (st.empty()) st.resize(g.size()), et.resize(g.size());
-    assert(u < st.size());
     st[u] = timer++;
     for (ll v : g[u]) if (v != p)
         eulerTour(g, v, u);
     et[u] = timer++;
 }
+```
+
+### Heavy-Light Decomposition
+
+```c++
+template <typename T, typename Op = function<T(T, T)>>
+struct HLD {
+    /**
+    *  @param  g    Tree.
+    *  @param  def  Default value.
+    *  @param  f    Merge function.
+    *
+    *  Example: def in sum or gcd should be 0, in max LLONG_MIN, in min LLONG_MAX
+    *
+    *  Time complexity: O(N)
+    */
+    HLD(vector<vector<T>>& g, T def, Op f)
+            : seg(g.size(), def, f), op(f) {
+        idx = subtree = parent = head = vll(g.size());
+        auto build = [&](auto&& self, ll u = 1, ll p = 0) -> void {
+            idx[u] = timer++;
+            subtree[u] = 1, parent[u] = p;
+           	for (ll& v : g[u]) if (v != p) {
+                head[v] = (v == g[u][0] ? head[u] : v);
+            self(self, v, u);
+            subtree[u] += subtree[v];
+            if (subtree[v] > subtree[g[u][0]] or g[u][0] == p)
+                swap(v, g[u][0]);
+           	}
+            
+           	if (p == 0) {
+                timer = 0;
+                self(self, head[u] = u, -1);
+            }
+        };
+        build(build);
+    }
+	
+    /**
+    *  @param  u  First node.
+    *  @param  v  Second node.
+    *  @param  x  Value to add (if it's a set).
+    *  @return    f of path [u, v] (if it's a query).
+    *
+    *  It's a query if x is specified.
+    *
+    *  Time complexity: O(log^2(N))
+    */
+    ll setQueryPath(ll u, ll v, ll x = INT_MIN) {
+        assert(1 <= u and u < idx.size() and 1 <= v and v < idx.size());
+       	if (idx[u] < idx[v]) swap(u, v);
+       	if (head[u] == head[v]) return seg.setQuery(idx[v], idx[u], x);
+       	return op(seg.setQuery(idx[head[u]], idx[u], x), setQueryPath(parent[head[u]], v, x));
+    }
+	
+	  /**
+    *  @param  u  Node.
+    *  @param  x  Value to add (if it's a set).
+    *  @return    f of subtree (if it's a query).
+    *
+    *  It's a query if x is specified.
+    *
+    *  Time complexity: O(log(N))
+    */
+    ll setQuerySubtree(ll u, ll x = INT_MIN) {
+        assert(1 <= u and u < idx.size());
+       	return seg.setQuery(idx[u], idx[u] + subtree[u] - 1, x);
+    }
+	
+    Segtree<T> seg;
+    vll idx, subtree, parent, head;
+    ll timer = 0;
+    Op op;
+};
 ```
 
 ### Menor ancestral comum (LCA)
@@ -489,7 +561,7 @@ void eulerTour(const vvll& g, ll u, ll p = 0) {
  *  Time complexity: O(log(V))
 */
 ll lca(ll u, ll v) {
-    assert(0 < u and u < parent.size() and 0 < v and v < parent.size());
+    assert(1 <= u and u < parent.size() and 1 <= v and v < parent.size());
     if (depth[u] < depth[v]) swap(u, v);
     ll k = depth[u] - depth[v];
     u = kthAncestor(u, k);
@@ -1198,7 +1270,7 @@ ll qntDivisors(ll x) {
         rep(i, 1, MAXN + 1)
             for (ll j = i; j <= MAXN; j += i)
                 ++qnt[j];
-    assert(x >= 0 and x <= MAXN);
+    assert(0 <= x and x <= MAXN);
     return qnt[x];
 }
 ```
@@ -1547,14 +1619,14 @@ struct BIT2D {
      *  Time complexity: O(log(N))
     */
     void add(ll y, ll x, T v) {
-        assert(y > 0 and x > 0 and y <= n and x <= m)
+        assert(0 < y and y <= n and 0 < x and x <= m)
        	for (; y <= n; y += y & -y)
             for (ll i = x; i <= m; i += i & -i)
                 bit[y][i] += v;
     }
     
     T sum(ll y, ll x) {
-        assert(y > 0 and x > 0 and y <= n and x <= m)
+        assert(0 < y and y <= n and 0 < x and x <= m)
         T sum = 0;
         for (; y > 0; y -= y & -y)
             for (ll i = x; i > 0; i -= i & -i)
@@ -1600,7 +1672,7 @@ struct DSU {
     *  Time complexity: ~O(1)
     */
     ll setOf(ll x) {
-        assert(x >= 0 and x < parent.size());
+        assert(0 <= x and x < parent.size());
         return parent[x] == x ? x : parent[x] = setOf(parent[x]);
     }
 
@@ -1706,18 +1778,18 @@ template <typename T, typename Op = function<T(T, T)>>
 struct Segtree {
     /**
     *  @param  sz   Size.
-    *  @param  f    Merge function.
     *  @param  def  Default value.
+    *  @param  f    Merge function.
     *
     *  Example: def in sum or gcd should be 0, in max LLONG_MIN, in min LLONG_MAX
     */
-    Segtree(ll sz, Op f, T def)
-        : seg(4 * sz, def), lzy(4 * sz), n(sz), op(f), DEF(def) {}
+    Segtree(ll sz, T def, Op f)
+        : seg(4 * sz, def), lzy(4 * sz), n(sz), DEF(def), op(f) {}
 
     /**
     *  @param  i  First  interval extreme.
     *  @param  j  Second interval extreme.
-    *  @param  x  Value to add (if it's a query).
+    *  @param  x  Value to add (if it's a set).
     *  @return    f of interval [i, j] (if it's a query).
     *
     *  It's a query if x is specified.
@@ -1725,7 +1797,7 @@ struct Segtree {
     *  Time complexity: O(log(N))
     */
     T setQuery(ll i, ll j, T x = LLONG_MIN, ll l = 0, ll r = -1, ll no = 1) {
-        assert(i >= 0 and j >= 0 and i < n and j < n);
+        assert(0 <= i and i < n and 0 <= j and j < n);
         if (r == -1) r = n - 1;
         if (lzy[no]) unlazy(l, r, no);
         if (j < l or i > r) return DEF;
@@ -1757,34 +1829,8 @@ private:
 
     vector<T> seg, lzy;
     ll n;
-    Op op;
     T DEF = {};
-};
-```
-
-### 3 Maiores valores
-
-```c++
-// not tested
-struct MX3 {
-    ll first, second, third;
-    MX3(ll a, ll b, ll c) : first(a), second(b), third(c) {}
-    MX3(ll x)             : first(x), second(x), third(x) {}
-    MX3() = default;
-    MX3 operator+=(MX3 other) {
-        auto [a, b, c] = other;
-        first += a, second += a, third += a;
-        return *this;
-    }
-    bool operator!=(ll x) { return first != x; }
-    operator bool() { return first; }
-};
-
-MX3 f(MX3 a, MX3 b) {
-    vll xs { a.first, a.second, a.third, b.first, b.second, b.third };
-    sort(all(xs), greater<>());
-    xs.erase(unique(all(xs)), xs.end());
-    return { xs[0], (xs.size() > 1 ? xs[1] : 0), (xs.size() > 2 ? xs[2] : 0) };
+    Op op;
 };
 ```
 
