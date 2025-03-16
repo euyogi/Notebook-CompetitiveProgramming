@@ -23,6 +23,7 @@ As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
   * Árvores
     * Binary lifting
     * Centróide
+    * Centróide decomposition
     * Euler tour
     * Menor ancestral comum (LCA)
   * Geometria
@@ -68,6 +69,7 @@ As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
   * Árvores
     * BIT tree 2D
     * Disjoint set union
+    * Heavy-light decomposition
     * Red-Black tree
     * Segment tree
     * Wavelet tree
@@ -105,6 +107,7 @@ As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
 ### Template
 
 ```c++
+// #pragma GCC target("popcnt")  // if solution involves bitset
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -119,7 +122,6 @@ using namespace std;
 #define pll          pair<ll, ll>
 #define vpll         vector<pll>
 #define all(xs)      xs.begin(), xs.end()
-#define found(x, xs) (xs.find(x) != xs.end())
 #define rep(i, a, b) for (ll i = (a); i < (ll)(b); ++i)
 #define per(i, a, b) for (ll i = (a); i >= (ll)(b); --i)
 #define eb           emplace_back
@@ -156,14 +158,10 @@ void solve() {
 #define tll   tuple<ll, ll, ll>
 #define vtll  vector<tll>
 #define pd    pair<double, double>
-#define vb    vector<bool>
 #define x     first
 #define y     second
-map<char, pll> ds1 {
-    {'R', {0, 1}},  {'D', {1, 0}},
-    {'L', {0, -1}}, {'U', {-1, 0}}
-};
-vpll ds2 { {0, 1}, {1, 0}, {0, -1}, {-1, 0}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1} };
+map<char, pll> ds1 { {'R', {0, 1}}, {'D', {1, 0}}, {'L', {0, -1}}, {'U', {-1, 0}} };
+vpll ds2 { {0, 1}, {1, 0}, {0, -1}, {-1, 0}, {1,  1}, {1, -1}, {-1,  1}, {-1, -1} };
 vpll ds3 { {1, 2}, {2, 1}, {-1, 2}, {-2, 1}, {1, -2}, {2, -1}, {-1, -2}, {-2, -1} };
 // END EXTRAS -------------------------------------------|
 ```
@@ -180,31 +178,25 @@ vpll ds3 { {1, 2}, {2, 1}, {-1, 2}, {-2, 1}, {1, -2}, {2, -1}, {-1, -2}, {-2, -1
 #pragma once
 #include <bits/stdc++.h>
 using namespace std;
-template <typename T> 
-void p(T x) {
+template <typename T> void p(T x) {
     int f = 0;
-    #define DEL(d) cerr << "\e[94m" << (f++ ? d : "")
-    if constexpr (requires {cout << x;}) DEL("") << x;
-    else {
+    #define D(d) cerr << "\e[94m" << (f++ ? d : "")
+    if constexpr (!requires {cout << x;}) {
         cerr << '{';
         if constexpr (requires {get<0>(x);})
-            apply([&](auto... args) {((DEL(","), p(args)), ...);}, x);
-        else if constexpr (requires {x.pop();})
-            while (size(x)) {
-                DEL(",");
-                if constexpr (requires {x.top();}) p(x.top());
-                else p(x.front());
-                x.pop();
-            }
-        else if (size(x) && requires {begin(*begin(x));})
-            for (auto i : x) cerr << '\n', p(i);
-        else for (auto i : x) DEL(","), p(i);
+            apply([&](auto... args) {((D(","), p(args)), ...);}, x);
+        else if constexpr (requires {x.pop();}) while (size(x)) {
+            D(",");
+            if constexpr (requires {x.top();}) p(x.top());
+            else p(x.front());
+            x.pop();
+        } else for (auto i : x)
+            (requires {begin(*begin(x));} ? cerr << "\n\t" : D(",")), p(i);
         cerr << '}';
-    }
-}
-template <typename... A>
-void _p(A... a) {int f = 0; ((DEL(" | "), p(a)), ...); cerr << "\e[m\n";}
-#define dbg(...) cerr << __LINE__ << ": [" << #__VA_ARGS__ << "] = "; _p(__VA_ARGS__);
+    } else D("") << x;
+} template <typename... A>
+void pr(A... a) {int f = 0; ((D(" | "), p(a)), ...); cerr << "\e[m\n";}
+#define dbg(...) { cerr << __LINE__ << ": [" << #__VA_ARGS__ << "] = "; pr(__VA_ARGS__); }
 ```
 
 # Algoritmos
@@ -380,22 +372,22 @@ vll depth;
 
 /**
  *  @brief     Binary lifting pre-processing.
- *  @param  g  Tree.
+ *  @param  g  Tree/Successor graph.
  *  @param  n  Quantity of nodes.
  *
- *  Time complexity: O(Vlog(V))
+ *  Time complexity: O(Nlog(N))
 */
 void populate(const vvll& g, ll n) {
     parent.resize(n + 1, vll(LOG));
     depth.resize(n + 1);
 
-    // initialize known relationships
-    auto dfs = [&](auto&& self, ll u, ll p = 1) -> void {
+    // populate parent
+    auto dfs = [&](auto& self, ll u, ll p = 1) -> void {
         parent[u][0] = p;
         depth[u] = depth[p] + 1;
         for (ll v : g[u]) if (v != p)
             self(self, v, u);
-    }; dfs(dfs, 1);
+    }; dfs(dfs, 1);  // if successor graph needs to loop for every node
 
     rep(i, 1, LOG)
         rep(j, 1, n + 1)
@@ -404,15 +396,16 @@ void populate(const vvll& g, ll n) {
 
 /**
  *  @param  u  Node.
- *  @param  k  Ancestor number, starts from 1.
+ *  @param  k  Ancestor number.
  *  @return    k-th ancestor of u.
  *
  *  Requires that depth and parent are populated.
+ *  k = 0 is me, k = 1 my parent, and so on...
  *
- *  Time complexity: O(log(V))
+ *  Time complexity: O(log(N))
 */
 ll kthAncestor(ll u, ll k) {
-    assert(1 <= u and u < parent.size() and k > 0);
+    assert(1 <= u and u < parent.size() and k >= 0);
     if (k > depth[u]) return -1;  // no kth ancestor
     rep(i, 0, LOG)
         if (k & (1LL << i))
@@ -426,27 +419,51 @@ ll kthAncestor(ll u, ll k) {
 ```c++
 vll subtree;
 
-ll dfs(const vvll& g, ll u, ll p = 0) {
-    if (subtree.empty()) subtree.resize(g.size());
-    subtree[u] = 1;
+ll subtree_dfs(const vvll& g, ll u, ll p) {
     for (ll v : g[u]) if (v != p)
-        subtree[u] += dfs(g, v, u);
+        subtree[u] += subtree_dfs(g, v, u);
     return subtree[u];
 }
 
 /**
  *  @param  g  Tree.
- *  @param  u  Root.
  *  @return    A new root that makes the size of all subtrees be n/2 or less.
  *
- *  Time complexity: O(E)
+ *  Time complexity: O(N)
 */
-ll centroid(const vvll& g, ll u, ll p = 0) {
-    if (subtree.empty()) dfs(g, u, p);
+ll centroid(const vvll& g, ll u = 1, ll p = 0) {
+    if (p == 0) { subtree = vll(g.size(), 1); subtree_dfs(g, u, p); }
     for (ll v : g[u]) if (v != p)
         if (subtree[v] * 2 > g.size() - 1)
             return centroid(g, v, u);
     return u;
+}
+```
+
+### Centróide decomposition
+
+```c++
+vll parent, subtree;
+
+ll subtree_dfs(const vvll& g, ll u, ll p = 0) {
+    subtree[u] = 1;
+    for (ll v : g[u]) if (v != p and !parent[v])
+        subtree[u] += subtree_dfs(g, v, u);
+    return subtree[u];
+}
+
+/**
+ *  @param  g  Tree.
+ *
+ *  Time complexity: O(Nlog(N))
+*/
+void CD(const vvll& g, ll u = 1, ll p = 0, ll sz = 0) {
+    if (p == 0) { p = -1; parent = subtree = vll(g.size()); }
+    if (sz == 0) sz = subtree_dfs(g, u);
+    for (ll v : g[u]) if (!parent[v] and subtree[v] * 2 > sz)
+        return subtree[u] = 0, CD(g, v, p, sz);
+    parent[u] = p;
+    for (ll v : g[u]) if (!parent[v]) CD(g, v, u);
 }
 ```
 
@@ -463,89 +480,15 @@ vll st, et;
  *  each subtree, with those we can use stuff like segtrees on
  *  subtrees.
  *
- *  Time complexity: O(E)
+ *  Time complexity: O(N)
 */
 void eulerTour(const vvll& g, ll u = 1, ll p = 0) {
-    if (st.empty()) st.resize(g.size()), et.resize(g.size());
+    if (p == 0) { timer = 0; st = et = vll(g.size()); }
     st[u] = timer++;
     for (ll v : g[u]) if (v != p)
         eulerTour(g, v, u);
     et[u] = timer++;
 }
-```
-
-### Heavy-Light Decomposition
-
-```c++
-template <typename T, typename Op = function<T(T, T)>>
-struct HLD {
-    /**
-    *  @param  g    Tree.
-    *  @param  def  Default value.
-    *  @param  f    Merge function.
-    *
-    *  Example: def in sum or gcd should be 0, in max LLONG_MIN, in min LLONG_MAX
-    *
-    *  Time complexity: O(N)
-    */
-    HLD(vector<vector<T>>& g, T def, Op f)
-            : seg(g.size(), def, f), op(f) {
-        idx = subtree = parent = head = vll(g.size());
-        auto build = [&](auto&& self, ll u = 1, ll p = 0) -> void {
-            idx[u] = timer++;
-            subtree[u] = 1, parent[u] = p;
-           	for (ll& v : g[u]) if (v != p) {
-                head[v] = (v == g[u][0] ? head[u] : v);
-            self(self, v, u);
-            subtree[u] += subtree[v];
-            if (subtree[v] > subtree[g[u][0]] or g[u][0] == p)
-                swap(v, g[u][0]);
-           	}
-            
-           	if (p == 0) {
-                timer = 0;
-                self(self, head[u] = u, -1);
-            }
-        };
-        build(build);
-    }
-	
-    /**
-    *  @param  u  First node.
-    *  @param  v  Second node.
-    *  @param  x  Value to add (if it's a set).
-    *  @return    f of path [u, v] (if it's a query).
-    *
-    *  It's a query if x is specified.
-    *
-    *  Time complexity: O(log^2(N))
-    */
-    ll setQueryPath(ll u, ll v, ll x = INT_MIN) {
-        assert(1 <= u and u < idx.size() and 1 <= v and v < idx.size());
-       	if (idx[u] < idx[v]) swap(u, v);
-       	if (head[u] == head[v]) return seg.setQuery(idx[v], idx[u], x);
-       	return op(seg.setQuery(idx[head[u]], idx[u], x), setQueryPath(parent[head[u]], v, x));
-    }
-	
-	  /**
-    *  @param  u  Node.
-    *  @param  x  Value to add (if it's a set).
-    *  @return    f of subtree (if it's a query).
-    *
-    *  It's a query if x is specified.
-    *
-    *  Time complexity: O(log(N))
-    */
-    ll setQuerySubtree(ll u, ll x = INT_MIN) {
-        assert(1 <= u and u < idx.size());
-       	return seg.setQuery(idx[u], idx[u] + subtree[u] - 1, x);
-    }
-	
-    Segtree<T> seg;
-    vll idx, subtree, parent, head;
-    ll timer = 0;
-    Op op;
-};
 ```
 
 ### Menor ancestral comum (LCA)
@@ -558,7 +501,7 @@ struct HLD {
  *
  *  Requires binary lifting pre-processing technique.
  *
- *  Time complexity: O(log(V))
+ *  Time complexity: O(log(N))
 */
 ll lca(ll u, ll v) {
     assert(1 <= u and u < parent.size() and 1 <= v and v < parent.size());
@@ -608,7 +551,7 @@ pair<vll, vll> spfa(const vvpll& g, ll s) {
                 ++cnt[v], pre[v] = u;
                 if (cnt[v] == g.size()) {
                     ds[v] = LLONG_MIN;
-                    ds[0] = v;  // a node that has -inf dist
+                    ds[0] = v;  // ds[0] keeps a node that has -inf dist
                 }
                 if (!in_queue[v]) {
                     q.emplace(v);
@@ -631,7 +574,7 @@ pair<vll, vll> spfa(const vvpll& g, ll s) {
  *
  *  The graph can only have weights 0 and 1.
  *
- *  Time complexity: O(E)
+ *  Time complexity: O(N)
 */
 vll bfs01(const vvpll& g, ll s) {
     vll ds(g.size(), LLONG_MAX);
@@ -677,8 +620,7 @@ vll eulerianPath(const vvll& g, bool d, ll s, ll e = -1) {
         }
     
     ll check = (in_degree[s] - (ll)h[s].size()) * (in_degree[e] - (ll)h[e].size());
-    if (e != -1 and check != -1)
-        return {};  // impossible
+    if (e != -1 and check != -1) return {};  // impossible
         
     rep(u, 0, h.size()) {
         if (e != -1 and (u == s or u == e)) continue;
@@ -704,10 +646,7 @@ vll eulerianPath(const vvll& g, bool d, ll s, ll e = -1) {
         }
     }
 
-    rep(u, 0, g.size())
-        if (in_degree[u] != 0)
-            return {};  // impossible
-
+    rep(u, 0, g.size()) if (in_degree[u] != 0) return {};  // impossible
     reverse(all(res));
     return res;
 }
@@ -764,7 +703,8 @@ vll getPath(const vll& pre, ll s, ll u) {
  *  @return    Vector with smallest distances between every vertex.
  *
  *  Weights can be negative.
- *  Can detect negative cycles.
+ *  If ds[u][v] == INT_MAX, unreachable
+ *  If ds[u][v] == INT_MIN, negative cycle.
  *
  *  Time complexity: O(V^3)
 */
@@ -772,21 +712,18 @@ vvll floydWarshall(const vvpll& g) {
     ll n = g.size();
     vvll ds(n + 1, vll(n + 1, INT_MAX));
 
-    rep(u, 1, n) {
+    rep(u, 0, n) {
         ds[u][u] = 0;
         for (auto [w, v] : g[u]) {
             ds[u][v] = min(ds[u][v], w);
             if (ds[u][u] < 0) ds[u][u] = INT_MIN;  // negative cycle
         }
     }
-
-    rep(k, 1, n) rep(u, 1, n) rep(v, 1, n)
+    
+    rep(k, 0, n) rep(u, 0, n) rep(v, 0, n)
         if (ds[u][k] != INT_MAX and ds[k][v] != INT_MAX) {
-            if (ds[k][k] == INT_MIN) ds[u][v] = INT_MIN;
-            else {
-                ds[u][v] = min(ds[u][v], ds[u][k] + ds[k][v]);
-                if (ds[u][v] < 0) ds[u][v] = INT_MIN;
-            }
+            ds[u][v] = min(ds[u][v], ds[u][k] + ds[k][v]);
+            if (ds[k][k] < 0) ds[u][v] = INT_MIN;  // negative cycle
         }
 
     return ds;
@@ -798,54 +735,50 @@ vvll floydWarshall(const vvpll& g) {
 ```c++
 /**
  *  @param  g  Directed graph.
- *  @return    Condensed graph and strongly connected components.
+ *  @return    Condensed graph, scc and comp vector.
  *
- *  A single vertex is a strongly connected component.
- *  The component is ordered in the sense that if we have {a, b},
+ *  Condensed graph is a DAG with the scc.
+ *  A single vertex is a scc.
+ *  The scc is ordered in the sense that if we have {a, b},
  *  then there is a edge from a to b.
+ *  scc is [comp, cc].
+ *  comp[u] is the component "leader" of an original vertex.
  *
  *  Time complexity: O((Elog(V))
 */
-pair<vvll, map<ll, vll>> kosaraju(const vvll& g) {
-    vvll g_inv(g.size()), g_cond(g.size());
+tuple<vvll, map<ll, vll>, vll> kosaraju(const vvll& g) {
+    vvll inv(g.size()), cond(g.size());
     map<ll, vll> scc;
-    vb vs(g.size());
-    vll order, reprs(g.size());
+    vll vs(g.size()), comp(g.size()), order;
 
-    auto dfs = [&vs](auto&& self, const vvll& h, vll& out, ll u) -> ll {
-        ll repr = u;
+    auto dfs = [&vs](auto& self, const vvll& h, vll& out, ll u) -> void {
         vs[u] = true;
         for (ll v : h[u]) if (!vs[v])
-            repr = min(repr, self(self, h, out, v));
+            self(self, h, out, v);
         out.eb(u);
-        return repr;
     };
 
     rep(u, 1, g.size()) {
-        for (ll v : g[u])
-            g_inv[v].eb(u);
-        if (!vs[u])
-            dfs(dfs, g, order, u);
+        for (ll v : g[u]) inv[v].eb(u);
+        if (!vs[u])       dfs(dfs, g, order, u);
     }
 
-    vs.assign(g.size(), false);
+    vs = vll(g.size(), false);
     reverse(all(order));
 
     for (ll u : order)
         if (!vs[u]) {
             vll cc;
-            ll repr = dfs(dfs, g_inv, cc, u);
-            scc[repr] = cc;
-            for (ll v : cc)
-                reprs[v] = repr;
+            dfs(dfs, inv, cc, u);
+            scc[u] = cc;
+            for (ll v : cc) comp[v] = u;
         }
 
     rep(u, 1, g.size())
-        for (ll v : g[u])
-            if (reprs[u] != reprs[v])
-                g_cond[reprs[u]].eb(reprs[v]);
+        for (ll v : g[u]) if (comp[u] != comp[v])
+            cond[comp[u]].eb(comp[v]);
 
-    return { g_cond, scc };
+    return { cond, scc, comp };
 }
 ```
 
@@ -858,7 +791,7 @@ pair<vvll, map<ll, vll>> kosaraju(const vvll& g) {
  *  @param  n      Quantity of vertex.
  *  @return        Edges of mst, or forest if not connected and sum of weights.
  *
- *  Time complexity: O(Elog(E))
+ *  Time complexity: O(Nlog(N))
 */
 pair<vtll, ll> kruskal(vtll& edges, ll n) {
     DSU dsu(n);
@@ -881,9 +814,11 @@ pair<vtll, ll> kruskal(vtll& edges, ll n) {
  *  @param  g  Directed graph.
  *  @return    Vector with vertexes in topological order or empty if has cycle.
  *
+ *  It starts from a node with indegree 0, that is no one points to it.
+ *
  *  Time complexity: O(EVlog(V))
 */
-vll topologicalSort(const vvll& g) {
+vll topoSort(const vvll& g) {
     vll degree(g.size()), res;
     rep(u, 1, g.size())
         for (ll v : g[u])
@@ -940,7 +875,7 @@ pair<ll, vector<vtll>> maxFlow(const vvpll& g, ll s, ll t) {
             h[v].eb(0, u, h[u].size() - 1);
         }
 
-    auto dfs = [&](auto&& self, ll u, ll nf) -> ll {
+    auto dfs = [&](auto& self, ll u, ll nf) -> ll {
         if (u == t or nf == 0) return nf;
         for (ll& i = ptr[u]; i < h[u].size(); i++) {
             auto& [w, v, rev] = h[u][i];
@@ -1071,7 +1006,7 @@ ll binom(ll n, ll k) {
  *  Time complexity: O(N)/O(1)
 */
 ll binom(ll n, ll k) {
-    const ll MAXN = 3e6, M = 1e9 + 7;  // check mod value!
+    const ll MAXN = (ll)3e6, M = (ll)1e9 + 7;  // check mod value!
     static vll fac(MAXN + 1), inv(MAXN + 1), finv(MAXN + 1);
     if (fac[0] != 1) {
         fac[0] = fac[1] = inv[1] = finv[0] = finv[1] = 1;
@@ -1234,7 +1169,7 @@ vll factors(ll x, const vll& spf) {
 */
 template <typename T>
 ll rePerm(const map<T, ll>& hist) {
-    const ll MAXN = 3e6, M = 1e9 + 7;  // check mod value!
+    const ll MAXN = (ll)3e6, M = (ll)1e9 + 7;  // check mod value!
     static vll fac(MAXN + 1), inv(MAXN + 1), finv(MAXN + 1);
     if (fac[0] != 1) {
         fac[0] = fac[1] = inv[1] = finv[0] = finv[1] = 1;
@@ -1264,7 +1199,7 @@ ll rePerm(const map<T, ll>& hist) {
  *  Time complexity: O(Nlog(N))/O(1)
 */
 ll qntDivisors(ll x) {
-    const ll MAXN = 1e6;
+    const ll MAXN = (ll)1e6;
     static vll qnt(MAXN + 1);
     if (qnt[1] != 1)
         rep(i, 1, MAXN + 1)
@@ -1293,8 +1228,8 @@ ll qntDivisors(ll x) {
  *  Time complexity: O(1)
  */
 ll compare(ll i, ll j, ll m, const vector<vector<int>>& cs) {
-    ll k = 0;  // move outside to speed up a little bit
-    while ((1 << (k + 1)) <= m) ++k;
+    ll k = 0;  // move outside
+    while ((1 << (k + 1)) <= m) ++k;  // move outside
     pll a = { cs[k][i], cs[k][i + m - (1 << k)] };
     pll b = { cs[k][j], cs[k][j + m - (1 << k)] };
     return a == b ? 0 : (a < b ? -1 : 1);
@@ -1646,6 +1581,8 @@ struct BIT2D {
      *  Time complexity: O(log(N))
     */
     T sum(ll ly, ll lx, ll hy, ll hx) {
+        assert(0 < ly and ly <= hy and hy <= n);
+        assert(0 < lx and lx <= hx and hx <= n);
         return sum(hy, hx)     - sum(hy, lx - 1) -
                sum(ly - 1, hx) + sum(ly - 1, lx - 1);
     }
@@ -1698,6 +1635,84 @@ struct DSU {
     bool sameSet(ll x, ll y) { return setOf(x) == setOf(y); }
 
     vll parent, size;
+};
+```
+
+### Heavy-light decomposition
+
+```c++
+template <typename T, typename Op = function<T(T, T)>>
+struct HLD {
+    /**
+    *  @param  g    Tree.
+    *  @param  def  Default value.
+    *  @param  f    Merge function.
+    *
+    *  Example: def in sum or gcd should be 0, in max LLONG_MIN, in min LLONG_MAX.
+    *
+    *  Initialize with setQueryPath(u, u) if values on nodes or setQueryPath(u, v)
+    *  if values on edges. The graph will need to be without weights even if there
+    *  is on the edges.
+    *
+    *  Time complexity: O(N)
+    */
+    HLD(vvll& g, bool values_on_edges, T def, Op f)
+            : seg(g.size(), def, f), op(f) {
+        idx = subtree = parent = head = vll(g.size());
+        auto build = [&](auto& self, ll u = 1, ll p = 0) -> void {
+            idx[u] = timer++;
+            subtree[u] = 1, parent[u] = p;
+           	for (ll& v : g[u]) if (v != p) {
+                head[v] = (v == g[u][0] ? head[u] : v);
+                self(self, v, u);
+                subtree[u] += subtree[v];
+                if (subtree[v] > subtree[g[u][0]] or g[u][0] == p)
+                    swap(v, g[u][0]);
+           	}
+            
+           	if (p == 0) {
+                timer = 0;
+                self(self, head[u] = u, -1);
+            }
+        };
+        build(build);
+    }
+	
+    /**
+    *  @param  u  First node.
+    *  @param  v  Second node.
+    *  @param  x  Value to add (if it's a set).
+    *  @return    f of path [u, v] (if it's a query).
+    *
+    *  It's a query if x is specified.
+    *
+    *  Time complexity: O(log^2(N))
+    */
+    ll setQueryPath(ll u, ll v, ll x = INT_MIN) {
+        assert(1 <= u and u < idx.size() and 1 <= v and v < idx.size());
+       	if (idx[u] < idx[v]) swap(u, v);
+       	if (head[u] == head[v]) return seg.setQuery(idx[v] + values_on_edges, idx[u], x);
+       	return op(seg.setQuery(idx[head[u]], idx[u], x), setQueryPath(parent[head[u]], v, x));
+    }
+	
+	  /**
+    *  @param  u  Node.
+    *  @param  x  Value to add (if it's a set).
+    *  @return    f of subtree (if it's a query).
+    *
+    *  It's a query if x is specified.
+    *
+    *  Time complexity: O(log(N))
+    */
+    ll setQuerySubtree(ll u, ll x = INT_MIN) {
+        assert(1 <= u and u < idx.size());
+       	return seg.setQuery(idx[u] + values_on_edges, idx[u] + subtree[u] - 1, x);
+    }
+	
+    Segtree<T> seg;
+    vll idx, subtree, parent, head;
+    ll timer = 0;
+    Op op;
 };
 ```
 
@@ -1797,7 +1812,7 @@ struct Segtree {
     *  Time complexity: O(log(N))
     */
     T setQuery(ll i, ll j, T x = LLONG_MIN, ll l = 0, ll r = -1, ll no = 1) {
-        assert(0 <= i and i < n and 0 <= j and j < n);
+        assert(0 <= i and i <= j and j < n);
         if (r == -1) r = n - 1;
         if (lzy[no]) unlazy(l, r, no);
         if (j < l or i > r) return DEF;
@@ -1829,7 +1844,7 @@ private:
 
     vector<T> seg, lzy;
     ll n;
-    T DEF = {};
+    T DEF;
     Op op;
 };
 ```
@@ -1840,20 +1855,20 @@ private:
 struct WaveletTree {
     /**
     *  @param  xs  Compressed vector.
-    *  @param  n   Distinct elements amount in xs.
+    *  @param  n   Distinct elements amount in xs (mp.size()).
     *
     *  Sorts xs in the process.
     *
     *  Time complexity: O(Nlog(N))
     */
     WaveletTree(vll& xs, ll n) : wav(2 * n), n(n) {
-        auto build = [&](auto&& self, auto b, auto e, ll l, ll r, ll no) {
+        auto build = [&](auto& self, auto b, auto e, ll l, ll r, ll no) {
             if (l == r) return;
             ll m = (l + r) / 2, i = 0;
             wav[no].resize(e - b + 1);
             for (auto it = b; it != e; ++it, ++i)
                 wav[no][i + 1] = wav[no][i] + (*it <= m);
-            auto p = stable_partition(b, e, [m](ll i) { return i <= m; });
+            auto p = stable_partition(b, e, [m](ll x) { return x <= m; });
             self(self, b, p, l, m, 2 * no);
             self(self, p, e, m + 1, r, 2 * no + 1);
         };
@@ -1869,20 +1884,41 @@ struct WaveletTree {
     *  Time complexity: O(log(N))
     */
     ll kTh(ll i, ll j, ll k) {
+        assert(0 <= i and i <= j and j < wav[1].size() and k > 0);
         ++j;
         ll l = 0, r = n - 1, no = 1;
         while (l != r) {
             ll m = (l + r) / 2;
-            ll seqm_l = wav[no][i], seqm_r = wav[no][j];
+            ll leqm_l = wav[no][i], leqm_r = wav[no][j];
             no *= 2;
-            if (k <= seqm_r - seqm_l)
-                i = seqm_l, j = seqm_r, r = m;
-            else
-                k -= seqm_r - seqm_l, i -= seqm_l, j -= seqm_r, l = m + 1, ++no;
+            if (k <= leqm_r - leqm_l) i = leqm_l, j = leqm_r, r = m;
+            else k -= leqm_r - leqm_l, i -= leqm_l, j -= leqm_r, l = m + 1, ++no;
         }
         return l;
     }
-
+    
+    /**
+    *  @param  i  First  interval extreme.
+    *  @param  j  Second interval extreme.
+    *  @param  x  Compressed value.
+    *  @return    Occurrences of values less than or equal to x.
+    *
+    *  Time complexity: O(log(N))
+    */
+    ll leq(ll i, ll j, ll x) {
+        assert(0 <= i and i <= j and j < wav[1].size() and 0 <= x and x < n);
+        ++j;
+        ll l = 0, r = n - 1, lx = 0, no = 1;
+        while (l != r) {
+            ll m = (l + r) / 2;
+            ll leqm_l = wav[no][i], leqm_r = wav[no][j];
+            no *= 2;
+            if (x <= m) i = leqm_l, j = leqm_r, r = m;
+            else i -= leqm_l, j -= leqm_r, l = m + 1, lx = leqm_r - leqm_l, ++no;
+        }
+        return j - i + lx;
+    }
+        
     vvll wav;
     ll n;
 };
@@ -2532,7 +2568,7 @@ struct Matrix {
  *  @brief Represent strings with integers.
 */
 struct Hash {
-    static const ll M1 = 1e9 + 7, M2 = 1e9 + 9, p1 = 31, p2 = 29;
+    static const ll M1 = (ll)1e9 + 7, M2 = (ll)1e9 + 9, p1 = 31, p2 = 29;
     #define T pair<Mi<M1>, Mi<M2>>
     
     /**
@@ -2817,7 +2853,6 @@ struct Psum2D {
         : n(xs.size()), m(xs[0].size()), psum(n + 1, vector<T>(m + 1)) {
         rep(i, 0, n)
             rep(j, 0, m) {
-                // sum side and up rectangles, add element and remove intersection
                 psum[i + 1][j + 1] = psum[i + 1][j] + psum[i][j + 1];
                 psum[i + 1][j + 1] += xs[i][j] - psum[i][j];
             }
@@ -2833,7 +2868,6 @@ struct Psum2D {
      *  Time complexity: O(1)
     */
     T query(ll ly, ll lx, ll hy, ll hx) {
-        // sum total rectangle, subtract side and up and add intersection
         T res = psum[hy][hx] - psum[hy][lx - 1] - psum[ly - 1][hx];
         res += psum[ly - 1][lx - 1];
         return res;
@@ -2861,13 +2895,10 @@ struct Psum3D {
             : n(xs.size()), m(xs[0].size()), o(xs[0][0].size()),
               psum(n + 1, vector<vector<T>>(m + 1, vector<T>(o + 1)) {
         rep(i, 1, n + 1) rep(j, 1, m + 1) rep(k, 1, o + 1) {
-            // sum cuboids from sides and down
             psum[i][j][k] = psum[i - 1][j][k] + psum[i][j - 1][k] +
                                                 psum[i][j][k - 1];
-            // subtract intersections
             psum[i][j][k] -= psum[i][j - 1][k - 1] + psum[i - 1][j][k - 1] +
                                                      psum[i - 1][j - 1][k];
-            // re-sum missing cuboid and add element
             psum[i][j][k] += psum[i - 1][j - 1][k - 1] + xs[i - 1][j - 1][k - 1];
         }
     }
@@ -2884,13 +2915,10 @@ struct Psum3D {
      *  Time complexity: O(1)
     */
     T query(ll lx, ll ly, ll lz, ll hx, ll hy, ll hz) {
-        // sum total cuboid, subtract sides and down
         T res = psum[hx][hy][hz]     - psum[lx - 1][hy][hz] -
                  psum[hx][ly - 1][hz] - psum[hx][hy][lz - 1];
-        // add intersections
         res += psum[hx][ly - 1][lz - 1] + psum[lx - 1][hy][lz - 1] +
                                           psum[lx - 1][ly - 1][hz];
-        // re-subtract missing cuboid
         res -= psum[lx - 1][ly - 1][lz - 1];
         return res;
     }
@@ -2905,7 +2933,7 @@ struct Psum3D {
 ### Aritmética modular
 
 ```c++
-const ll MOD = 1e9 + 7;
+const ll MOD = (ll)1e9 + 7;
 
 /**
  *  @brief Modular arithmetics.
@@ -3070,76 +3098,89 @@ Bitwise
 
 > `a + b = a ^ b + 2 * (a & b)`.
 
+> `a ^ b = ~(a & b) & (a ∣ b)`.
+
 Geometria
 
-> Sendo `A` a área da treliça, `I` a quantidade de pontos interiores
-  com coordenadas inteiras e `B` os pontos da borda com coordenadas
-  inteiras, `A = I + B / 2 - 1`. Assim como, `I = (2A + 2 - B) / 2`.
+> Quantidade de pontos inteiros em um segmento: `gcd(abs(Px - Qx), abs(Py - Qy)) + 1`.
+  `P, Q` são os pontos extremos do segmento.
+  
+> Teorema de Pick: Seja `A` a área da treliça, `I` a quantidade de
+  pontos interiores com coordenadas inteiras e `B` os pontos da borda
+  com coordenadas inteiras. Então, `A = I + B / 2 - 1` e `I = (2A + 2 - B) / 2`.
 
-> Sendo `y/x` o coeficiente angular de uma reta com coordenadas
-  inteiras, `gcd(y, x)` representa a quantidade de pontos inteiros nela.
-
-> Ao trabalhar com distância de Manhattam podemos fazer a transformação
-  `(x, y) -> (x + y, x - y)` para transformar os pontos e ter uma equivalência
-  com a distância de Chebyshev, de forma que agora conseguimos tratar `x` e `y`
-  separadamente, fazer boundig boxes, etc...
+> Distância de Chebyshev: `dist(P, Q) = max(Px - Qx, Py - Qy)`.
+  `P, Q` são dois pontos.
+  
+> Manhattam para Chebyshev: Feita a transformação `(x, y) -> (x + y, x - y)`,
+  temos uma equivalência entre as duas distâncias, podemos agora tratar `x`
+  e `y` separadamente, fazer bounding boxes, entre outros...
 
 Matemática
 
-> A quantidade de divisores de um número é o produtório de `(a + 1)`,
-  onde `a` é o expoente do `i`-ésimo fator primo.
+> Quantidade de divisores de um número: produtório de `(a + 1)`.
+  `a` é o expoente do `i`-ésimo fator primo.
 
-> A soma dos divisores de um número é o produtório de (p^(a + 1) - 1)/(p - 1)`,
-  onde `p` é o `i`-ésimo fator primo e `a` o seu expoente.
+> Soma dos divisores de um número: produtório de (p^(a + 1) - 1)/(p - 1)`.
+  `a` é o expoente do `i`-ésimo fator primo `p`.
   
-> O produto dos divisores de `x` é `x^(qd(x)/2)`, onde `qd(x)` é
-  a quantidade de divisores de `x`.
+> Produto dos divisores de um número: `x^(qd(x)/2)`. 
+  `x` é o número, `qd(x)` é a quantidade de divisores dele.
 
-> Maior quantidade de divisores de um número `< 10^18` é `107520`.
+> Maior quantidade de divisores de um número: `< 10^3` é `32`,
+  `< 10^6` é `240`, `< 10^18` é `107520`.
 
-> Maior quantidade de divisores de um número `< 10^6` é `240`.
+> Maior diferença entre dois primos consecutivos: `< 10^18` é `1476`.
+  (Podemos concluir que a partir de um número arbitrário a 
+   distância para o coprimo mais próximo é bem menor que esse valor).
 
-> Maior quantidade de divisores de um número `< 10^3` é `32`.
-
-> Maior diferença entre dois primos consecutivos `< 10^18` é `1476`
-  (Podemos concluir também que a partir de um número arbitrário a 
-   distância para um coprimo é bem menor que esse valor).
-
-> Maior quantidade de primos na fatoração de um número `< 10^6` é `19`.
-
-> Maior quantidade de primos na fatoração de um número `< 10^3` é `9`.
+> Maior quantidade de primos na fatoração de um número: `< 10^3` é `9`,
+  `< 10^6` é `19`.
 
 > Números primos interessantes: `2^31 - 1, 2^31 + 11, 10^18 - 11, 10^18 + 3`.
 
-> `gcd(a, b) = gcd(a, a - b)`, `gcd(a, b, c) = gcd(a, a - b, a - c)`.
+> Quantidade de coprimos de `1` até `x`: produtório de (p^(a - 1)(p - 1)`;
+  `a` é o expoente do `i`-ésimo fator primo `p`.
+  
+> `gcd(a, b) = gcd(a, a - b)`, `gcd(a, b, c) = gcd(a, a - b, a - c)`, segue o padrão.
 
-> Divisibilidade por `3`: Soma dos algarismos divisível por `3`.
+> Divisibilidade por `3`: soma dos algarismos divisível por `3`.
 
-> Divisibilidade por `4`: Número formado pelos dois últimos algarismos divísivel por `4`.
+> Divisibilidade por `4`: número formado pelos dois últimos algarismos divísivel por `4`.
 
-> Divisibilidade por `6`: Par e divísivel por `3`.
+> Divisibilidade por `6`: se divísivel por `2` e `3`.
 
-> Divisibilidade por `7`: Dobro do último algarismo subtraído do número sem ele divisível por `7` (pode ir repetindo)
-ou a soma alternada de blocos de três algarismos divisível por `7`.
+> Divisibilidade por `7`: soma alternada de blocos de três algarismos divisível por `7`.
 
-> Divisibilidade por `8`: Número formado pelos três últimos algarismos divísivel por `8`.
+> Divisibilidade por `8`: número formado pelos três últimos algarismos divísivel por `8`.
 
-> Divisibilidade por `9`: Soma dos algarismos divisível por `9`.
+> Divisibilidade por `9`: soma dos algarismos divisível por `9`.
 
-> Divisibilidade por `11`: Soma alternada dos algarismos divisível por `11`.
+> Divisibilidade por `11`: soma alternada dos algarismos divisível por `11`.
 
-> Divisibilidade por `12`: Se for divisível por `3` e `4`.
+> Divisibilidade por `12`: se divisível por `3` e `4`.
 
-> A soma da progressão geométrica  é `(a_n * r - a_1) / (r - 1)`.
+> Soma da progressão geométrica: `(a_n * r - a_1) / (r - 1)`.
 
-> `1^2 + 2^2 + ... + n^2 = n(n + 1)(2n + 1) / 6`.
+> Soma de termos ao quadrado: `1^2 + 2^2 + ... + n^2 = n(n + 1)(2n + 1) / 6`.
 
-> Ao realizar operações com aritmética modular a paridade (sem módulo) não é preservada.
+> Ao realizar operações com aritmética modular a paridade (sem módulo) não é preservada,
+  se quer saber a paridade na soma vai checando a paridade do que está sendo somado e do
+  número, na multiplicação e divisão conte e mantenha a quantidade de fatores iguais a dois.
 
 > `a^(b % p) % p != a^b % p`, então é necessário que `b` seja sempre menor que `p`, mas
   devido ao Pequeno Teorema de Fermat podemos fazer `b % (p - 1)` isso vai garantir que
   a operação tenha o valor correto.
+  
+> Números de Catalan `Cn`: representa a quantidade de expressões válidas com parênteses
+  de tamanho `2n`. Também são relacionados à árvores, existem `Cn` árvores binárias de n vértices
+  e `Cn-1` árvores de n vértices (as árvores são caracterizadas por sua aparência).
+  `Cn = binom(2n, n)/(n + 1)`.
 
+> Lema de Burnside: o número de combinações em que simétricos são considerados iguais é
+  o somatório de `k` entre `[1, n]` de `c(k)/n`. `n` é a quantidade de maneiras de mudar a posição
+  de uma combinação e `c(k)` é a quantidade de combinações que são consideradas iguais na `k`-ésima maneira.
+  
 Strings
 
 > Sejam `p` e `q` dois períodos de uma string `s`. Se `p + q − mdc(p, q) ≤ |s|`,
@@ -3154,10 +3195,9 @@ Outros
   a soma de todas as interseções de um número ímpar de conjuntos menos
   a soma de todas as interseções de um número par de conjuntos.
   
-> A regra de Warnsdorf é uma heurística para encontrar um caminho em
-  que o cavalo passa por todas as casas uma única vez: sempre escolher
+> Regra de Warnsdorf: heurística para encontrar um caminho em
+  que o cavalo passa por todas as casas uma única vez, sempre escolher
   o próximo movimento para a casa com o menor número de casas alcançáveis.
-  Talvez funcione em outros cenários.
 
 ### Igualdade flutuante
 
@@ -3256,7 +3296,6 @@ void binom(ll i, ll k, vll& ks, const vll& xs) {
 ### Overflow check
 
 ```c++
-// BEGIN OVERFLOW CHECK --------------------------------|
 ll mult(ll a, ll b) {
     if (abs(a) >= LLONG_MAX / abs(b))
         return LLONG_MAX;  // overflow
@@ -3268,7 +3307,6 @@ ll sum(ll a, ll b) {
         return LLONG_MAX;  // overflow
     return a + b;
 }
-// END OVERFLOW CHECK ----------------------------------|
 ```
 
 ### Pares com gcd x
@@ -3282,7 +3320,7 @@ ll sum(ll a, ll b) {
  *  Time complexity: O(Nlog(N))/O(1)
 */
 vll gcdPairs(const vll& xs, ll x) {
-    const ll MAXN = 1e6 + 1;
+    const ll MAXN = (ll)1e6 + 1;
     static vll dp(MAXN, -1), ms(MAXN), hist(MAXN);
     if (dp[1] == -1) {
         for (ll x : xs)
