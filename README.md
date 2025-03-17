@@ -6,13 +6,20 @@ pdf_options:
   margin: 5mm
 css: |-
   .markdown-body { font-size: 11px; }
+  @page {
+    @bottom-right { content: counter(page); }
+  }
+  h1, h2, h3 { break-after: avoid; }
+  pre { break-inside: avoid; }
+  h1 + ul { column-count: 2; }
 ---
 
 <!-- Booklet print: https://bookbinder.app (A4, Duplex, 2 PPS, Booklet) -->
 
-# Notebook
-
-As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
+<figure style="break-after: always; display: flex; flex-direction: column; justify-content: center; height: 100vh; text-align: center;">
+  <img src="title.png">
+  <figcaption style="font-size: 14px;">As complexidades temporais são estimadas e simplificadas!</figcaption>
+</figure>
 
 # Sumário
 
@@ -44,8 +51,15 @@ As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
     * Ordenação topológica
     * Max flow/min cut (Dinic)
   * Outros
+    * Busca ternária
+    * Intervalos com soma S
+    * Kadane
+    * Listar combinações
     * Maior subsequência comum (LCS)
     * Maior subsequência crescente (LIS)
+    * Pares com gcd x
+    * Próximo maior/menor elemento
+    * Soma de todos os intervalos
   * Matemática
     * Coeficiente binomial 
     * Conversão de base
@@ -90,19 +104,14 @@ As complexidades são estimadas e às vezes eu não incluo todas as variáveis!
     * Soma de prefixo 3D
 * Utils
   * Aritmética modular
+  * Bits
   * Big integer
   * Ceil division
   * Conversão de índices
   * Compressão de coordenadas
   * Fatos
   * Igualdade flutuante
-  * Intervalos com soma S
-  * Kadane
-  * Listar combinações
   * Overflow check
-  * Pares com gcd x
-  * Próximo maior/menor elemento
-  * Soma de todos os intervalos
 
 ### Template
 
@@ -207,11 +216,8 @@ void pr(A... a) {int f = 0; ((D(" | "), p(a)), ...); cerr << "\e[m\n";}
 
 ```c++
 /**
- *  @param  P  First extreme point.
- *  @param  Q  Second extreme point.
- *  @param  R  First extreme point.
- *  @param  S  Second extreme point.
- *  @return    Smallest angle between segments PQ and RS in radians.
+ *  @param  P, Q, R, S  Points.
+ *  @return             Smallest angle between segments PQ and RS in radians.
  *
  *  Time complexity: O(1)
 */
@@ -232,9 +238,8 @@ double angle(const pair<T, T>& P, const pair<T, T>& Q,
 
 ```c++
 /**
- *  @param  P  First point.
- *  @param  Q  Second point.
- *  @return    Distance between points P and Q.
+ *  @param  P, Q  Points.
+ *  @return       Distance between points.
  *
  *  Time complexity: O(1)
 */
@@ -265,7 +270,7 @@ vector<pair<T, T>> makeHull(const vector<pair<T, T>>& PS) {
  *  @param  PS  Vector of points.
  *  @return     Convex hull.
  *
- *  Convex hull will be sorted counter-clockwise.
+ *  Points will be sorted counter-clockwise.
  *  First and last point will be the same.
  *
  *  Time complexity: O(Nlog(N))
@@ -287,10 +292,8 @@ vector<pair<T, T>> monotoneChain(vector<pair<T, T>> PS) {
 
 ```c++
 /**
- *  @param  A  First extreme point.
- *  @param  B  Second extreme point.
- *  @param  P  Point.
- *  @return    Value that represents orientation of P to segment AB.
+ *  @param  A, B, P  Points.
+ *  @return          Value that represents orientation of P to segment AB.
  *
  *  If orientation is collinear: zero;
  *  If point is to the left:     positive;
@@ -306,10 +309,10 @@ T D(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
 
 ```c++
 /**
- *  @param  P  First point.
- *  @param  Q  Second point.
- *  @param  O  Origin point.
- *  @return    True if P before Q in counter-clockwise order.
+ *  @param  P, Q, O  Points.
+ *  @return          True if P before Q in counter-clockwise order.
+ *
+ *  O is the origin point.
  *
  *  Time complexity: O(1)
 */
@@ -329,8 +332,7 @@ bool ccw(pair<T, T> P, pair<T, T> Q, const pair<T, T>& O) {
 
 ```c++
 /**
- *  @param  P  First extreme point.
- *  @param  Q  Second extreme point.
+ *  @param  P, Q  Points.
  *  @return    Perpendicular bisector to segment PQ.
  *
  *  Time complexity: O(1)
@@ -377,9 +379,10 @@ vll depth;
  *
  *  Time complexity: O(Nlog(N))
 */
-void populate(const vvll& g, ll n) {
-    parent.resize(n + 1, vll(LOG));
-    depth.resize(n + 1);
+void populate(const vvll& g) {
+    ll n = g.size();
+    parent = vvll(n, vll(LOG));
+    depth  = vll(n);
 
     // populate parent
     auto dfs = [&](auto& self, ll u, ll p = 1) -> void {
@@ -387,19 +390,18 @@ void populate(const vvll& g, ll n) {
         depth[u] = depth[p] + 1;
         for (ll v : g[u]) if (v != p)
             self(self, v, u);
-    }; dfs(dfs, 1);  // if successor graph needs to loop for every node
+    }; dfs(dfs, 1);  // if not tree needs to loop for every node
 
-    rep(i, 1, LOG)
-        rep(j, 1, n + 1)
-            parent[j][i] = parent[ parent[j][i - 1] ][i - 1];
+    rep(i, 1, LOG) rep(j, 0, n)
+        parent[j][i] = parent[ parent[j][i - 1] ][i - 1];
 }
 
 /**
  *  @param  u  Node.
- *  @param  k  Ancestor number.
+ *  @param  k  Number.
  *  @return    k-th ancestor of u.
  *
- *  Requires that depth and parent are populated.
+ *  Requires populate().
  *  k = 0 is me, k = 1 my parent, and so on...
  *
  *  Time complexity: O(log(N))
@@ -407,9 +409,8 @@ void populate(const vvll& g, ll n) {
 ll kthAncestor(ll u, ll k) {
     assert(1 <= u and u < parent.size() and k >= 0);
     if (k > depth[u]) return -1;  // no kth ancestor
-    rep(i, 0, LOG)
-        if (k & (1LL << i))
-            u = parent[u][i];
+    rep(i, 0, LOG) if (k & (1LL << i))
+        u = parent[u][i];
     return u;
 }
 ```
@@ -431,11 +432,10 @@ ll subtree_dfs(const vvll& g, ll u, ll p) {
  *
  *  Time complexity: O(N)
 */
-ll centroid(const vvll& g, ll u = 1, ll p = 0) {
+    ll n = g.size();
     if (p == 0) { subtree = vll(g.size(), 1); subtree_dfs(g, u, p); }
-    for (ll v : g[u]) if (v != p)
-        if (subtree[v] * 2 > g.size() - 1)
-            return centroid(g, v, u);
+    for (ll v : g[u]) if (v != p and subtree[v] * 2 > g.size())
+        return centroid(g, v, u);
     return u;
 }
 ```
@@ -445,7 +445,7 @@ ll centroid(const vvll& g, ll u = 1, ll p = 0) {
 ```c++
 vll parent, subtree;
 
-ll subtree_dfs(const vvll& g, ll u, ll p = 0) {
+ll subtree_dfs(const vvll& g, ll u, ll p) {
     subtree[u] = 1;
     for (ll v : g[u]) if (v != p and !parent[v])
         subtree[u] += subtree_dfs(g, v, u);
@@ -455,15 +455,18 @@ ll subtree_dfs(const vvll& g, ll u, ll p = 0) {
 /**
  *  @param  g  Tree.
  *
+ *  Forms a new tree of centroids with height log(N), size of each centroid subtree
+ *  will also be kinda like log(N) because it keeps dividing by 2.
+ *
  *  Time complexity: O(Nlog(N))
 */
-void CD(const vvll& g, ll u = 1, ll p = 0, ll sz = 0) {
+void centroidDecomp(const vvll& g, ll u = 1, ll p = 0, ll sz = 0) {
     if (p == 0) { p = -1; parent = subtree = vll(g.size()); }
-    if (sz == 0) sz = subtree_dfs(g, u);
+    if (sz == 0) sz = subtree_dfs(g, u, 0);
     for (ll v : g[u]) if (!parent[v] and subtree[v] * 2 > sz)
-        return subtree[u] = 0, CD(g, v, p, sz);
+        return subtree[u] = 0, centroidDecomp(g, v, p, sz);
     parent[u] = p;
-    for (ll v : g[u]) if (!parent[v]) CD(g, v, u);
+    for (ll v : g[u]) if (!parent[v]) centroidDecomp(g, v, u);
 }
 ```
 
@@ -476,9 +479,8 @@ vll st, et;
 /**
  *  @param  g  Tree.
  *
- *  Populates st and et, vectors that represents intervals of
- *  each subtree, with those we can use stuff like segtrees on
- *  subtrees.
+ *  Populates st and et, vectors that represents intervals of each subtree,
+ *  with those we can use stuff like segtrees on the subtrees.
  *
  *  Time complexity: O(N)
 */
@@ -495,11 +497,10 @@ void eulerTour(const vvll& g, ll u = 1, ll p = 0) {
 
 ```c++
 /**
- *  @param  u  First node.
- *  @param  v  Second node.
- *  @return    Lowest common ancestor between u and v.
+ *  @param  u, v  Nodes.
+ *  @return       Lowest common ancestor between u and v.
  *
- *  Requires binary lifting pre-processing technique.
+ *  Requires binary lifting pre-processing.
  *
  *  Time complexity: O(log(N))
 */
@@ -509,9 +510,8 @@ ll lca(ll u, ll v) {
     ll k = depth[u] - depth[v];
     u = kthAncestor(u, k);
     if (u == v) return u;
-    per(i, LOG - 1, 0)
-        if (parent[u][i] != parent[v][i])
-            u = parent[u][i], v = parent[v][i];
+    per(i, LOG - 1, 0) if (parent[u][i] != parent[v][i])
+        u = parent[u][i], v = parent[v][i];
     return parent[u][0];  // could also be parent[v][0]
 }
 ```
@@ -532,8 +532,9 @@ ll lca(ll u, ll v) {
  *  Time complexity: O(EV)
 */
 pair<vll, vll> spfa(const vvpll& g, ll s) {
-    vll ds(g.size(), LLONG_MAX), cnt(g.size()), pre = cnt;
-    vb in_queue(g.size());
+    ll n = g.size();
+    vll ds(n, LLONG_MAX), cnt(n), pre = cnt;
+    vll in_queue(n);
     queue<ll> q;
     ds[s] = 0; q.emplace(s);
     in_queue[s] = true;
@@ -549,7 +550,7 @@ pair<vll, vll> spfa(const vvpll& g, ll s) {
             else if (ds[u] + w < ds[v]) {
                 ds[v] = ds[u] + w;
                 ++cnt[v], pre[v] = u;
-                if (cnt[v] == g.size()) {
+                if (cnt[v] == n) {
                     ds[v] = LLONG_MIN;
                     ds[0] = v;  // ds[0] keeps a node that has -inf dist
                 }
@@ -597,27 +598,26 @@ vll bfs01(const vvpll& g, ll s) {
 
 ```c++
 /**
- *  @param  g  Graph.
- *  @param  d  Directed flag (true if g is directed).
- *  @param  s  Starting vertex.
- *  @param  e  Ending vertex.
- *  @return    Vector with the eulerian path. If e is specified: eulerian cycle.
+ *  @param  g     Graph.
+ *  @param  d     Directed flag (true if g is directed).
+ *  @param  s, e  Start and end vertex.
+ *  @return       Vector with the eulerian path. If e is specified: eulerian cycle.
  *
  *  Empty if impossible or no edges.
  *
  *  Time complexity: O(EVlog(EV))
 */
 vll eulerianPath(const vvll& g, bool d, ll s, ll e = -1) {
-    vector<multiset<ll>> h(g.size());
-    vll res, in_degree(g.size());
+    ll n = g.size();
+    vector<multiset<ll>> h(n);
+    vll res, in_degree(n);
     stack<ll> st;
     st.emplace(s);  // start vertex
 
-    rep(u, 0, g.size())
-        for (auto v : g[u]) {
-            ++in_degree[v];
-            h[u].emplace(v);
-        }
+    rep(u, 0, n) for (auto v : g[u]) {
+        ++in_degree[v];
+        h[u].emplace(v);
+    }
     
     ll check = (in_degree[s] - (ll)h[s].size()) * (in_degree[e] - (ll)h[e].size());
     if (e != -1 and check != -1) return {};  // impossible
@@ -646,7 +646,7 @@ vll eulerianPath(const vvll& g, bool d, ll s, ll e = -1) {
         }
     }
 
-    rep(u, 0, g.size()) if (in_degree[u] != 0) return {};  // impossible
+    rep(u, 0, n) if (in_degree[u] != 0) return {};  // impossible
     reverse(all(res));
     return res;
 }
@@ -747,9 +747,10 @@ vvll floydWarshall(const vvpll& g) {
  *  Time complexity: O((Elog(V))
 */
 tuple<vvll, map<ll, vll>, vll> kosaraju(const vvll& g) {
-    vvll inv(g.size()), cond(g.size());
+    ll n = g.size();
+    vvll inv(n), cond(n);
     map<ll, vll> scc;
-    vll vs(g.size()), comp(g.size()), order;
+    vll vs(n), comp(n), order;
 
     auto dfs = [&vs](auto& self, const vvll& h, vll& out, ll u) -> void {
         vs[u] = true;
@@ -758,12 +759,12 @@ tuple<vvll, map<ll, vll>, vll> kosaraju(const vvll& g) {
         out.eb(u);
     };
 
-    rep(u, 1, g.size()) {
+    rep(u, 1, n) {
         for (ll v : g[u]) inv[v].eb(u);
         if (!vs[u])       dfs(dfs, g, order, u);
     }
 
-    vs = vll(g.size(), false);
+    vs = vll(n, false);
     reverse(all(order));
 
     for (ll u : order)
@@ -774,9 +775,8 @@ tuple<vvll, map<ll, vll>, vll> kosaraju(const vvll& g) {
             for (ll v : cc) comp[v] = u;
         }
 
-    rep(u, 1, g.size())
-        for (ll v : g[u]) if (comp[u] != comp[v])
-            cond[comp[u]].eb(comp[v]);
+    rep(u, 1, n) for (ll v : g[u]) if (comp[u] != comp[v])
+        cond[comp[u]].eb(comp[v]);
 
     return { cond, scc, comp };
 }
@@ -819,8 +819,9 @@ pair<vtll, ll> kruskal(vtll& edges, ll n) {
  *  Time complexity: O(EVlog(V))
 */
 vll topoSort(const vvll& g) {
-    vll degree(g.size()), res;
-    rep(u, 1, g.size())
+    ll n = g.size();
+    vll degree(n), res;
+    rep(u, 1, n)
         for (ll v : g[u])
             ++degree[v];
 
@@ -839,7 +840,7 @@ vll topoSort(const vvll& g) {
                 pq.emplace(v);
     }
 
-    if (res.size() != g.size() - 1) return {};  // cycle
+    if (res.size() != n - 1) return {};  // cycle
     return res;
 }
 ```
@@ -861,19 +862,17 @@ vll topoSort(const vvll& g) {
  *  only traverse if there is a path from u to v and w is 0.
  *  When getting the path set each w in the path to 1.
  *
- *  Time complexity: O(EV^2) but there is cases
- *                   where it's better.
+ *  Time complexity: O(EV^2) but there is cases where it's better.
 */
 pair<ll, vector<vtll>> maxFlow(const vvpll& g, ll s, ll t) {
     ll n = g.size();
     vector<vtll> h(n);  // (w, v, rev)
     vll lvl(n), ptr(n), q(n);
     
-    rep(u, 1, n)
-        for (auto [w, v] : g[u]) {
-            h[u].eb(w, v, h[v].size());
-            h[v].eb(0, u, h[u].size() - 1);
-        }
+    rep(u, 1, n) for (auto [w, v] : g[u]) {
+        h[u].eb(w, v, h[v].size());
+        h[v].eb(0, u, h[u].size() - 1);
+    }
 
     auto dfs = [&](auto& self, ll u, ll nf) -> ll {
         if (u == t or nf == 0) return nf;
@@ -903,8 +902,7 @@ pair<ll, vector<vtll>> maxFlow(const vvpll& g, ll s, ll t) {
                         q[qe++] = v, lvl[v] = lvl[u] + 1;
             }
 
-            while (ll nf = dfs(dfs, s, LLONG_MAX))
-                f += nf;
+            while (ll nf = dfs(dfs, s, LLONG_MAX)) f += nf;
         } while (lvl[t]);
         
     return { f, h };
@@ -913,13 +911,115 @@ pair<ll, vector<vtll>> maxFlow(const vvpll& g, ll s, ll t) {
 
 ## Outros
 
+### Busca ternária
+
+```c++
+/**
+ *  @param  lo, hi  Interval.
+ *  @param  f       Function (strictly increases, reaches maximum, strictly decreases).
+ *  @return         Maximum value of the function in interval [lo, hi].
+ *
+ *  If it's an integer function use binary search.
+ *
+ *  Time complexity: O(log(N))
+*/
+double ternarySearch(double lo, double hi, function<double(double)> f) {
+    rep(i, 0, 100) {
+        double mi1 = lo + (hi - lo) / 3.0, mi2 = hi - (hi - lo) / 3.0;
+        if (f(mi1) < f(mi2)) lo = mi1;
+        else                 hi = mi2;
+    }
+    return f(lo);
+}
+```
+
+### Intervalos com soma S
+
+```c++
+/**
+ *  @param  xs   Vector.
+ *  @param  sum  Desired sum.
+ *  @return      Quantity of contiguous intervals with sum S.
+ *
+ *  Can change to count odd/even sum intervals (hist of even and odd).
+ *  Also could change to get contiguos intervals with sum bigger equal,
+ *  using an ordered-set.
+ *
+ *  Time complexity: O(Nlog(N))
+*/
+template <typename T>
+ll countIntervals(const vector<T>& xs, ll sum) {
+    map<T, ll> hist;
+    hist[0] = 1;
+    ll ans = 0;
+    T csum = 0;
+    for (T x : xs) {
+        csum += x;
+        ans += hist[csum - sum];
+        ++hist[csum];
+    }
+    return ans;
+}
+```
+
+### Kadane
+
+```c++
+/**
+ *  @param  xs  Vector.
+ *  @param  mx  Maximum Flag (true if want max).
+ *  @return     Max/min contiguous sum and smallest interval inclusive.
+ *
+ *  We consider valid an empty sum.
+ *
+ *  Time complexity: O(N)
+*/
+template <typename T>
+tuple<T, ll, ll> kadane(const vector<T>& xs, bool mx = true) {
+    T res = 0, csum = 0;
+    ll l = -1, r = -1, j = 0;
+    rep(i, 0, xs.size()) {
+        csum += xs[i] * (mx ? 1 : -1);
+        if (csum < 0) csum = 0, j = i + 1;  //            > if wants biggest interval
+        else if (csum > res or (csum == res and i - j + 1 < r - l + 1))
+            res = csum, l = j, r = i;
+    }
+    return { res * (mx ? 1 : -1), l, r };
+}
+```
+
+### Listar combinações
+
+```c++
+/**
+ *  @brief     Lists all combinations n choose k.
+ *  @param  i  Index.
+ *  @param  k  Remaining elements to be chosen.
+ *
+ *  When calling try to call on min(k, n - k) if
+ *  can make the reverse logic to guarantee efficiency.
+ *
+ *  Time complexity: O(K(binom(n, k)))
+*/
+void binom(ll i, ll k, vll& ks, const vll& xs) {
+    if (k == 0) {
+        cout << ks << '\n';
+        return;
+    }
+    if (i == xs.size()) return;
+    ks.eb(xs[i]);
+    binom(i + 1, k - 1, ks, xs);
+    ks.pop_back();
+    binom(i + 1, k, ks, xs);
+}
+```
+
 ### Maior subsequência comum (LCS)
 
 ```c++
 /**
- *  @param  xs  First vector.
- *  @param  ys  Second vector.
- *  @return     Size of longest common subsequence.
+ *  @param  xs, ys  Vectors.
+ *  @return         Size of longest common subsequence.
  *
  *  Time complexity: O(N^2)
 */
@@ -969,15 +1069,115 @@ vll lis(const vll& xs, bool values) {
 }
 ```
 
+### Pares com gcd x
+
+```c++
+/**
+ *  @param  xs  Target.
+ *  @param  x   Desired gcd.
+ *  @return     Quantity of pairs with gcd equals x.
+ *
+ *  Time complexity: O(Nlog(N))/O(1)
+*/
+vll gcdPairs(const vll& xs, ll x) {
+    const ll MAXN = (ll)1e6 + 1;
+    static vll dp(MAXN, -1), ms(MAXN), hist(MAXN);
+    if (dp[1] == -1) {
+        for (ll x : xs) ++hist[x];
+        
+        rep(i, 1, MAXN)
+            for (ll j = i; j < MAXN; j += i)
+                ms[i] += hist[j];
+        
+        per(i, MAXN - 1, 1) {
+            dp[i] = ms[i] * (ms[i] - 1) / 2;
+            for (ll j = 2 * i; j < MAXN; j += i)
+                dp[i] -= dp[j];
+        }
+    }
+    return dp[x];
+}
+```
+
+### Próximo maior/menor elemento
+
+```c++
+/**
+ *  @param  xs  Vector.
+ *  @return     Vector of indexes of closest biggest.
+ *
+ *  Example: c[i] = j where j < i and xs[j] > xs[i] and it's the closest.
+ *  If there isn't then c[i] = -1.
+ *
+ *  Time complexity: O(N)
+*/
+template <typename T>
+vector<T> closests(const vector<T>& xs) {
+    vll c(xs.size(), -1);  // n if to the right
+    stack<ll> prevs;
+    // n - 1 -> 0: to the right
+    rep(i, 0, xs.size()) {  //                    <= if want smallest
+        while (!prevs.empty() and xs[prevs.top()] <= xs[i])
+            prevs.pop();
+        if (!prevs.empty()) c[i] = prevs.top();
+        prevs.emplace(i);
+    }
+    return c;
+}
+```
+
+### Soma de todos os intervalos
+
+```c++
+/**
+ *  @param  xs  Vector.
+ *  @return     Sum of all intervals.
+ *
+ *  By counting in how many intervals the element appear
+ *
+ *  Time complexity: O(N)
+*/
+template <typename T>
+T sumAllIntervals(const vector<T>& xs) {
+    T sum = 0;
+    ll opens = 0;
+    rep(i, 0, xs.size()) {
+        opens += xs.size() - 2 * i;
+        sum += xs[i] * opens;
+    }
+    return sum;
+}
+```
+
+```c++
+/**
+ *  @param  xs  Vector.
+ *  @return     Sum of all intervals.
+ *
+ *  By adding each prefix sum
+ *
+ *  Time complexity: O(N)
+*/
+T sumAllIntervals(const vector<T>& xs) {
+    ll n = xs.size();
+    T sum = 0, csum = 0;
+    rep(i, 0, n)
+        csum += xs[i] * (n - i);
+    rep(i, 0, n) {
+        sum += csum;
+        csum -= xs[i] * (n - i);
+    }
+    return sum;
+}
+```
+
 ## Matemática
 
 ### Coeficiente binomial
 
 ```c++
 /**
- *  @param  n  First number.
- *  @param  k  Second number.
- *  @return    Binomial coefficient.
+ *  @return  Binomial coefficient.
  *
  *  Time complexity: O(N^2)/O(1)
 */
@@ -999,9 +1199,7 @@ ll binom(ll n, ll k) {
 
 ```c++
 /**
- *  @param  n  First number.
- *  @param  k  Second number.
- *  @return    Binomial coefficient mod M.
+ *  @return  Binomial coefficient mod M.
  *
  *  Time complexity: O(N)/O(1)
 */
@@ -1049,8 +1247,7 @@ vll toBase(ll x, ll b) {
 
 ```c++
 /**
- *  @param  n  Bound.
- *  @return    Vectors with primes from [1, n] and smallest prime factors.
+ *  @return  Vectors with primes from [1, n] and smallest prime factors.
  *
  *  Time complexity: O(Nlog(N))
 */
@@ -1069,8 +1266,7 @@ pair<vll, vll> sieve(ll n) {
 
 ```c++
 /**
- *  @param  x  Target.
- *  @return    Unordered vector with all divisors of x.
+ *  @return  Unordered vector with all divisors of x.
  *
  *  Time complexity: O(sqrt(N))
 */
@@ -1089,7 +1285,7 @@ vll divisors(ll x) {
 
 ```c++
 /**
- *  @param  xs  Target vector.
+ *  @param  xs  Target vector (with x in it).
  *  @param  x   Number.
  *  @return     Divisors of x.
  *
@@ -1119,8 +1315,7 @@ vll divisors(const vll& xs, ll x) {
 
 ```c++
 /**
- *  @param  x  Target.
- *  @return    Vector with all prime factors of x.
+ *  @return  Vector with all prime factors of x.
  *
  *  Time complexity: O(sqrt(N))
 */
@@ -1140,7 +1335,7 @@ vll factors(ll x) {
 
 ```c++
 /**
- *  @param  x    Target.
+ *  @param  x    Number.
  *  @param  spf  Vector of smallest prime factors
  *  @return      Vector with all prime factors of x.
  *
@@ -1193,8 +1388,7 @@ ll rePerm(const map<T, ll>& hist) {
 
 ```c++
 /**
- *  @param  x  Target.
- *  @return    Quantity of divisors of x.
+ *  @return  Quantity of divisors of x.
  *
  *  Time complexity: O(Nlog(N))/O(1)
 */
@@ -1216,11 +1410,10 @@ ll qntDivisors(ll x) {
 
 ```c++
 /**
- *  @param  i   First index.
- *  @param  j   Second index.
- *  @param  m   Size of subarray.
- *  @param  cs  Equivalence classes from suffix array.
- *  @return     0 if equal, -1 if smaller or 1 if bigger.
+ *  @param  i, j  First and second string start indexes.
+ *  @param  m     Size of subarray.
+ *  @param  cs    Equivalence classes from suffix array.
+ *  @return       0 if equal, -1 if smaller or 1 if bigger.
  *
  *  Requires suffix array.
  *  Both substrings start in the given index and have size m.
@@ -1261,9 +1454,8 @@ vll prefixBorder(const string& s) {
 
 ```c++
 /**
- *  @param  s  First string.
- *  @param  t  Second string.
- *  @return    Edit distance to transform s in t and operations.
+ *  @param  s, t  Srings
+ *  @return       Edit distance to transform s in t and operations.
  *
  *  Can change costs.
  *  -      Deletion
@@ -1275,15 +1467,10 @@ vll prefixBorder(const string& s) {
 */
 pair<ll, string> edit(const string& s,  string& t) {
     ll ci = 1, cr = 1, cs = 1, m = s.size(), n = t.size();
-    vvll dp(m + 1, vll(n + 1));
-    vvll pre = dp;
+    vvll dp(m + 1, vll(n + 1)), pre = dp;
 
-    rep(i, 0, m + 1)
-        dp[i][0] = i*cr, pre[i][0] = 'r';
-
-    rep(j, 0, n + 1)
-        dp[0][j] = j*ci, pre[0][j] = 'i';
-
+    rep(i, 0, m + 1) dp[i][0] = i*cr, pre[i][0] = 'r';
+    rep(j, 0, n + 1) dp[0][j] = j*ci, pre[0][j] = 'i';
     rep(i, 1, m + 1)
         rep(j, 1, n + 1) {
             ll ins = dp[i][j - 1] + ci, del = dp[i - 1][j] + cr;
@@ -1304,8 +1491,7 @@ pair<ll, string> edit(const string& s,  string& t) {
         }
         else {
             --i, --j;
-            if (s[i] == t[j])
-                ops += '=';
+            if (s[i] == t[j]) ops += '=';
             else
                 ops += "]", ops += t[j], ops += ">-", ops += s[i], ops += "[";
         }
@@ -1354,8 +1540,8 @@ vll getLcp(const string& s, const vll& sa) {
 
 ```c++
 /**
- *  @param  s   String.
- *  @return     Index of the minimum rotation.
+ *  @param  s  String.
+ *  @return    Index of the minimum rotation.
  *
  *  Time complexity: O(N)
  */
@@ -1442,9 +1628,8 @@ vll occur(const string& s, const string& t) {
 vll periods(const string& s) {
     ll n = s.size();
     vll zs = z(s), ps;
-    rep(i, 0, n)
-        if (zs[i] == n - i)
-            ps.eb(i);
+    rep(i, 0, n) if (zs[i] == n - i)
+        ps.eb(i);
     ps.eb(n);
     return ps;
 }
@@ -1538,16 +1723,14 @@ vll z(const string& s) {
 template <typename T>
 struct BIT2D {
     /**
-     *  @param  h  Height.
-     *  @param  w  Width.
+     *  @param  h, w  Height and width.
     */
     BIT2D(ll h, ll w) : n(h), m(w), bit(n + 1, vector<T>(m + 1)) {}
     
     /**
-     *  @brief     Adds v to position (y, x).
-     *  @param  y  First position.
-     *  @param  x  Second position.
-     *  @param  v  Value to add.
+     *  @brief        Adds v to position (y, x).
+     *  @param  y, x  Position.
+     *  @param  v     Value to add.
      *
      *  1-indexed
      *
@@ -1561,7 +1744,6 @@ struct BIT2D {
     }
     
     T sum(ll y, ll x) {
-        assert(0 < y and y <= n and 0 < x and x <= m)
         T sum = 0;
         for (; y > 0; y -= y & -y)
             for (ll i = x; i > 0; i -= i & -i)
@@ -1570,19 +1752,16 @@ struct BIT2D {
     }
     
     /**
-     *  @param  ly  Lower y bound.
-     *  @param  lx  Lower x bound.
-     *  @param  hy  Higher y bound.
-     *  @param  hx  Higher x bound.
-     *  @return     Sum in that rectangle.
+     *  @param  ly, hy  Vertical   interval
+     *  @param  lx, hx  Horizontal interval
+     *  @return         Sum in that rectangle.
      *
      *  1-indexed
      *
      *  Time complexity: O(log(N))
     */
     T sum(ll ly, ll lx, ll hy, ll hx) {
-        assert(0 < ly and ly <= hy and hy <= n);
-        assert(0 < lx and lx <= hx and hx <= n);
+        assert(0 < ly and ly <= hy and hy <= n and 0 < lx and lx <= hx and hx <= m);
         return sum(hy, hx)     - sum(hy, lx - 1) -
                sum(ly - 1, hx) + sum(ly - 1, lx - 1);
     }
@@ -1614,8 +1793,7 @@ struct DSU {
     }
 
     /**
-    *  @param  x  Element.
-    *  @param  y  Element.
+    *  @param  x, y  Elements.
     *
     *  Time complexity: ~O(1)
     */
@@ -1627,8 +1805,7 @@ struct DSU {
     }
 
     /**
-    *  @param  x  Element.
-    *  @param  y  Element.
+    *  @param  x, y  Elements.
     *
     *  Time complexity: ~O(1)
     */
@@ -1662,15 +1839,15 @@ struct HLD {
         auto build = [&](auto& self, ll u = 1, ll p = 0) -> void {
             idx[u] = timer++;
             subtree[u] = 1, parent[u] = p;
-           	for (ll& v : g[u]) if (v != p) {
+            for (ll& v : g[u]) if (v != p) {
                 head[v] = (v == g[u][0] ? head[u] : v);
                 self(self, v, u);
                 subtree[u] += subtree[v];
                 if (subtree[v] > subtree[g[u][0]] or g[u][0] == p)
                     swap(v, g[u][0]);
-           	}
+            }
             
-           	if (p == 0) {
+            if (p == 0) {
                 timer = 0;
                 self(self, head[u] = u, -1);
             }
@@ -1679,10 +1856,9 @@ struct HLD {
     }
 	
     /**
-    *  @param  u  First node.
-    *  @param  v  Second node.
-    *  @param  x  Value to add (if it's a set).
-    *  @return    f of path [u, v] (if it's a query).
+    *  @param  u, v  Nodes.
+    *  @param  x     Value to add     (if it's a set).
+    *  @return       f of path [u, v] (if it's a query).
     *
     *  It's a query if x is specified.
     *
@@ -1690,9 +1866,10 @@ struct HLD {
     */
     ll setQueryPath(ll u, ll v, ll x = INT_MIN) {
         assert(1 <= u and u < idx.size() and 1 <= v and v < idx.size());
-       	if (idx[u] < idx[v]) swap(u, v);
-       	if (head[u] == head[v]) return seg.setQuery(idx[v] + values_on_edges, idx[u], x);
-       	return op(seg.setQuery(idx[head[u]], idx[u], x), setQueryPath(parent[head[u]], v, x));
+        if (idx[u] < idx[v]) swap(u, v);
+        if (head[u] == head[v]) return seg.setQuery(idx[v] + values_on_edges, idx[u], x);
+        return op(seg.setQuery(idx[head[u]], idx[u], x),
+                      setQueryPath(parent[head[u]], v, x));
     }
 	
 	  /**
@@ -1706,7 +1883,7 @@ struct HLD {
     */
     ll setQuerySubtree(ll u, ll x = INT_MIN) {
         assert(1 <= u and u < idx.size());
-       	return seg.setQuery(idx[u] + values_on_edges, idx[u] + subtree[u] - 1, x);
+        return seg.setQuery(idx[u] + values_on_edges, idx[u] + subtree[u] - 1, x);
     }
 	
     Segtree<T> seg;
@@ -1732,7 +1909,7 @@ struct RBT {
     void insert(T x) { rb.insert({ x, n++ }); }
     ll size() { return rb.size(); };
     bool empty() { return rb.empty(); };
-        
+
     void erase(T x) {
         auto it = rb.lower_bound({ x, 0 });
         if (it == rb.end() or it->first != x) return;
@@ -1798,14 +1975,12 @@ struct Segtree {
     *
     *  Example: def in sum or gcd should be 0, in max LLONG_MIN, in min LLONG_MAX
     */
-    Segtree(ll sz, T def, Op f)
-        : seg(4 * sz, def), lzy(4 * sz), n(sz), DEF(def), op(f) {}
+    Segtree(ll sz, T def, Op f) : seg(4 * sz, def), lzy(4 * sz), n(sz), DEF(def), op(f) {}
 
     /**
-    *  @param  i  First  interval extreme.
-    *  @param  j  Second interval extreme.
-    *  @param  x  Value to add (if it's a set).
-    *  @return    f of interval [i, j] (if it's a query).
+    *  @param  i, j  Interval;
+    *  @param  x     Value to add (if it's a set).
+    *  @return       f of interval [i, j] (if it's a query).
     *
     *  It's a query if x is specified.
     *
@@ -1876,10 +2051,9 @@ struct WaveletTree {
     }
 
     /**
-    *  @param  i  First  interval extreme.
-    *  @param  j  Second interval extreme.
-    *  @param  k  Value, starts from 1.
-    *  @return    k-th smallest element in [i, j].
+    *  @param  i, j  Interval.
+    *  @param  k     Number, starts from 1.
+    *  @return       k-th smallest element in [i, j].
     *
     *  Time complexity: O(log(N))
     */
@@ -1898,10 +2072,9 @@ struct WaveletTree {
     }
     
     /**
-    *  @param  i  First  interval extreme.
-    *  @param  j  Second interval extreme.
-    *  @param  x  Compressed value.
-    *  @return    Occurrences of values less than or equal to x.
+    *  @param  i, j  Interval.
+    *  @param  x     Compressed value.
+    *  @return       Occurrences of values less than or equal to x in [i, j].
     *
     *  Time complexity: O(log(N))
     */
@@ -1974,7 +2147,7 @@ struct Circle {
 
     /**
     *  @param  c  Circle.
-    *  @return    Intersection/s point between c and this circle.
+    *  @return    Intersection(s) point(s) between c and this circle.
     *
     *  Time complexity: O(1)
     */
@@ -1998,9 +2171,8 @@ struct Circle {
     }
 
     /**
-    *  @param  P  First point
-    *  @param  Q  Second point
-    *  @return    Intersection point/s between line PQ and this circle.
+    *  @param  P, Q  Points.
+    *  @return       Intersection point/s between line PQ and this circle.
     *
     *  Time complexity: O(1)
     */
@@ -2020,7 +2192,7 @@ struct Circle {
     }
 
     /**
-    *  @return Tangent points looking from origin.
+    *  @return  Tangent points looking from origin.
     *
     *  Time complexity: O(1)
     */
@@ -2032,10 +2204,8 @@ struct Circle {
     }
 
     /**
-    *  @param  P  First point
-    *  @param  Q  Second point
-    *  @param  R  Third point
-    *  @return Circle defined by those 3 points.
+    *  @param  P, Q, R  Points.
+    *  @return          Circle defined by those 3 points.
     *
     *  Time complexity: O(1)
     */
@@ -2098,7 +2268,7 @@ struct Polygon {
         : vs(PS), n(vs.size()) { vs.eb(vs.front()); }
 
     /**
-    *  @return True if is convex.
+    *  @return  True if is convex.
     *
     *  Time complexity: O(N)
     */
@@ -2115,7 +2285,7 @@ struct Polygon {
     }
 
     /**
-    *  @return Area. If points are integer, double the area.
+    *  @return  Area. If points are integer, double the area.
     *
     *  Time complexity: O(N)
     */
@@ -2127,7 +2297,7 @@ struct Polygon {
     }
     
     /**
-    *  @return Perimeter.
+    *  @return  Perimeter.
     *
     *  Time complexity: O(N)
     */
@@ -2161,9 +2331,8 @@ struct Polygon {
     }
 
     /**
-    *  @param  P  First point.
-    *  @param  Q  Second point.
-    *  @return    One of the polygons generated through the cut of the line PQ.
+    *  @param  P, Q  Points.
+    *  @return       One of the polygons generated through the cut of the line PQ.
     *
     *  Time complexity: O(N)
     */
@@ -2182,7 +2351,7 @@ struct Polygon {
     }
 
     /**
-    *  @return Circumradius length.
+    *  @return  Circumradius length.
     *
     *  Regular polygon.
     *
@@ -2194,7 +2363,7 @@ struct Polygon {
     }
 
     /**
-    *  @return Apothem length.
+    *  @return  Apothem length.
     *
     *  Regular polygon.
     *
@@ -2229,8 +2398,7 @@ private:
 template <typename T>
 struct Line {
     /**
-    *  @param  P  First point.
-    *  @param  Q  Second point.
+    *  @param  P, Q  Points.
     *
     *  Time complexity: O(1)
     */
@@ -2325,8 +2493,7 @@ struct Line {
 template <typename T>
 struct Segment {
     /**
-    *  @param  P  First extreme point.
-    *  @param  Q  Second extreme point.
+    *  @param  P, Q  Points.
     */
     Segment(const pair<T, T>& P, const pair<T, T>& Q) : A(P), B(Q) {}
 
@@ -2392,12 +2559,10 @@ enum Angles { RIGHT, ACUTE, OBTUSE };
 template <typename T>
 struct Triangle {
     /**
-    *  @param  P  First point.
-    *  @param  Q  Second point.
-    *  @param  r  Third point.
+    *  @param  P, Q, R  Points.
     */
-    Triangle(pair<T, T> P, pair<T, T> Q, pair<T, T> r)
-        : A(P), B(Q), C(r), a(dist(A, B)), b(dist(B, C)), c(dist(C, A)) {}
+    Triangle(pair<T, T> P, pair<T, T> Q, pair<T, T> R)
+        : A(P), B(Q), C(R), a(dist(A, B)), b(dist(B, C)), c(dist(C, A)) {}
 
     /**
     *  Time complexity: O(1)
@@ -2407,7 +2572,7 @@ struct Triangle {
     double circumradius() { return (a * b * c) / (4.0 * area()); }
     
     /**
-    *  @return Area.
+    *  @return  Area.
     *
     *  Time complexity: O(1)
     */
@@ -2419,7 +2584,7 @@ struct Triangle {
     }
 
     /**
-    *  @return Sides class.
+    *  @return  Sides class.
     *
     *  Time complexity: O(1)
     */
@@ -2430,7 +2595,7 @@ struct Triangle {
     }
 
     /**
-    *  @return Angle class.
+    *  @return  Angle class.
     *
     *  Time complexity: O(1)
     */
@@ -2446,7 +2611,7 @@ struct Triangle {
     }
 
     /**
-    *  @return Medians intersection point.
+    *  @return  Medians intersection point.
     *
     *  Time complexity: O(1)
     */
@@ -2457,7 +2622,7 @@ struct Triangle {
     }
 
     /**
-    *  @return Circumcenter point.
+    *  @return  Circumcenter point.
     *
     *  Time complexity: O(1)
     */
@@ -2471,7 +2636,7 @@ struct Triangle {
     }
 
     /**
-    *  @return Bisectors intersection point.
+    *  @return  Bisectors intersection point.
     *
     *  Time complexity: O(1)
     */
@@ -2483,7 +2648,7 @@ struct Triangle {
     }
 
     /**
-    *  @return Heights intersection point.
+    *  @return  Heights intersection point.
     *
     *  Time complexity: O(1)
     */
@@ -2593,9 +2758,8 @@ struct Hash {
     }
     
     /**
-     *  @param  i  First  interval extreme.
-     *  @param  j  Second interval extreme.
-     *  @return    Pair of integers that represents the substring [i, j].
+     *  @param  i, j  Interval.
+     *  @return       Pair of integers that represents the substring [i, j].
      *
      *  Time complexity: O(1)
     */
@@ -2699,7 +2863,7 @@ struct SuffixAutomaton {
     }
 
     /**
-    *  @param  k  Value, starts from 0.
+    *  @param  k  Number, starts from 0.
     *  @return    k-th substring lexographically. 
     *
     *  Time complexity: O(N)
@@ -2724,7 +2888,7 @@ struct SuffixAutomaton {
     }
 
     /**
-    *  @param  k  Value, starts from 0.
+    *  @param  k  Number, starts from 0.
     *  @return    k-th distinct substring lexographically. 
     *
     *  Time complexity: O(N)
@@ -2819,9 +2983,8 @@ struct RMQ {
     }
 
     /**
-    *  @param  i  First  interval extreme.
-    *  @param  j  Second interval extreme.
-    *  @return    Minimum value in interval [i, j].
+    *  @param  i, j  Interval.
+    *  @return       Minimum value in interval [i, j].
     *
     *  Time complexity: O(1)
     */
@@ -2859,15 +3022,15 @@ struct Psum2D {
     }
 
     /**
-     *  @param  ly  Lower y bound.
-     *  @param  lx  Lower x bound.
-     *  @param  hy  Higher y bound.
-     *  @param  hx  Higher x bound.
-     *  @return     Sum in that rectangle.
+     *  @param  ly, hy  Vertical   interval.
+     *  @param  lx, hx  Horizontal interval.
+     *  @return         Sum in that rectangle.
      *
      *  Time complexity: O(1)
     */
     T query(ll ly, ll lx, ll hy, ll hx) {
+        assert(0 <= ly and ly <= hy and hy < n and 0 <= lx and lx <= hx and hx < m);
+        ++ly, ++lx, ++hy, ++hx;
         T res = psum[hy][hx] - psum[hy][lx - 1] - psum[ly - 1][hx];
         res += psum[ly - 1][lx - 1];
         return res;
@@ -2904,17 +3067,18 @@ struct Psum3D {
     }
 
     /**
-     *  @param  ly  Lower y bound.
-     *  @param  lx  Lower x bound.
-     *  @param  lz  Lower z bound.
-     *  @param  hy  Higher y bound.
-     *  @param  hx  Higher x bound.
-     *  @param  hz  Higher z bound.
-     *  @return     Sum in that cuboid.
+     *  @param  ly, hy  First interval.
+     *  @param  lx, hy  Second interval.
+     *  @param  lz, hz  Third interval
+     *  @return         Sum in that cuboid.
      *
      *  Time complexity: O(1)
     */
     T query(ll lx, ll ly, ll lz, ll hx, ll hy, ll hz) {
+        assert(0 <= lx and lx <= hx and hx < n);
+        assert(0 <= ly and ly <= hy and hy < m);
+        assert(0 <= lz and lz <= hz and hz < o);
+        ++lx, ++ly, ++lz, ++hx, ++hy, ++hz;
         T res = psum[hx][hy][hz]     - psum[lx - 1][hy][hz] -
                  psum[hx][ly - 1][hz] - psum[hx][hy][lz - 1];
         res += psum[hx][ly - 1][lz - 1] + psum[lx - 1][hy][lz - 1] +
@@ -2935,9 +3099,6 @@ struct Psum3D {
 ```c++
 const ll MOD = (ll)1e9 + 7;
 
-/**
- *  @brief Modular arithmetics.
-*/
 template <ll M = MOD>
 struct Mi {
     ll v;   
@@ -2964,6 +3125,13 @@ struct Mi {
         return res;
     }
 };
+```
+
+### Bits
+
+```c++
+ll msb(ll x) { return (x == 0 ? 0 : 64 - __builtin_clzll(x)); } 
+ll lsb(ll x) { return __builtin_ffsll(x); }
 ```
 
 ### Big integer
@@ -3052,8 +3220,6 @@ struct Bi {
  *  @param  a  Numerator.
  *  @param  b  Denominator.
  *  @return    Result of ceil division.
- *
- *  Time complexity: O(1)
 */
 ll ceilDiv(ll a, ll b) { assert(b != 0); return a / b + ((a ^ b) > 0 && a % b != 0); }
 ```
@@ -3203,94 +3369,11 @@ Outros
 
 ```c++
 /**
- *  @param  a  First value.
- *  @param  b  Second value.
- *  @return    True if they are equal.
- *
- *  Time complexity: O(1)
+ *  @param  a, b  Floats.
+ *  @return       True if they are equal.
 */
 template <typename T, typename S>
 bool equals(T a, S b) { return abs(a - b) < 1e-9; }
-```
-
-### Intervalos com soma S
-
-```c++
-/**
- *  @param  xs   Vector.
- *  @param  sum  Desired sum.
- *  @return      Quantity of contiguous intervals with sum S.
- *
- *  Can change to count odd/even sum intervals (hist of even and odd).
- *  Also could change to get contiguos intervals with sum bigger equal,
- *  using an ordered-set.
- *
- *  Time complexity: O(Nlog(N))
-*/
-template <typename T>
-ll countIntervals(const vector<T>& xs, ll sum) {
-    map<T, ll> hist;
-    hist[0] = 1;
-    ll ans = 0;
-    T csum = 0;
-    for (T x : xs) {
-        csum += x;
-        ans += hist[csum - sum];
-        ++hist[csum];
-    }
-    return ans;
-}
-```
-
-### Kadane
-
-```c++
-/**
- *  @param  xs  Vector.
- *  @param  mx  Maximum Flag (true if want max).
- *  @return     Max/min contiguous sum and smallest interval inclusive.
- *
- *  We consider valid an empty sum.
- *
- *  Time complexity: O(N)
-*/
-template <typename T>
-tuple<T, ll, ll> kadane(const vector<T>& xs, bool mx = true) {
-    T res = 0, csum = 0, l = -1, r = -1, j = 0;
-    rep(i, 0, xs.size()) {
-        csum += xs[i] * (mx ? 1 : -1);
-        if (csum < 0) csum = 0, j = i + 1;  //            > if wants biggest interval
-        else if (csum > res or (csum == res and i - j + 1 < r - l + 1))
-            res = csum, l = j, r = i;
-    }
-    return { res * (mx ? 1 : -1), l, r };
-}
-```
-
-### Listar combinações
-
-```c++
-/**
- *  @brief Lists all combinations n choose k.
- *  @param  i  Index.
- *  @param  k  Remaining elements to be chosen.
- *
- *  When calling try to call on min(k, n - k) if
- *  can make the reverse logic to guarantee efficiency.
- *
- *  Time complexity: O(K(binom(n, k)))
-*/
-void binom(ll i, ll k, vll& ks, const vll& xs) {
-    if (k == 0) {
-        cout << ks << '\n';
-        return;
-    }
-    if (i == xs.size()) return;
-    ks.eb(xs[i]);
-    binom(i + 1, k - 1, ks, xs);
-    ks.pop_back();
-    binom(i + 1, k, ks, xs);
-}
 ```
 
 ### Overflow check
@@ -3306,108 +3389,5 @@ ll sum(ll a, ll b) {
     if (abs(a) >= LLONG_MAX - abs(b))
         return LLONG_MAX;  // overflow
     return a + b;
-}
-```
-
-### Pares com gcd x
-
-```c++
-/**
- *  @param  xs  Target.
- *  @param  x   Desired gcd.
- *  @return     Quantity of pairs with gcd equals x.
- *
- *  Time complexity: O(Nlog(N))/O(1)
-*/
-vll gcdPairs(const vll& xs, ll x) {
-    const ll MAXN = (ll)1e6 + 1;
-    static vll dp(MAXN, -1), ms(MAXN), hist(MAXN);
-    if (dp[1] == -1) {
-        for (ll x : xs)
-            ++hist[x];
-        
-        rep(i, 1, MAXN)
-            for (ll j = i; j < MAXN; j += i)
-                ms[i] += hist[j];
-        
-        per(i, MAXN - 1, 1) {
-            dp[i] = ms[i] * (ms[i] - 1) / 2;
-            for (ll j = 2 * i; j < MAXN; j += i)
-                dp[i] -= dp[j];
-        }
-    }
-    return dp[x];
-}
-```
-
-### Próximo maior/menor elemento
-
-```c++
-/**
- *  @param  xs  Vector.
- *  @return     Vector of indexes of closest biggest.
- *
- *  Example: c[i] = j where j < i and xs[j] > xs[i] and it's the closest.
- *  If there isn't then c[i] = -1.
- *
- *  Time complexity: O(N)
-*/
-template <typename T>
-vector<T> closests(const vector<T>& xs) {
-    vll c(xs.size(), -1);  // n if to the right
-    stack<ll> prevs;
-    // n - 1 -> 0: to the right
-    rep(i, 0, xs.size()) {  //                    <= if want smallest
-        while (!prevs.empty() and xs[prevs.top()] <= xs[i])
-            prevs.pop();
-        if (!prevs.empty()) c[i] = prevs.top();
-        prevs.emplace(i);
-    }
-    return c;
-}
-```
-
-### Soma de todos os intervalos
-
-```c++
-/**
- *  @param  xs  Vector.
- *  @return     Sum of all intervals.
- *
- *  By counting in how many intervals the element appear
- *
- *  Time complexity: O(N)
-*/
-template <typename T>
-T sumAllIntervals(const vector<T>& xs) {
-    T sum = 0;
-    ll opens = 0;
-    rep(i, 0, xs.size()) {
-        opens += xs.size() - 2 * i;
-        sum += xs[i] * opens;
-    }
-    return sum;
-}
-```
-
-```c++
-/**
- *  @param  xs  Vector.
- *  @return     Sum of all intervals.
- *
- *  By adding each prefix sum
- *
- *  Time complexity: O(N)
-*/
-T sumAllIntervals(const vector<T>& xs) {
-    ll n = xs.size();
-    T sum = 0, csum = 0;
-    rep(i, 0, n)
-        csum += xs[i] * (n - i);
-    rep(i, 0, n) {
-        sum += csum;
-        csum -= xs[i] * (n - i);
-    }
-    return sum;
 }
 ```
