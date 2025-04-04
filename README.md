@@ -69,8 +69,8 @@ css: |-
     * Permutação com repetição
     * Totiente de Euler
   * Strings
+    * Borda de prefixos (KMP)
     * Comparador de substring
-    * Borda de prefixos
     * Distância de edição
     * Maior prefixo comum (LCP)
     * Menor rotação
@@ -675,8 +675,7 @@ vll getPath(const vll& pre, ll s, ll u) {
 */
 vvll floydWarshall(const vvpll& g) {
     ll n = g.size();
-    vvll ds(n + 1, vll(n + 1, INT_MAX));
-
+    vvll ds(n, vll(n, INT_MAX));
     rep(u, 0, n) {
         ds[u][u] = 0;
         for (auto [w, v] : g[u]) {
@@ -684,13 +683,11 @@ vvll floydWarshall(const vvpll& g) {
             if (ds[u][u] < 0) ds[u][u] = INT_MIN;  // negative cycle
         }
     }
-
     rep(k, 0, n) rep(u, 0, n) rep(v, 0, n)
         if (ds[u][k] != INT_MAX and ds[k][v] != INT_MAX) {
             ds[u][v] = min(ds[u][v], ds[u][k] + ds[k][v]);
             if (ds[k][k] < 0) ds[u][v] = INT_MIN;  // negative cycle
         }
-
     return ds;
 }
 ```
@@ -714,33 +711,26 @@ tuple<vvll, map<ll, vll>, vll> kosaraju(const vvll& g) {
     vvll inv(n), cond(n);
     map<ll, vll> scc;
     vll vs(n), comp(n), order;
-
     auto dfs = [&vs](auto& self, const vvll& h, vll& out, ll u) -> void {
         vs[u] = true;
         for (ll v : h[u]) if (!vs[v])
             self(self, h, out, v);
         out.eb(u);
     };
-
-    rep(u, 1, n) {
+    rep(u, 0, n) {
         for (ll v : g[u]) inv[v].eb(u);
         if (!vs[u])       dfs(dfs, g, order, u);
     }
-
     vs = vll(n, false);
     reverse(all(order));
-
-    for (ll u : order)
-        if (!vs[u]) {
-            vll cc;
-            dfs(dfs, inv, cc, u);
-            scc[u] = cc;
-            for (ll v : cc) comp[v] = u;
-        }
-
-    rep(u, 1, n) for (ll v : g[u]) if (comp[u] != comp[v])
+    for (ll u : order) if (!vs[u]) {
+        vll cc;
+        dfs(dfs, inv, cc, u);
+        scc[u] = cc;
+        for (ll v : cc) comp[v] = u;
+    }
+    rep(u, 0, n) for (ll v : g[u]) if (comp[u] != comp[v])
         cond[comp[u]].eb(comp[v]);
-
     return { cond, scc, comp };
 }
 ```
@@ -817,13 +807,14 @@ vll topoSort(const vvll& g) {
  *  If want all the paths from source to sink, make a bfs, only traverse if there is
  *  a path from u to v and w is 0.
  *  When getting the path set each w in the path to 1.
- *  Time complexity: O(EV^2) but there is cases where it's better.
+ *  Capacities on edges, to limit a vertex create a new vertex and limit edge.
+ *  Time complexity: O(EV^2) but there is cases where it's better (unit capacities).
 */
 pair<ll, vector<vtll>> maxFlow(const vvpll& g, ll s, ll t) {
     ll n = g.size();
     vector<vtll> h(n);  // (w, v, rev)
     vll lvl(n), ptr(n), q(n);
-    rep(u, 1, n) for (auto [w, v] : g[u]) {
+    rep(u, 0, n) for (auto [w, v] : g[u]) {
         h[u].eb(w, v, h[v].size());
         h[v].eb(0, u, h[u].size() - 1);
     }
@@ -889,7 +880,7 @@ double ternarySearch(double lo, double hi, function<double(double)> f) {
  *  Can change to count odd/even sum intervals (hist of even and odd).
  *  Also could change to get contiguos intervals with sum less equal, using an
  *  ordered-set just uncomment and comment the ones with hist.
- *  If want the interval to have an index or value subtract the parts without it. 
+ *  If want the interval to have an index or value subtract the parts without it.
  *  Time complexity: O(Nlog(N))
 */
 template <typename T>
@@ -1014,28 +1005,23 @@ vll lis(const vll& xs, bool values) {
 
 ```c++
 /**
- *  @param  xs  Target.
- *  @param  x   Desired gcd.
- *  @return     Amount of pairs with gcd equals x.
- *  Time complexity: O(Nlog(N))/O(1)
+ *  @param  xs  Target vector.
+ *  @return     Vector with amount of pairs with gcd equals i [1, 1e6].
+ *  Time complexity: O(Nlog(N))
 */
-vll gcdPairs(const vll& xs, ll x) {
-    const ll MAXN = (ll)1e6 + 1;
-    static vll dp(MAXN, -1), ms(MAXN), hist(MAXN);
-    if (dp[1] == -1) {
-        for (ll x : xs) ++hist[x];
-
-        rep(i, 1, MAXN)
-            for (ll j = i; j < MAXN; j += i)
-                ms[i] += hist[j];
-
-        per(i, MAXN - 1, 1) {
-            dp[i] = ms[i] * (ms[i] - 1) / 2;
-            for (ll j = 2 * i; j < MAXN; j += i)
-                dp[i] -= dp[j];
-        }
+vll gcdPairs(const vll& xs) {
+    ll MAXN = (ll)1e6 + 1;
+    vll dp(MAXN, -1), ms(MAXN), hist(MAXN);
+    for (ll x : xs) ++hist[x];
+    rep(i, 1, MAXN)
+        for (ll j = i; j < MAXN; j += i)
+            ms[i] += hist[j];
+    per(i, MAXN - 1, 1) {
+        dp[i] = ms[i] * (ms[i] - 1) / 2;
+        for (ll j = 2 * i; j < MAXN; j += i)
+            dp[i] -= dp[j];
     }
-    return dp[x];
+    return dp;
 }
 ```
 
@@ -1044,8 +1030,8 @@ vll gcdPairs(const vll& xs, ll x) {
 ```c++
 /**
  *  @param  xs  Vector.
- *  @return     Vector of indexes of closest biggest.
- *  Example: c[i] = j where j < i and xs[j] > xs[i] and it's the closest.
+ *  @return     Vector of indexes of closest smaller.
+ *  Example: c[i] = j where j < i and xs[j] < xs[i] and it's the closest.
  *  If there isn't then c[i] = -1.
  *  Time complexity: O(N)
 */
@@ -1054,8 +1040,8 @@ vector<T> closests(const vector<T>& xs) {
     vll c(xs.size(), -1);  // n if to the right
     stack<ll> prevs;
     // n - 1 -> 0: to the right
-    rep(i, 0, xs.size()) {  //                    <= if want smallest
-        while (!prevs.empty() and xs[prevs.top()] > xs[i])
+    rep(i, 0, xs.size()) {  //                    <= if want bigger
+        while (!prevs.empty() and xs[prevs.top()] >= xs[i])
             prevs.pop();
         if (!prevs.empty()) c[i] = prevs.top();
         prevs.emplace(i);
@@ -1298,6 +1284,27 @@ vll totient(ll n) {
 
 ## Strings
 
+### Borda de prefixos (KMP)
+
+```c++
+/**
+ *  @param  s  String.
+ *  @return    Vector with the border size for each prefix size.
+ *  Used in KMP to count occurrences.
+ *  Time complexity: O(N)
+*/
+vll prefixBorder(const string& s) {
+    vll bs(s.size() + 1, -1);
+    ll t = -1;
+    rep(i, 0, s.size()) {
+        while (t > -1 and s[t] != s[i])
+            t = bs[t];
+        bs[i + 1] = ++t;
+    }
+    return bs;
+}
+```
+
 ### Comparador de substring
 
 ```c++
@@ -1315,26 +1322,6 @@ ll compare(ll i, ll j, ll m, const vector<vector<int>>& cs) {
     pll a = { cs[k][i], cs[k][i + m - (1 << k)] };
     pll b = { cs[k][j], cs[k][j + m - (1 << k)] };
     return a == b ? 0 : (a < b ? -1 : 1);
-}
-```
-
-### Borda de prefixos
-
-```c++
-/**
- *  @param  s  String.
- *  @return    Vector with the border size for each prefix size.
- *  Time complexity: O(N)
-*/
-vll prefixBorder(const string& s) {
-    vll bs(s.size() + 1, -1);
-    ll t = -1;
-    rep(i, 0, s.size()) {
-        while (t > -1 and s[t] != s[i])
-            t = bs[t];
-        bs[i + 1] = ++t;
-    }
-    return bs;
 }
 ```
 
@@ -1581,12 +1568,13 @@ vll suffixArray(string s, ll k = LLONG_MAX) {
 /**
  *  @param  s  String.
  *  @return    Vector with Z-Function value for every position.
+ *  It's how much original prefix this suffix has as prefix.
  *  Time complexity: O(N)
 */
 vll z(const string& s) {
     ll n = s.size(), l = 0, r = 0;
     vll zs(n);
-    rep(i, 1, s.size()) {
+    rep(i, 1, n) {
         if (i <= r)
             zs[i] = min(zs[i - l], r - i + 1);
         while (zs[i] + i < n && s[zs[i]] == s[i + zs[i]])
@@ -1783,9 +1771,6 @@ using oset = tree<T, S, less<>, rb_tree_tag, tree_order_statistics_node_update>;
 ### Segment tree
 
 ```c++
-/**
-*  @brief Make interval queries and updates
-*/
 template <typename T, typename Op = function<T(T, T)>>
 struct Segtree {
     /**
@@ -1795,6 +1780,21 @@ struct Segtree {
     *  Example: def in sum or gcd should be 0, in max LLONG_MIN, in min LLONG_MAX
     */
     Segtree(ll sz, T def, Op f) : seg(4 * sz, def), lzy(4 * sz), n(sz), DEF(def), op(f) {}
+
+    /**
+    *  @param  xs  Vector.
+    *  Time complexity: O(N)
+    */
+    void build(const vector<T>& xs, ll l = 0, ll r = -1, ll no = 1) {
+        if (r == -1) r = n - 1;
+        if (l == r) seg[no] = xs[l];
+        else {
+            ll m = (l + r) / 2;
+            build(xs, l, m, 2 * no);
+            build(xs, m + 1, r, 2 * no + 1);
+            seg[no] = op(seg[2 * no], seg[2 * no + 1]);
+        }
+    }
 
     /**
     *  @param  i, j  Interval;
@@ -1850,7 +1850,7 @@ struct Node {
     Node() = default;
     Node(ll x) { xs.fill(0), xs[0] = x; }
     operator bool() { return xs[0]; }
-    Node& operator+=(const Node& v) { 
+    Node& operator+=(const Node& v) {
         xs[0] += v.xs[0];
         rep(i, 1, n) if (xs[i])
             xs[i] += v.xs[0];
@@ -2508,7 +2508,7 @@ struct Matrix {
      *  @param  b  Exponent.
      *  Time complexity: O(N^3 * log(B))
     */
-    void pow(ll b) {
+    void exp(ll b) {
         Matrix &self = *this, res(n);
         rep(i, 0, n) res[i][i] = 1;
         while (b > 0) {
@@ -2529,7 +2529,7 @@ struct Matrix {
 ### Hash
 
 ```c++
-static const ll M1 = (ll)1e9 + 7, M2 = (ll)1e9 + 9;
+const ll M1 = (ll)1e9 + 7, M2 = (ll)1e9 + 9;
 #define H pair<Mi<M1>, Mi<M2>>
 H operator*(H a, H b) { return { a.x * b.x, a.y * b.y }; }
 H operator+(H a, H b) { return { a.x + b.x, a.y + b.y }; }
@@ -2538,28 +2538,48 @@ struct Hash {
     /**
      *  @param  s  String.
      *  p^n + p^n-1 + ... + p^0.
+     *  Can use a segtree to update as seen in the commented blocks.
      *  Time complexity: O(N)
     */
     Hash(const string& s) : n(s.size()), ps(n + 1), pw(n + 1) {
         pw[0] = { 1, 1 };
+        vector<H> ps_(n);
         rep(i, 0, n) {
             ll v      = s[i] - 'a' + 1;
             ps[i + 1] = ps[i] * p + H(v, v);
             pw[i + 1] = pw[i] * p;
         }
+        // rep(i, 0, n) {
+        //     ll v   = s[i] - 'a' + 1;
+        //     ps_[i] = pw[n - i - 1] * H(v, v);
+        // }
+        // ps.build(ps_);
     }
+
+    /**
+     *  @param  i  Index.
+     *  @param  c  Character.
+     *  Sets character at index i to c.
+     *  Time complexity: O(log(N))
+    */
+    // void set(ll i, char c) {
+    //     ll v = c - 'a' + 1;
+    //     ps.setQuery(i, i, pw[n - i - 1] * H(v, v));
+    // }
 
     /**
      *  @param  i, j  Interval.
      *  @return       Pair of integers that represents the substring [i, j].
-     *  Time complexity: O(1)
+     *  Time complexity: O(1), If using segtree: O(log(N))
     */
     H get(ll i, ll j) {
         assert(0 <= i and i <= j and j < n);
         return ps[j + 1] - ps[i] * pw[j + 1 - i];
+        // return ps.setQuery(i, j) * pw[i];
     }
-    
+
     ll n;
+    // Segtree<H> ps;
     vector<H> ps, pw;
     H p = { 31, 29 };
 };
@@ -2866,6 +2886,17 @@ struct Psum3D {
 ### Aritmética modular
 
 ```c++
+template <typename T>
+T exp(T a, ll b) {
+    T res = 1;
+    while (b) {
+        if (b & 1) res *= a;
+        a *= a;
+        b /= 2;
+    }
+    return res;
+}
+
 const ll MOD = (ll)1e9 + 7;
 template <ll M = MOD>
 struct Mi {
@@ -2878,20 +2909,11 @@ struct Mi {
     Mi operator+=(Mi b) { return v += b.v - (v + b.v >= M) * M; }
     Mi operator-=(Mi b) { return v -= b.v - (v - b.v  < 0) * M; }
     Mi operator*=(Mi b) { return v = v * b.v % M; }
-    Mi operator/=(Mi b) { return *this *= pow(b, M - 2); }
+    Mi operator/=(Mi b) { return *this *= exp(b, M - 2); }
     friend Mi operator+(Mi a, Mi b) { return a += b; }
     friend Mi operator-(Mi a, Mi b) { return a -= b; }
     friend Mi operator*(Mi a, Mi b) { return a *= b; }
     friend Mi operator/(Mi a, Mi b) { return a /= b; }
-    static Mi pow(Mi a, ll b) {
-        Mi res = 1;
-        while (b) {
-            if (b & 1) res *= a;
-            a *= a;
-            b /= 2;
-        }
-        return res;
-    }
 };
 ```
 
@@ -2980,11 +3002,6 @@ struct Bi {
 ### Ceil division
 
 ```c++
-/**
- *  @param  a  Numerator.
- *  @param  b  Denominator.
- *  @return    Result of ceil division.
-*/
 ll ceilDiv(ll a, ll b) { assert(b != 0); return a / b + ((a ^ b) > 0 && a % b != 0); }
 ```
 
@@ -3031,7 +3048,7 @@ Bitwise
 
 Geometria
 
-> Quantidade de pontos inteiros em um segmento: `gcd(abs(Px - Qx), abs(Py - Qy)) + 1`.
+> Quantidade de pontos inteiros num segmento: `gcd(abs(Px - Qx), abs(Py - Qy)) + 1`.
   `P, Q` são os pontos extremos do segmento.
 
 > Teorema de Pick: Seja `A` a área da treliça, `I` a quantidade de pontos interiores com
@@ -3073,13 +3090,13 @@ Matemática
 
 > Divisibilidade por `3`: soma dos algarismos divisível por `3`.
 
-> Divisibilidade por `4`: número formado pelos dois últimos algarismos divísivel por `4`.
+> Divisibilidade por `4`: número formado pelos dois últimos algarismos, divisível por `4`.
 
-> Divisibilidade por `6`: se divísivel por `2` e `3`.
+> Divisibilidade por `6`: se divisível por `2` e `3`.
 
-> Divisibilidade por `7`: soma alternada de blocos de três algarismos divisível por `7`.
+> Divisibilidade por `7`: soma alternada de blocos de três algarismos, divisível por `7`.
 
-> Divisibilidade por `8`: número formado pelos três últimos algarismos divísivel por `8`.
+> Divisibilidade por `8`: número formado pelos três últimos algarismos, divisível por `8`.
 
 > Divisibilidade por `9`: soma dos algarismos divisível por `9`.
 
@@ -3101,9 +3118,16 @@ Matemática
   a operação tenha o valor correto.
 
 > Números de Catalan `Cn`: representa a quantidade de expressões válidas com parênteses
-  de tamanho `2n`. Também são relacionados à árvores, existem `Cn` árvores binárias de n
-  vértices e `Cn-1` árvores de n vértices (as árvores são caracterizadas por sua
+  de tamanho `2n`. Também são relacionados às árvores, existem `Cn` árvores binárias de `n`
+  vértices e `Cn-1` árvores de `n` vértices (as árvores são caracterizadas por sua
   aparência). `Cn = binom(2n, n)/(n + 1)`.
+  A intuição boa é imaginar o problema como uma caminhada numa matriz, do ponto `(0,0)`
+  até o ponto `(M, N)`, onde `M, N` é a quantidade de parênteses de abrir e de fechar,
+  aí a quantidade de expressões válidas é o total `binom(N + M, N)` menos as inválidas,
+  que dá para interpretar como as que vem do ponto simétrico à reta
+  `y = x + k = n = m + k + 1` até `(M, N)`, cruzando a reta inválida. `k` é a quantidade de parênteses já abertos, aí fica
+  `binom(N + M, N) - binom(N + M, M + K + 1)`.
+ 
 
 > Lema de Burnside: o número de combinações em que simétricos são considerados iguais é
   o somatório de `k` entre `[1, n]` de `c(k)/n`. `n` é a quantidade de maneiras de mudar
