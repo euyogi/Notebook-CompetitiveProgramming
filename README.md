@@ -578,6 +578,7 @@ vll bfs01(const vvpll& g, ll s) {
  *  @param  s, e  Start and end vertex.
  *  @return       Vector with the eulerian path. If e is specified: eulerian cycle.
  *  Empty if impossible or no edges.
+ *  Eulerian path goes through every edge once, cycle starts and ends at the same node. 
  *  Time complexity: O(EVlog(EV))
 */
 vll eulerianPath(const vvll& g, bool d, ll s, ll e = -1) {
@@ -930,11 +931,14 @@ tuple<T, ll, ll> kadane(const vector<T>& xs, bool mx = true) {
 
 ```c++
 /**
- *  @brief     Lists all combinations n choose k.
- *  @param  i  Index.
- *  @param  k  Remaining elements to be chosen.
+ *  @brief      Lists all combinations n choose k.
+ *  @param  i   Index.
+ *  @param  k   Remaining elements to be chosen.
+ *  @param  ks  Temporary vector.
+ *  @param  xs  Target vector.
  *  When calling try to call on min(k, n - k) if
  *  can make the reverse logic to guarantee efficiency.
+ *  Initially ks is an empty vector.
  *  Time complexity: O(K(binom(n, k)))
 */
 void binom(ll i, ll k, vll& ks, const vll& xs) {
@@ -1928,7 +1932,7 @@ struct WaveletTree {
             ll leqm_l = wav[no][i], leqm_r = wav[no][j];
             no *= 2;
             if (x <= m) i = leqm_l, j = leqm_r, r = m;
-            else i -= leqm_l, j -= leqm_r, l = m + 1, lx = leqm_r - leqm_l, ++no;
+            else i -= leqm_l, j -= leqm_r, l = m + 1, lx += leqm_r - leqm_l, ++no;
         }
         return j - i + lx;
     }
@@ -2530,10 +2534,14 @@ struct Matrix {
 
 ```c++
 const ll M1 = (ll)1e9 + 7, M2 = (ll)1e9 + 9;
-#define H pair<Mi<M1>, Mi<M2>>
-H operator*(H a, H b) { return { a.x * b.x, a.y * b.y }; }
-H operator+(H a, H b) { return { a.x + b.x, a.y + b.y }; }
-H operator-(H a, H b) { return { a.x - b.x, a.y - b.y }; }
+#define H pll
+H operator*(H a, H b) { return { a.x * b.x % M1, a.y * b.y % M2 }; }
+H operator+(H a, H b) {
+    return { a.x + b.x - (a.x + b.x >= M1) * M1, a.y + b.y - (a.y + b.y >= M2) * M2 };
+}
+H operator-(H a, H b) {
+    return { a.x - b.x + (a.x - b.x  < 0)  * M1, a.y - b.y + (a.y - b.y  < 0)  * M2 };
+}
 struct Hash {
     /**
      *  @param  s  String.
@@ -2582,6 +2590,7 @@ struct Hash {
     // Segtree<H> ps;
     vector<H> ps, pw;
     H p = { 31, 29 };
+};
 };
 ```
 
@@ -3023,14 +3032,15 @@ ll ceilDiv(ll a, ll b) { assert(b != 0); return a / b + ((a ^ b) > 0 && a % b !=
  *  Time complexity: O(Nlog(N))
 */
 template <typename T>
-pair<map<T, ll>, map<ll, T>> compress(vector<T>& xs) {
+pair<map<T, ll>, map<ll, T>> compress(vector<T> xs) {
     ll i = 0;
-    set<T> ys(all(xs));
+    sort(all(xs));
+    xs.erase(unique(all(xs)), xs.end());
     map<ll, T> pm;
     map<T, ll> mp;
-    for (T y : ys) {
-        pm[i] = y;
-        mp[y] = i++;
+    for (T x : xs) {
+        pm[i] = x;
+        mp[x] = i++;
     }
     return { mp, pm };
 }
@@ -3125,8 +3135,8 @@ Matemática
   até o ponto `(M, N)`, onde `M, N` é a quantidade de parênteses de abrir e de fechar,
   aí a quantidade de expressões válidas é o total `binom(N + M, N)` menos as inválidas,
   que dá para interpretar como as que vem do ponto simétrico à reta
-  `y = x + k = n = m + k + 1` até `(M, N)`, cruzando a reta inválida. `k` é a quantidade de parênteses já abertos, aí fica
-  `binom(N + M, N) - binom(N + M, M + K + 1)`.
+  `y = x + k = n = m + k + 1` até `(M, N)`, cruzando a reta inválida. `k` é a quantidade
+  de parênteses já abertos, aí fica `binom(N + M, N) - binom(N + M, M + K + 1)`.
  
 
 > Lema de Burnside: o número de combinações em que simétricos são considerados iguais é
