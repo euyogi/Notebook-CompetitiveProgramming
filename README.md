@@ -43,6 +43,7 @@ css: |-
   * Grafos
     * Bellman-Ford
     * BFS 0/1
+    * Bridges
     * Caminho euleriano
     * Dijkstra
     * Floyd-Warshall
@@ -65,8 +66,10 @@ css: |-
     * Conversão de base
     * Crivo de Eratóstenes
     * Divisores
+    * Exponenciação binária
     * Fatoração
     * Permutação com repetição
+    * Teste de primalidade
     * Totiente de Euler
   * Strings
     * Borda de prefixos (KMP)
@@ -99,6 +102,7 @@ css: |-
   * Strings
     * Hash
     * Suffix Automaton
+    * Trie
   * Outros
     * RMQ
     * Soma de prefixo 2D
@@ -106,7 +110,6 @@ css: |-
 * Utils
   * Aritmética modular
   * Bits
-  * Big integer
   * Ceil division
   * Conversão de índices
   * Compressão de coordenadas
@@ -269,6 +272,7 @@ vector<pair<T, T>> makeHull(const vector<pair<T, T>>& PS) {
  *  @return     Convex hull.
  *  Points will be sorted counter-clockwise.
  *  First and last point will be the same.
+ *  Be aware of degenerate polygon (line) use D() to check.
  *  Time complexity: O(Nlog(N))
 */
 template <typename T>
@@ -566,6 +570,41 @@ vll bfs01(const vvpll& g, ll s) {
             }
     }
     return ds;
+}
+```
+
+### Bridges 
+
+```c++
+/**
+ *  @param  g  Graph [id of edge, v].
+ *  Bridges are edges that when removed increases components.
+ *  Time complexity: O(E + V)
+*/
+vll getBridges(const vvpll& g) {
+    ll n = g.size();
+    vector<bool> vs(n);
+    vll st(n), low(n), bridges;
+    int timer = 0;
+    auto dfs = [&](auto& self, ll u, ll p) -> void {
+        vs[u] = true;
+        st[u] = low[u] = timer++;
+        bool parent_skipped = false;
+        for (auto [i, v] : g[u]) {
+            if (v == p && !parent_skipped) {
+                parent_skipped = true;
+                continue;
+            }
+            if (vs[v]) low[u] = min(low[u], st[v]);
+            else {
+                self(self, v, u);
+                low[u] = min(low[u], low[v]);
+                if (low[v] > st[u]) bridges.eb(i);
+            }
+        }
+    };
+    rep(i, 0, g.size()) if (!vs[i]) dfs(dfs, i, 0);
+    return bridges;
 }
 ```
 
@@ -1200,6 +1239,30 @@ vvll divisors(const vll& xs) {
 }
 ```
 
+### Exponenciação binária
+
+```c++
+ll mul(ll a, ll b, ll p) { return (__int128)a * b % p; }
+
+/**
+ *  @param  a  Number.
+ *  @param  b  Exponent.
+ *  @param  p  Modulo.
+ *  @return    a^b (mod p).
+ *  Time complexity: O(log(B))
+*/
+ll exp(ll a, ll b, ll p) {
+    ll res = 1;
+    a %= p;
+    while (b) {
+        if (b & 1) res = mul(res, a, p);
+        a = mul(a, a, p);
+        b /= 2;
+    }
+    return res;
+}
+```
+
 ### Fatoração
 
 ```c++
@@ -1236,6 +1299,36 @@ vll factors(ll x, const vll& spf) {
 }
 ```
 
+### Fatoração rápida
+
+```c++
+ll rho(ll x) {
+    auto f  = [x](ll x) { return mul(x, x, x) + 1; };
+    ll init = 0, x = 0, y = 0, prod = 2, i = 0;
+    while (i & 63 or gcd(prod, x) == 1) {
+        if (x == y) x = ++init, y = f(x);
+        if (ll t = mul(prod, (x - y), x); t) prod = t;
+        x = f(x), y = f(f(y)), ++i;
+    }
+    return gcd(prod, x);
+}
+
+/**
+ *  @param  x  Number.
+ *  @return    True if x is prime, false otherwise.
+ *  Requires primality test, which requires binary exponentiation.
+ *  Time complexity: O(N^(1/4)log(N)
+*/
+vll factors(ll x) {
+    if (x == 1)     return {};
+    if (isPrime(x)) return {x};
+    ll d  = rho(x);
+    vll l = factors(d), r = factors(x / d);
+    l.insert(l.end(), all(r));
+    return l;
+}
+```
+
 ### Permutação com repetição
 
 ```c++
@@ -1264,6 +1357,34 @@ ll rePerm(const map<T, ll>& hist) {
         total += v;
     }
     return res * fac[total] % M;
+}
+```
+
+### Teste de primalidade
+
+```c++
+/**
+ *  @param  x  Number.
+ *  @return    True if x is prime, false otherwise.
+ *  Requires binary exponentiation.
+ *  Time complexity: O(log^2(N))
+*/
+bool isPrime(ll x) {  // miller rabin
+    if (x < 2)      return false;
+    if (x <= 3)     return true;
+    if (x % 2 == 0) return false;
+    ll r = __builtin_ctzll(x - 1), d = x >> r;
+    for (ll a : {2, 3, 5, 7, 11, 13, 17, 19, 23}) {
+        if (a == x) return true;
+        a = exp(a, d, x);
+        if (a == 1 or a == x - 1) continue;
+        rep(i, 1, r) {
+            a = mul(a, a, x);
+            if (a == x - 1) break;
+        }
+        if (a != x - 1) return false;
+    }
+    return true;
 }
 ```
 
@@ -1814,16 +1935,16 @@ struct Segtree {
         if (j < l or i > r) return DEF;
         if (i <= l and r <= j) {
             if (x != LLONG_MIN) {
-                lzy[no] += x;
+                lzy[no] += x;  // seg[no] if no lazy
                 unlazy(l, r, no);
             }
             return seg[no];
         }
         ll m = (l + r) / 2;
         T q = op(setQuery(i, j, x, l, m, 2 * no),
-                 setQuery(i, j, x, m + 1, r, 2 * no + 1));
-        seg[no] = op(seg[2 * no], seg[2 * no + 1]);
-        return q;
+                 setQuery(i, j, x, m + 1, r, 2 * no + 1));  // [qry]
+        seg[no] = op(seg[2 * no], seg[2 * no + 1]);  // [set] comment if no lazy range upd
+        return q;  // [qry] q + seg[no] if no lazy range upd
     }
 
 private:
@@ -1848,9 +1969,10 @@ private:
 ### Máximos
 
 ```c++
+// for segment tree
 struct Node {
-    static const ll n = 2;
-    array<ll, n> xs;
+    static const ll n = 2;  // quantity of maxs
+    array<ll, n> xs;  // maxs
     Node() = default;
     Node(ll x) { xs.fill(0), xs[0] = x; }
     operator bool() { return xs[0]; }
@@ -1871,6 +1993,30 @@ struct Node {
         return u;
     }
 };
+```
+
+### Primeiro maior
+
+```c++
+/**
+*  @param  i, j  Interval;
+*  @param  x     Value to comppare.
+*  @return       First index with element greater than x.
+*  This is a segment tree's method.
+*  The segment tree function must be max().
+*  Returns -1 if no element is greater.
+*  Time complexity: O(log(N))
+*/
+ll firstGreater(ll i, ll j, T x, ll l = 0, ll r = -1, ll no = 1) {
+    assert(0 <= i and i <= j and j < n);
+    if (r == -1) r = n - 1;
+    if (j < l or i > r or seg[no] <= x) return -1;
+    if (l == r) return l;
+    ll m = (l + r) / 2;
+    ll left = firstGreater(i, j, x, l, m, 2 * no);
+    if (left != -1) return left;
+    return firstGreater(i, j, x, m + 1, r, 2 * no + 1);
+}
 ```
 
 ### Wavelet Tree
@@ -2535,14 +2681,12 @@ struct Matrix {
 ```c++
 const ll M1 = (ll)1e9 + 7, M2 = (ll)1e9 + 9;
 #define H pll
+ll sum(ll a, ll b, ll m) { return (a += b.x) >= m ? a - m : a; };
+ll sub(ll a, ll b, ll m) { return (a -= b.x) >= m ? a + m : a; };
 H operator*(H a, H b) { return { a.x * b.x % M1, a.y * b.y % M2 }; }
-H operator+(H a, H b) {
-    return { a.x + b.x - (a.x + b.x >= M1) * M1, a.y + b.y - (a.y + b.y >= M2) * M2 };
-}
-H operator-(H a, H b) {
-    return { a.x - b.x + (a.x - b.x  < 0)  * M1, a.y - b.y + (a.y - b.y  < 0)  * M2 };
-}
-struct Hash {
+H operator+(H a, H b) { return { sum(a.x, b.x, M1), sum(a.y, b.y, M2) }; }
+H operator-(H a, H b) { return { sub(a.x, b.x, M1), sub(a.y, b.y, M2) }; }
+    struct Hash {
     /**
      *  @param  s  String.
      *  p^n + p^n-1 + ... + p^0.
@@ -2580,7 +2724,7 @@ struct Hash {
      *  @return       Pair of integers that represents the substring [i, j].
      *  Time complexity: O(1), If using segtree: O(log(N))
     */
-    H get(ll i, ll j) {
+    H operator()(ll i, ll j) {
         assert(0 <= i and i <= j and j < n);
         return ps[j + 1] - ps[i] * pw[j + 1 - i];
         // return ps.setQuery(i, j) * pw[i];
@@ -2590,7 +2734,6 @@ struct Hash {
     // Segtree<H> ps;
     vector<H> ps, pw;
     H p = { 31, 29 };
-};
 };
 ```
 
@@ -2756,7 +2899,7 @@ private:
         last = u;
     }
 
-    void dfs(ll u) {
+    void dfs(ll u) {  // for kThSub and kThDSub
         dcnt[u] = 1, rcnt[u] = cnt[u];
         rep(i, 0, alpha) {
             ll v = next[u][i];
@@ -2770,6 +2913,61 @@ private:
     vvll next;
     vll len, fpos, lnk, cnt, rcnt, dcnt;
     ll sz = 0, last = 0, n = 0, alpha = 26;
+};
+```
+
+### Trie
+
+```c++
+// empty head, tree is made by the prefixs of each string in it.
+struct Trie {
+    Trie() : n(0), to(MAXN + 1, vll(26)), mark(MAXN + 1), qnt(MAXN + 1) {}
+    
+    /**
+    *  @param  s  String.
+    *  Time complexity: O(N)
+    */
+    void insert(const string& s) {
+        ll u = 0;
+        for (auto c : s) {
+            ll& v = to[u][c - 'a'];
+            if (!v) v = ++n;
+            u = v, ++qnt[u];
+        }
+        ++mark[u], ++qnt[0];
+    }
+    
+    /**
+    *  @param  s  String.
+    *  Time complexity: O(N)
+    */
+    void erase(const string& s) {
+        ll u = 0;
+        for (char c : s) {
+            ll& v = to[u][c - 'a'];
+            u = v, --qnt[u];
+            if (!qnt[u]) v = 0, --n;
+        }
+        --mark[u], --qnt[0];
+    }
+    
+    void dfs(ll u) {
+        rep(i, 0, 26) {
+            ll v = to[u][i];
+            if (v) {
+                if (mark[v]) cout << "\e[31m";
+                cout << (char)(i + 'a') << " \e[m";
+                dfs(to[u][i]);
+            }
+        }
+    }
+    
+    const ll MAXN = 5e5;
+    ll n;
+    vvll to;  // 0 is head
+    // mark: quantity of strings that ends in this node.
+    // qnt: quantity of strings that pass through this node.
+    vll mark, qnt;
 };
 ```
 
@@ -2915,8 +3113,8 @@ struct Mi {
     friend bool operator==(Mi a, Mi b) { return a.v == b.v; }
     friend bool operator!=(Mi a, Mi b) { return a.v != b.v; }
     friend ostream& operator<<(ostream& os, Mi a) { return os << a.v; }
-    Mi operator+=(Mi b) { return v += b.v - (v + b.v >= M) * M; }
-    Mi operator-=(Mi b) { return v -= b.v - (v - b.v  < 0) * M; }
+    Mi operator+=(Mi b) { return v -= ((v += b.v) >= M) * M; }
+    Mi operator-=(Mi b) { return v += ((v -= b.v)  < 0) * M; }
     Mi operator*=(Mi b) { return v = v * b.v % M; }
     Mi operator/=(Mi b) { return *this *= exp(b, M - 2); }
     friend Mi operator+(Mi a, Mi b) { return a += b; }
@@ -2931,81 +3129,6 @@ struct Mi {
 ```c++
 ll msb(ll x) { return (x == 0 ? 0 : 64 - __builtin_clzll(x)); }
 ll lsb(ll x) { return __builtin_ffsll(x); }
-```
-
-### Big integer
-
-```c++
-/**
- *  @brief Integers bigger than long long using string.
-*/
-struct Bi {
-    Bi() : v("0") {}
-    Bi(const string& x) : v(x) { reverse(all(v)); }
-    friend Bi operator+(Bi a, const Bi& b) { return a += b; }
-    friend Bi operator-(Bi a, const Bi& b) { return a -= b; }
-
-    friend ostream& operator<<(ostream& os, const Bi& a) {
-        ll i = a.v.size() - 1;
-        while (a.v[i] == '0' and i > 0) --i;
-        while (i >= 0) os << a.v[i--];
-        return os;
-    }
-
-    // Time complexity: O(N)
-    Bi operator+=(const Bi& b) {
-        bool c = false;
-        rep(i, 0, max(v.size(), b.v.size())) {
-            ll x = c;
-            if (i < v.size()) x += v[i] - '0';
-            if (i < b.v.size()) x += b.v[i] - '0';
-            c = x >= 10, x -= 10 * (x >= 10);
-            if (i < v.size()) v[i] = x + '0';
-            else v += x + '0';
-        }
-        if (c) v += '1';
-        return *this;
-    }
-
-    /**
-    * assumes a > b
-    * Time complexity: O(N)
-    */
-    Bi operator-=(const Bi& b) {
-        rep(i, 0, v.size()) {
-            ll x = v[i] - '0';
-            if (i < b.v.size()) x -= b.v[i] - '0';
-            if (x < 0) x += 10, --v[i + 1];
-            v[i] = x + '0';
-        }
-        return *this;
-    }
-
-    /**
-     *  @param  n  Size of prefix.
-     *  @return    Prefix.
-     *  Time complexity: O(N)
-    */
-    Bi prefix(ll n) {
-        string p = v.substr(v.size() - n, n);
-        reverse(all(p));
-        return p;
-    }
-
-    /**
-     *  @param  n  Size of suffix.
-     *  @return    Suffix.
-     *  Same as x % 10^(n-1)
-     *  Time complexity: O(N)
-    */
-    Bi suffix(ll n) {
-        string s = v.substr(0, n);
-        reverse(all(s));
-        return s;
-    }
-
-    string v;
-};
 ```
 
 ### Ceil division
@@ -3162,6 +3285,8 @@ Outros
 > Regra de Warnsdorf: heurística para encontrar um caminho em que o cavalo passa por
   todas as casas uma única vez, sempre escolher o próximo movimento para a casa com o
   menor número de casas alcançáveis.
+  
+> Para utilizar ordenação customizada em sets/maps: `set<ll, decltype([](ll a, ll b) { ... })`.
 
 ### Igualdade flutuante
 
