@@ -90,6 +90,7 @@ css: |-
     * Heavy-light decomposition
     * Ordered-set
     * Segment tree
+    * Treap
     * Wavelet tree
   * Geometria
     * Círculo
@@ -971,25 +972,25 @@ tuple<T, ll, ll> kadane(const vector<T>& xs, bool mx = true) {
 ```c++
 /**
  *  @brief      Lists all combinations n choose k.
- *  @param  i   Index.
- *  @param  k   Remaining elements to be chosen.
- *  @param  ks  Temporary vector.
- *  @param  xs  Target vector.
+ *  @param  k   Number.
+ *  @param  xs  Target vector (of size n with the elements you want).
  *  When calling try to call on min(k, n - k) if
  *  can make the reverse logic to guarantee efficiency.
- *  Initially ks is an empty vector.
- *  Time complexity: O(K(binom(n, k)))
+ *  Time complexity: O(K(binom(N, K)))
 */
-void binom(ll i, ll k, vll& ks, const vll& xs) {
-    if (k == 0) {
-        cout << ks << '\n';
-        return;
-    }
-    if (i == xs.size()) return;
-    ks.eb(xs[i]);
-    binom(i + 1, k - 1, ks, xs);
-    ks.pop_back();
-    binom(i + 1, k, ks, xs);
+void binom(ll k, const vll& xs) {
+    vll ks;
+    auto f = [&](auto& self, ll i, ll rem) {
+        if (rem == 0) {  // do stuff here
+            cout << ks << '\n';
+            return;
+        }
+        if (i == xs.size()) return;
+        ks.eb(xs[i]);
+        self(self, i + 1, rem - 1);
+        ks.pop_back();
+        self(self, i + 1, rem);
+    }; f(f, 0, k);
 }
 ```
 
@@ -1922,13 +1923,13 @@ struct Segtree {
     }
 
     /**
-    *  @param  i, j  Interval;
-    *  @param  x     Value to add (if it's a set).
+    *  @param  i, j  Interval.
+    *  @param  x     Value to add (if it's an update).
     *  @return       f of interval [i, j] (if it's a query).
     *  It's a query if x is specified.
     *  Time complexity: O(log(N))
     */
-    T setQuery(ll i, ll j, T x = LLONG_MIN, ll l = 0, ll r = -1, ll no = 1) {
+    T updQry(ll i, ll j, T x = LLONG_MIN, ll l = 0, ll r = -1, ll no = 1) {
         assert(0 <= i and i <= j and j < n);
         if (r == -1) r = n - 1;
         if (lzy[no]) unlazy(l, r, no);
@@ -1941,9 +1942,9 @@ struct Segtree {
             return seg[no];
         }
         ll m = (l + r) / 2;
-        T q = op(setQuery(i, j, x, l, m, 2 * no),
-                 setQuery(i, j, x, m + 1, r, 2 * no + 1));  // [qry]
-        seg[no] = op(seg[2 * no], seg[2 * no + 1]);  // [set] comment if no lazy range upd
+        T q = op(updQry(i, j, x, l, m, 2 * no),
+                 updQry(i, j, x, m + 1, r, 2 * no + 1));  // [qry]
+        seg[no] = op(seg[2 * no], seg[2 * no + 1]);  // [upd] comment if no lazy range upd
         return q;  // [qry] q + seg[no] if no lazy range upd
     }
 
@@ -2017,6 +2018,130 @@ ll firstGreater(ll i, ll j, T x, ll l = 0, ll r = -1, ll no = 1) {
     if (left != -1) return left;
     return firstGreater(i, j, x, m + 1, r, 2 * no + 1);
 }
+```
+
+### Treap
+
+```c++
+mt19937_64 rng(chrono::steady_clock::now().time_since_epoch().count());
+
+typedef char NT;
+struct Node {
+    Node(NT x) : v(x), s(x), w(rng()) {}
+    NT v, s;
+    ll w, sz = 1;
+    bool lazy_rev = false;
+    Node *l = nullptr, *r = nullptr;
+};
+typedef Node* NP;
+
+ll size(NP t) { return t ? t->sz : 0; }
+ll sum(NP t) { return t ? t->s : 0; }
+
+void unlazy(NP t) {
+    if (!t or !t->lazy_rev) return;
+    t->lazy_rev = false;
+    swap(t->l, t->r);
+    if (t->l) t->l->lazy_rev ^= true;
+    if (t->r) t->r->lazy_rev ^= true;
+}
+
+void lazy(NP t) {
+    if (!t) return;
+    unlazy(t->l), unlazy(t->r);
+    t->sz = size(t->l) + size(t->r) + 1;
+    t->s  = sum(t->l) + sum(t->r) + t->v;
+}
+
+NP merge(NP l, NP r) {
+    NP t;
+    unlazy(l), unlazy(r);
+    if (!l or !r) t = l ? l : r;
+    else if (l->w > r->w) l->r = merge(l->r, r), t = l;
+    else r->l = merge(l, r->l), t = r;
+    lazy(t);
+    return t;
+}
+
+// splits t into l: [0, val), r: [val, )
+void split(NP t, NP& l, NP& r, ll i) {
+    unlazy(t);
+    if (!t) l = r = nullptr;
+    else if (i > size(t->l)) split(t->r, t->r, r, i - size(t->l) - 1), l = t;
+    else split(t->l, l, t->l, i), r = t;
+    lazy(t);
+}
+
+/**
+*  @param  t  Node pointer.
+*  Time complexity: O(N)
+*/
+void print(NP t) {
+    unlazy(t);
+    if (!t) return;
+    print(t->l);
+    cout << t->v;
+    print(t->r);
+}
+
+struct Treap {
+    NP root = nullptr;
+
+    /**
+    *  @brief     Inserts element at index i, pushes from index i inclusive.
+    *  @param  i  Index.
+    *  @param  x  Value to insert.
+    *  Time complexity: O(log(N))
+    */
+    void insert(ll i, NT x) {
+        NP l, r, no = new Node(x);
+        split(root, l, r, i);
+        root = merge(merge(l, no), r);
+    }
+
+    /**
+    *  @brief     Erases element at index i, pulls from index i + 1 inclusive.
+    *  @param  i  Index.
+    *  Time complexity: O(log(N))
+    */
+    void erase(ll i) {
+        NP l, r;
+        split(root, l, r, i);
+        split(r, root, r, 1);
+        root = merge(l, r);
+    }
+
+    /**
+    *  @brief updates the range [i, j)
+    *  @param  i, j  Interval.
+    *  @param  f     Function to apply.
+    *  Time complexity: O(log(N))
+    */
+    void upd(ll i, ll j, function<void(NP)> f) {
+        NP m, r;
+        split(root, root, m, i);
+        split(m, m, r, j - i + 1);
+        if (m) f(m);
+        root = merge(merge(root, m), r);
+    }
+
+    /**
+    *  @brief query the range [i, j)
+    *  @param  i, j  Interval.
+    *  @param  f     Function to query.
+    *  Time complexity: O(log(N))
+    */
+    template <typename R>
+    R query(ll i, ll j, function<R(NP)> f) {
+        NP m, r;
+        split(root, root, m, i);
+        split(m, m, r, j - i + 1);
+        assert(m);
+        R x = f(m);
+        root = merge(merge(root, m), r);
+        return x;
+    }
+};
 ```
 
 ### Wavelet Tree
