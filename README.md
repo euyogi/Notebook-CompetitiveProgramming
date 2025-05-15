@@ -43,7 +43,6 @@ css: |-
   * Grafos
     * Bellman-Ford
     * BFS 0/1
-    * Bridges
     * Caminho euleriano
     * Dijkstra
     * Floyd-Warshall
@@ -51,6 +50,7 @@ css: |-
     * Kruskal (Árvore geradora mínima)
     * Ordenação topológica
     * Max flow/min cut (Dinic)
+    * Pontes e articulações
   * Outros
     * Busca ternária
     * Intervalos com soma S
@@ -76,6 +76,7 @@ css: |-
     * Comparador de substring
     * Distância de edição
     * Maior prefixo comum (LCP)
+    * Manacher (substrings palíndromas)
     * Menor rotação
     * Ocorrências de substring (suffix array)
     * Ocorrências de substring (Z-Function)
@@ -136,27 +137,25 @@ using namespace std;
 #define pll          pair<ll, ll>
 #define vpll         vector<pll>
 #define all(xs)      xs.begin(), xs.end()
-#define rep(i, a, b) for (ll i = (a); i < (ll)(b); ++i)
+#define rep(i, a, b) for (ll i = (a); i  < (ll)(b); ++i)
 #define per(i, a, b) for (ll i = (a); i >= (ll)(b); --i)
 #define eb           emplace_back
-#define cinj         (cin.iword(0)  = 1, cin)
-#define coutj        (cout.iword(0) = 1, cout)
+#define cinj         cin.iword(0)  = 1, cin
+#define coutj        cout.iword(0) = 1, cout
 template <typename T>  // read vector
 istream& operator>>(istream& is, vector<T>& xs) {
     assert(!xs.empty());
     rep(i, is.iword(0), xs.size()) is >> xs[i];
-    is.iword(0) = 0;
-    return is;
+    return is.iword(0) = 0, is;
 } template <typename T>  // print vector
 ostream& operator<<(ostream& os, vector<T>& xs) {
     rep(i, os.iword(0), xs.size()) os << xs[i] << ' ';
-    os.iword(0) = 0;
-    return os;
+    return os.iword(0) = 0, os;
 } void solve();
 signed main() {
     cin.tie(0)->sync_with_stdio(0);
     ll t = 1;
-    // cin >> t;
+    cin >> t;
     while (t--) solve();
 }  // END TEMPLATE --------------------------------------|
 
@@ -574,41 +573,6 @@ vll bfs01(const vvpll& g, ll s) {
 }
 ```
 
-### Bridges 
-
-```c++
-/**
- *  @param  g  Graph [id of edge, v].
- *  Bridges are edges that when removed increases components.
- *  Time complexity: O(E + V)
-*/
-vll getBridges(const vvpll& g) {
-    ll n = g.size();
-    vector<bool> vs(n);
-    vll st(n), low(n), bridges;
-    int timer = 0;
-    auto dfs = [&](auto& self, ll u, ll p) -> void {
-        vs[u] = true;
-        st[u] = low[u] = timer++;
-        bool parent_skipped = false;
-        for (auto [i, v] : g[u]) {
-            if (v == p && !parent_skipped) {
-                parent_skipped = true;
-                continue;
-            }
-            if (vs[v]) low[u] = min(low[u], st[v]);
-            else {
-                self(self, v, u);
-                low[u] = min(low[u], low[v]);
-                if (low[v] > st[u]) bridges.eb(i);
-            }
-        }
-    };
-    rep(i, 0, g.size()) if (!vs[i]) dfs(dfs, i, 0);
-    return bridges;
-}
-```
-
 ### Caminho euleriano
 
 ```c++
@@ -889,6 +853,49 @@ pair<ll, vector<vtll>> maxFlow(const vvpll& g, ll s, ll t) {
 }
 ```
 
+### Pontes e articulações
+
+```c++
+/**
+ *  @param  g  Graph [id of edge, v].
+ *  Bridges are edges that when removed increases components.
+ *  Articulations are vertices that when removed increases components.
+ *  Time complexity: O(E + V)
+*/
+vll bridgesOrArticulations(const vvpll& g, bool get_bridges) {
+    ll n = g.size(), timer = 0;
+    vector<bool> vs(n);
+    vll st(n), low(n), res;
+    auto dfs = [&](auto& self, ll u, ll p) -> void {
+        vs[u] = true;
+        st[u] = low[u] = timer++;
+        ll children = 0;
+        bool parent_skipped = false;
+        for (auto [i, v] : g[u]) {
+            if (v == p && !parent_skipped) {
+                parent_skipped = true;
+                continue;
+            }
+            if (vs[v]) low[u] = min(low[u], st[v]);
+            else {
+                self(self, v, u);
+                low[u] = min(low[u], low[v]);
+                if (get_bridges and low[v] > st[u]) res.eb(i);
+                else if (!get_bridges and p != 0 and low[v] >= st[u]) res.eb(u);
+                ++children;
+            }
+        }
+        if (!get_bridges and p == 0 and children > 1) res.eb(u);
+    };
+    rep(i, 0, g.size()) if (!vs[i]) dfs(dfs, i, 0);
+    if (!get_bridges) {
+        sort(all(res));
+        res.erase(unique(all(res)), res.end());
+    }
+    return res;
+}
+```
+
 ## Outros
 
 ### Busca ternária
@@ -999,19 +1006,30 @@ void binom(ll k, const vll& xs) {
 ```c++
 /**
  *  @param  xs, ys  Vectors/Strings.
- *  @return         Size of longest common subsequence.
+ *  @return         One valid longest common subsequence.
  *  Time complexity: O(NM)
 */
 template <typename T>
-ll lcs(const T& xs, const T& ys) {
-    vvll dp(xs.size() + 1, vll(ys.size() + 1));
-    rep(i, 1, xs.size() + 1)
-        rep(j, 1, ys.size() + 1)
-            if (xs[i - 1] == ys[j - 1])
-                dp[i][j] = 1 + dp[i - 1][j - 1];
-            else
-                dp[i][j] = max(dp[i][j - 1], dp[i - 1][j]);
-    return dp.back().back();
+T lcs(const T& xs, const T& ys) {
+    ll n = xs.size(), m = ys.size();
+    vvll dp(n + 1, vll(m + 1));
+    vvpll pre(n + 1, vpll(m + 1, { -1, -1 }));
+    rep(i, 1, n + 1) rep(j, 1, m + 1)
+        if (xs[i - 1] == ys[j - 1])
+            dp[i][j] = 1 + dp[i - 1][j - 1], pre[i][j] = { i - 1, j - 1};
+        else {
+            if (dp[i][j - 1] >= dp[i][j])
+                dp[i][j] = dp[i][j - 1], pre[i][j] = pre[i][j - 1];
+            if (dp[i - 1][j] >= dp[i][j])
+                dp[i][j] = dp[i - 1][j], pre[i][j] = pre[i - 1][j];
+        }
+    T res;
+    while (pre[n][m].first != -1) {
+        tie(n, m) = pre[n][m];
+        res.eb(xs[n]);  // += if T is string.
+    }
+    reverse(all(res));
+    return res;  // dp[n][m] is size of lcs.
 }
 ```
 
@@ -1533,6 +1551,37 @@ vll getLcp(const string& s, const vll& sa) {
 }
 ```
 
+### Manacher (substrings palíndromas)
+
+```c++
+/**
+ *  @param  s   String.
+ *  @return     Vector of pairs (deven, dodd).
+ *  deven[i] and dodd[i] represent the biggest palindrome centered at i,
+ *  palindrome of size even and odd respectively, even palindromes centered
+ *  at i means that it's centered at both i - 1 and i, because they are equal.
+ *  Time complexity: O(N)
+*/
+vpll manacher(string s) {
+    string t;
+    for(char c : s) t += string("#") + c;
+    t += '#';
+    ll n = t.size(), l = 0, r = 1;
+    t = "$" + t + "^";
+    vll p(n + 2);  // qnt of palindromes centered in i.
+    rep(i, 1, n + 1) {
+        p[i] = max(0LL, min(r - i, p[l + (r - i)]));
+        while(t[i - p[i]] == t[i + p[i]]) p[i]++;
+        if(i + p[i] > r) l = i - p[i], r = i + p[i];
+    }
+    ll m = s.size(), i = 0;
+    vpll res(m);
+    for (auto& [deven, dodd] : res)
+        deven = p[2 * i + 1] - 1, dodd = p[2 * i + 2] - 1, ++i;
+    return res;
+}
+``` 
+
 ### Menor rotação
 
 ```c++
@@ -1615,7 +1664,7 @@ vll occur(const string& s, const string& t) {
  *  Time complexity: O(1)
 */
 bool palindrome(ll i, ll j, Hash& h, Hash& rh) {
-    return h.get(i, j) == rh.get(h.n - j - 1, h.n - i - 1);
+    return h(i, j) == rh(h.n - j - 1, h.n - i - 1);
 }
 ```
 
@@ -2150,11 +2199,11 @@ struct Treap {
 struct WaveletTree {
     /**
     *  @param  xs  Compressed vector.
-    *  @param  n   Distinct elements amount in xs (mp.size()).
+    *  @param  sz  Distinct elements amount in xs (mp.size()).
     *  Sorts xs in the process.
     *  Time complexity: O(Nlog(N))
     */
-    WaveletTree(vll& xs, ll n) : wav(2 * n), n(n) {
+    WaveletTree(vll& xs, ll sz) : wav(2 * n), n(sz) {
         auto build = [&](auto& self, auto b, auto e, ll l, ll r, ll no) {
             if (l == r) return;
             ll m = (l + r) / 2, i = 0;
@@ -2175,7 +2224,7 @@ struct WaveletTree {
     *  Time complexity: O(log(N))
     */
     ll kTh(ll i, ll j, ll k) {
-        assert(0 <= i and i <= j and j < wav[1].size() and k > 0);
+        assert(0 <= i and i <= j and j < (ll)wav[1].size() and k > 0);
         ++j;
         ll l = 0, r = n - 1, no = 1;
         while (l != r) {
@@ -2195,7 +2244,7 @@ struct WaveletTree {
     *  Time complexity: O(log(N))
     */
     ll leq(ll i, ll j, ll x) {
-        assert(0 <= i and i <= j and j < wav[1].size() and 0 <= x and x < n);
+        assert(0 <= i and i <= j and j < (ll)wav[1].size() and 0 <= x and x < n);
         ++j;
         ll l = 0, r = n - 1, lx = 0, no = 1;
         while (l != r) {
