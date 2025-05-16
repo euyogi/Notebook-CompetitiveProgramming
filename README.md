@@ -2,19 +2,15 @@
 body_class: markdown-body
 highlight_style: default
 pdf_options:
-  format: A4
-  margin: 5mm
+  margin: 0mm
+  landscape: true
+  outline: true
 css: |-
-  .markdown-body { font-size: 11px; }
-  @page {
-    @bottom-right { content: counter(page); }
-  }
+  .markdown-body { font-size: 8px; font-weight: bold; column-count: 2; }
   h1, h2, h3 { break-after: avoid; }
   pre { break-inside: avoid; }
   h1 + ul { column-count: 2; }
 ---
-
-<!-- Booklet print: https://bookbinder.app (A4, Duplex, 2 PPS, Booklet) -->
 
 <figure style="break-after: always; display: flex; flex-direction: column; justify-content: center; height: 100vh; text-align: center;">
   <img src="title.png">
@@ -71,6 +67,7 @@ css: |-
     * Permutação com repetição
     * Teste de primalidade
     * Totiente de Euler
+    * Transformada de Fourier
   * Strings
     * Borda de prefixos (KMP)
     * Comparador de substring
@@ -362,7 +359,7 @@ pd rotate(const pair<T, T>& P, double a) {
 ### Binary lifting
 
 ```c++
-const ll LOG = 31;
+constexpr ll LOG = 31;
 vvll parent;
 vll depth;
 
@@ -1143,7 +1140,7 @@ T sumAllIntervals(const vector<T>& xs) {
  *  Time complexity: O(N^2)/O(1)
 */
 ll binom(ll n, ll k) {
-    const ll MAXN = 64;
+    constexpr ll MAXN = 64;
     static vvll dp(MAXN + 1, vll(MAXN + 1));
     if (dp[0][0] != 1) {
         dp[0][0] = 1;
@@ -1163,7 +1160,7 @@ ll binom(ll n, ll k) {
  *  Time complexity: O(N)/O(1)
 */
 ll binom(ll n, ll k) {
-    const ll MAXN = (ll)3e6, M = (ll)1e9 + 7;  // check mod value!
+    constexpr ll MAXN = (ll)3e6, M = (ll)1e9 + 7;  // check mod value!
     static vll fac(MAXN + 1), inv(MAXN + 1), finv(MAXN + 1);
     if (fac[0] != 1) {
         fac[0] = fac[1] = inv[1] = finv[0] = finv[1] = 1;
@@ -1359,7 +1356,7 @@ vll factors(ll x) {
 */
 template <typename T>
 ll rePerm(const map<T, ll>& hist) {
-    const ll MAXN = (ll)3e6, M = (ll)1e9 + 7;  // check mod value!
+    constexpr ll MAXN = (ll)3e6, M = (ll)1e9 + 7;  // check mod value!
     static vll fac(MAXN + 1), inv(MAXN + 1), finv(MAXN + 1);
     if (fac[0] != 1) {
         fac[0] = fac[1] = inv[1] = finv[0] = finv[1] = 1;
@@ -1425,6 +1422,74 @@ vll totient(ll n) {
     return phi;
 }
 ```
+
+### Transformada de Fourier
+
+```c++
+constexpr ll mod     = 998244353;
+constexpr ll root    = 15311432;
+constexpr ll rootinv = 469870224;
+constexpr ll root_pw = 1 << 23;
+#define T Mi<mod>
+
+/**
+ *  @brief     Fast fourier transform with integers mod.
+ *  @param  a  Coefficients of polynomial.
+ *  Requires modular arithmetic.
+ *  Time complexity: O(Nlog(N))
+*/
+void ntt(vector<T>& a, bool invert) {
+    ll n = a.size();
+    for (ll i = 1, j = 0; i < n; i++) {
+        ll bit = n >> 1;
+        while (j & bit) j ^= bit, bit >>= 1;
+        j ^= bit;
+        if (i < j) swap(a[i], a[j]);
+    }
+    for (ll len = 2; len <= n; len <<= 1) {
+        T wlen = invert ? rootinv : root;
+        for (ll i = len; i < root_pw; i <<= 1)
+            wlen *= wlen;
+        for (ll i = 0; i < n; i += len) {
+            T w = 1;
+            for (ll j = 0; j < len / 2; j++, w *= wlen) {
+                T u = a[i + j], v = a[i + j + len / 2] * w;
+                a[i + j] = u + v, a[i + j + len / 2] = u - v;
+            }
+        }
+    }
+    if (invert) {
+        T ninv = T(1) / n;
+        for (T& x : a) x *= ninv;
+    }
+}
+
+/**
+ *  @param  a, b  Coefficients of both polynomials
+ *  @return       Coefficients of the multiplication of both polynomials.
+ *  Requires modular arithmetic.
+ *  Time complexity: O(Nlog(N))
+*/
+vector<T> convolution(const vector<T>& a, const vector<T>& b) {
+    vector<T> fa(all(a)), fb(all(b));
+    ll n = 1;
+    while (n < a.size() + b.size()) n <<= 1;
+    fa.resize(n), fb.resize(n);
+    ntt(fa, false), ntt(fb, false);
+    rep(i, 0, n) fa[i] *= fb[i];
+    ntt(fa, true);
+    return fa;
+}
+
+void print(const vector<T>& a) {
+    bool first = true;
+    per(i, a.size() - 1, 0) if (a[i].v) {
+        cout << (first ? "" : " + ") << a[i] << "x^" << i;
+        first = false;
+    }
+    cout << '\n';
+}
+``` 
 
 ## Strings
 
@@ -2021,7 +2086,7 @@ private:
 ```c++
 // for segment tree
 struct Node {
-    static const ll n = 2;  // quantity of maxs
+    static constexpr ll n = 2;  // quantity of maxs
     array<ll, n> xs;  // maxs
     Node() = default;
     Node(ll x) { xs.fill(0), xs[0] = x; }
@@ -2853,7 +2918,7 @@ struct Matrix {
 ### Hash
 
 ```c++
-const ll M1 = (ll)1e9 + 7, M2 = (ll)1e9 + 9;
+constexpr ll M1 = (ll)1e9 + 7, M2 = (ll)1e9 + 9;
 #define H pll
 ll sum(ll a, ll b, ll m) { return (a += b.x) >= m ? a - m : a; };
 ll sub(ll a, ll b, ll m) { return (a -= b.x) >= m ? a + m : a; };
@@ -3136,7 +3201,7 @@ struct Trie {
         }
     }
     
-    const ll MAXN = 5e5;
+    constexpr ll MAXN = 5e5;
     ll n;
     vvll to;  // 0 is head
     // mark: quantity of strings that ends in this node.
@@ -3272,25 +3337,27 @@ T exp(T a, ll b) {
     T res = 1;
     while (b) {
         if (b & 1) res *= a;
-        a *= a;
-        b /= 2;
+        a *= a, b /= 2;
     }
     return res;
 }
 
-const ll MOD = (ll)1e9 + 7;
+constexpr ll MOD = (ll)1e9 + 7;
 template <ll M = MOD>
 struct Mi {
     ll v;
     Mi() : v(0) {}
-    Mi(ll x) : v(x % M) { v += (v < 0) * M; }
+    Mi(ll x) : v(x) {
+        if (v >= M or v < -M) v %= M;
+        v += v < 0 ? M : 0;
+    }
     friend bool operator==(Mi a, Mi b) { return a.v == b.v; }
     friend bool operator!=(Mi a, Mi b) { return a.v != b.v; }
     friend ostream& operator<<(ostream& os, Mi a) { return os << a.v; }
-    Mi operator+=(Mi b) { return v -= ((v += b.v) >= M) * M; }
-    Mi operator-=(Mi b) { return v += ((v -= b.v)  < 0) * M; }
-    Mi operator*=(Mi b) { return v = v * b.v % M; }
-    Mi operator/=(Mi b) { return *this *= exp(b, M - 2); }
+    Mi& operator+=(Mi b) { return v -= ((v += b.v) >= M ? M : 0), *this; }
+    Mi& operator-=(Mi b) { return v += ((v -= b.v)  < 0 ? M : 0), *this; }
+    Mi& operator*=(Mi b) { return v = v * b.v % M, *this; }
+    Mi& operator/=(Mi b) { return *this *= exp(b, M - 2); }
     friend Mi operator+(Mi a, Mi b) { return a += b; }
     friend Mi operator-(Mi a, Mi b) { return a -= b; }
     friend Mi operator*(Mi a, Mi b) { return a *= b; }
@@ -3394,6 +3461,10 @@ Matemática
   `a` é o expoente do `i`-ésimo fator primo `p`.
 
 > `gcd(a, b) = gcd(a, a - b)`, `gcd(a, b, c) = gcd(a, a - b, a - c)`, segue o padrão.
+
+> Para calcular o `lcm` de um conjunto de números com módulo, podemos fatorizar cada um,
+  cada primo gerado vai ter uma potência que vai ser a maior, o produto desses primos
+  elevados à essa potência será o `lcm`, se queremos módulo basta fazer nessas operações.
 
 > Divisibilidade por `3`: soma dos algarismos divisível por `3`.
 
