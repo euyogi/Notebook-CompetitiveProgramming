@@ -2,7 +2,7 @@
 body_class: markdown-body
 highlight_style: default
 pdf_options:
-  margin: 0mm
+  margin: 2mm
   landscape: true
   outline: true
 css: |-
@@ -42,6 +42,7 @@ css: |-
     * Caminho euleriano
     * Dijkstra
     * Floyd-Warshall
+    * Johnson
     * Kosaraju
     * Kruskal (Árvore geradora mínima)
     * Ordenação topológica
@@ -62,7 +63,8 @@ css: |-
     * Conversão de base
     * Crivo de Eratóstenes
     * Divisores
-    * Exponenciação binária
+    * Equações diofantinas
+    * Exponenciação rápida
     * Fatoração
     * Permutação com repetição
     * Teste de primalidade
@@ -509,32 +511,31 @@ ll lca(ll u, ll v) {
  *  Can detect negative cycles.
  *  Time complexity: O(EV)
 */
+constexpr ll NC = LLONG_MIN;  // negative cycle
 pair<vll, vll> spfa(const vvpll& g, ll s) {
     ll n = g.size();
-    vll ds(n, LLONG_MAX), cnt(n), pre = cnt;
-    vll in_queue(n);
+    vll ds(n, LLONG_MAX), cnt(n), pre(n);
+    vector<bool> in_queue(n);
     queue<ll> q;
-    ds[s] = 0; q.emplace(s);
-    in_queue[s] = true;
+    ds[s] = 0, q.emplace(s);
     while (!q.empty()) {
         ll u = q.front(); q.pop();
         in_queue[u] = false;
         for (auto [w, v] : g[u]) {
-            if (ds[u] == LLONG_MIN) {
-                if (ds[v] != LLONG_MIN)
+            if (ds[u] == NC) {
+                // spread negative cycle
+                if (ds[v] != NC) {
                     q.emplace(v);
-                ds[v] = LLONG_MIN;
+                    in_queue[v] = true;
+                }
+                ds[v] = NC;
             }
             else if (ds[u] + w < ds[v]) {
-                ds[v] = ds[u] + w;
-                ++cnt[v], pre[v] = u;
-                if (cnt[v] == n) {
-                    ds[v] = LLONG_MIN;
-                    ds[0] = v;  // ds[0] keeps one vertex that has -inf dist
-                }
+                ds[v] = ds[u] + w, pre[v] = u;
                 if (!in_queue[v]) {
                     q.emplace(v);
                     in_queue[v] = true;
+                    if (++cnt[v] > n) ds[v] = NC;
                 }
             }
         }
@@ -634,12 +635,17 @@ vll eulerianPath(const vvll& g, bool d, ll s, ll e = -1) {
  *  If want to calculate amount of paths or size of path, notice that when the
  *  distance for a vertex is calculated it probably won't be the best, remember to reset
  *  calculations if a better is found.
+ *  It doesn't work with negative weights, but if you can find a potential Function
+ *  we can turn all weights to positive.
+ *  A potential function is such that:
+ *  new  weight is w' = w + p(u) - p(v) >= 0.
+ *  real dist will be dist(u, v) = dist'(u, v) - p(u) + p(v).
  *  Time complexity: O(Elog(V))
 */
 pair<vll, vll> dijkstra(const vvpll& g, ll s) {
-    vll ds(g.size(), LLONG_MAX), pre(g.size(), -1);
+    vll ds(g.size(), LLONG_MAX), pre = ds;
     priority_queue<pll, vpll, greater<>> pq;
-    ds[s] = 0; pq.emplace(ds[s], s);
+    ds[s] = 0, pq.emplace(ds[s], s);
     while (!pq.empty()) {
         auto [t, u] = pq.top(); pq.pop();
         if (t > ds[u]) continue;
@@ -671,26 +677,62 @@ vll getPath(const vll& pre, ll s, ll u) {
  *  @param  g  Graph (w, v).
  *  @return    Vector with smallest distances between every vertex.
  *  Weights can be negative.
- *  If ds[u][v] == INT_MAX, unreachable
- *  If ds[u][v] == INT_MIN, negative cycle.
+ *  If ds[u][v] == LLONG_MAX, unreachable
+ *  If ds[u][v] == LLONG_MIN, negative cycle.
  *  Time complexity: O(V^3)
 */
 vvll floydWarshall(const vvpll& g) {
     ll n = g.size();
-    vvll ds(n, vll(n, INT_MAX));
+    vvll ds(n, vll(n, LLONG_MAX));
     rep(u, 0, n) {
         ds[u][u] = 0;
         for (auto [w, v] : g[u]) {
             ds[u][v] = min(ds[u][v], w);
-            if (ds[u][u] < 0) ds[u][u] = INT_MIN;  // negative cycle
+            if (ds[u][u] < 0) ds[u][u] = LLONG_MIN;  // negative cycle
         }
     }
-    rep(k, 0, n) rep(u, 0, n) rep(v, 0, n)
-        if (ds[u][k] != INT_MAX and ds[k][v] != INT_MAX) {
-            ds[u][v] = min(ds[u][v], ds[u][k] + ds[k][v]);
-            if (ds[k][k] < 0) ds[u][v] = INT_MIN;  // negative cycle
-        }
+    rep(k, 0, n) rep(u, 0, n)
+        if (ds[u][k] != LLONG_MAX) rep(v, 0, n)
+            if (ds[k][v] != LLONG_MAX) {
+                ds[u][v] = min(ds[u][v], ds[u][k] + ds[k][v]);
+                if (ds[k][k] < 0) ds[u][v] = LLONG_MIN;  // negative cycle
+            }
     return ds;
+}
+```
+
+### Johnson
+
+```c++
+/**
+ *  @param  g  Graph (w, v).
+ *  @return    Vector with smallest distances between every vertex.
+ *  Weights can be negative.
+ *  If ds[u][v] == LLONG_MAX, unreachable
+ *  Will return all ds = NC if negative cycle.
+ *  Requires Bellman-Ford and Dijkstra.
+ *  If complete graph is worse than Floyd-Warshall.
+ *  Time complexity: O(EVlog(N))
+*/
+vvll johnson(vvpll& g) {
+    ll n = g.size();
+    rep(v, 1, n) g[0].eb(0, v);
+    auto [dsb, _] = spfa(g, 0);
+    vvll dsj(n, vll(n, NC));
+    rep(u, 1, n) {
+        if (dsb[u] == NC) return dsj;  // negative cycle
+        for (auto& [w, v] : g[u])
+            w += dsb[u] - dsb[v];
+    }
+    rep(u, 1, n) {
+        auto [dsd, __] = dijkstra(g, u);
+        rep(v, 1, n)
+            if (dsd[v] == LLONG_MAX)
+                dsj[u][v] = LLONG_MAX;
+            else
+                dsj[u][v] = dsd[v] - dsb[u] + dsb[v];
+    }
+    return dsj;
 }
 ```
 
@@ -1255,25 +1297,43 @@ vvll divisors(const vll& xs) {
 }
 ```
 
-### Exponenciação binária
+### Equações diofantinas
 
 ```c++
-ll mul(ll a, ll b, ll p) { return (__int128)a * b % p; }
+/**
+ *  @param  a, b, c  Numbers.
+ *  @return          (x, y) integer solution for Ax + By = C.
+ *  (LLONG_MAX, LLONG_MAX) if no solution is possible.
+ *  Time complexity: O(log(N))
+*/
+pll diophantine(ll a, ll b, ll c, ll x1 = 1, ll y1 = 0, ll x0 = 0, ll y0 = 1) {
+    if (!b) {
+        ll div = c / a;
+        if (div * a != c) return { LLONG_MAX, LLONG_MAX };
+        return { x1 * div, y1 * div };
+    }
+    ll x = x0, y = y0, div = a / b;
+    x0 = x1 - div * x0, y0 = y1 - div * y0;
+    x1 = x, y1 = y;
+    return diophantine(b, a - b * div, c, x1, y1, x0, y0);
+}
+```
 
+### Exponenciação rápida
+
+```c++
 /**
  *  @param  a  Number.
  *  @param  b  Exponent.
- *  @param  p  Modulo.
- *  @return    a^b (mod p).
+ *  @return    a^b.
  *  Time complexity: O(log(B))
 */
-ll exp(ll a, ll b, ll p) {
-    ll res = 1;
-    a %= p;
+template <typename T>
+T pot(T a, ll b) {
+    T res(1);  // T's identity
     while (b) {
-        if (b & 1) res = mul(res, a, p);
-        a = mul(a, a, p);
-        b /= 2;
+        if (b & 1) res *= a;
+        a *= a, b /= 2;
     }
     return res;
 }
@@ -1289,10 +1349,8 @@ ll exp(ll a, ll b, ll p) {
 vll factors(ll x) {
     vll fs;
     for (ll i = 2; i * i <= x; ++i)
-        while (x % i == 0) {
-            fs.eb(i);
-            x /= i;
-        }
+        while (x % i == 0)
+            fs.eb(i), x /= i;
     if (x > 1) fs.eb(x);
     return fs;
 }
@@ -1310,7 +1368,7 @@ vll factors(ll x) {
 */
 vll factors(ll x, const vll& spf) {
     vll fs;
-    while (x != 1) { fs.eb(spf[x]); x /= spf[x]; }
+    while (x != 1) fs.eb(spf[x]), x /= spf[x];
     return fs;
 }
 ```
@@ -1332,7 +1390,7 @@ ll rho(ll x) {
 /**
  *  @param  x  Number.
  *  @return    True if x is prime, false otherwise.
- *  Requires primality test, which requires binary exponentiation.
+ *  Requires primality test.
  *  Time complexity: O(N^(1/4)log(N)
 */
 vll factors(ll x) {
@@ -1379,10 +1437,28 @@ ll rePerm(const map<T, ll>& hist) {
 ### Teste de primalidade
 
 ```c++
+ll mul(ll a, ll b, ll p) { return (__int128)a * b % p; }
+
+/**
+ *  @param  a  Number.
+ *  @param  b  Exponent.
+ *  @param  p  Modulo.
+ *  @return    a^b (mod p).
+ *  Time complexity: O(log(B))
+*/
+ll pot(ll a, ll b, ll p) {
+    ll res(1);
+    a %= p;
+    while (b) {
+        if (b & 1) res = mul(res, a, p);
+        a = mul(a, a, p), b /= 2;
+    }
+    return res;
+}
+
 /**
  *  @param  x  Number.
  *  @return    True if x is prime, false otherwise.
- *  Requires binary exponentiation.
  *  Time complexity: O(log^2(N))
 */
 bool isPrime(ll x) {  // miller rabin
@@ -1392,7 +1468,7 @@ bool isPrime(ll x) {  // miller rabin
     ll r = __builtin_ctzll(x - 1), d = x >> r;
     for (ll a : {2, 3, 5, 7, 11, 13, 17, 19, 23}) {
         if (a == x) return true;
-        a = exp(a, d, x);
+        a = pot(a, d, x);
         if (a == 1 or a == x - 1) continue;
         rep(i, 1, r) {
             a = mul(a, a, x);
@@ -1426,30 +1502,32 @@ vll totient(ll n) {
 ### Transformada de Fourier
 
 ```c++
-constexpr ll mod     = 998244353;
-constexpr ll root    = 15311432;
-constexpr ll rootinv = 469870224;
-constexpr ll root_pw = 1 << 23;
-#define T Mi<mod>
+// constexpr ll mod     = 998244353;  // ntt
+// constexpr ll root    = 15311432;  // ntt
+// constexpr ll rootinv = 469870224;  // ntt
+// constexpr ll root_pw = 1 << 23;  // ntt
+// #define T Mi<mod>  // ntt
+#define T complex<double>  // fft
 
 /**
- *  @brief     Fast fourier transform with integers mod.
+ *  @brief     Fast fourier transform.
  *  @param  a  Coefficients of polynomial.
- *  Requires modular arithmetic.
+ *  Requires modular arithmetic if ntt.
  *  Time complexity: O(Nlog(N))
 */
-void ntt(vector<T>& a, bool invert) {
+void fft(vector<T>& a, bool invert) {
     ll n = a.size();
-    for (ll i = 1, j = 0; i < n; i++) {
+    for (ll i = 1, j = 0; i < n; ++i) {
         ll bit = n >> 1;
         while (j & bit) j ^= bit, bit >>= 1;
         j ^= bit;
         if (i < j) swap(a[i], a[j]);
     }
     for (ll len = 2; len <= n; len <<= 1) {
-        T wlen = invert ? rootinv : root;
-        for (ll i = len; i < root_pw; i <<= 1)
-            wlen *= wlen;
+        // T wlen = invert ? rootinv : root;  // ntt
+        // for (ll i = len; i < root_pw; i <<= 1) wlen *= wlen;  // ntt
+        double ang = 2 * acos(-1) / len * (invert ? -1 : 1);  // fft
+        T wlen(cos(ang), sin(ang));  // fft
         for (ll i = 0; i < n; i += len) {
             T w = 1;
             for (ll j = 0; j < len / 2; j++, w *= wlen) {
@@ -1459,7 +1537,7 @@ void ntt(vector<T>& a, bool invert) {
         }
     }
     if (invert) {
-        T ninv = T(1) / n;
+        T ninv = T(1) / T(n);
         for (T& x : a) x *= ninv;
     }
 }
@@ -1467,7 +1545,8 @@ void ntt(vector<T>& a, bool invert) {
 /**
  *  @param  a, b  Coefficients of both polynomials
  *  @return       Coefficients of the multiplication of both polynomials.
- *  Requires modular arithmetic.
+ *  Requires modular arithmetic if ntt.
+ *  If normal fft may need to round later: round(.real())
  *  Time complexity: O(Nlog(N))
 */
 vector<T> convolution(const vector<T>& a, const vector<T>& b) {
@@ -1475,19 +1554,10 @@ vector<T> convolution(const vector<T>& a, const vector<T>& b) {
     ll n = 1;
     while (n < a.size() + b.size()) n <<= 1;
     fa.resize(n), fb.resize(n);
-    ntt(fa, false), ntt(fb, false);
+    fft(fa, false), fft(fb, false);
     rep(i, 0, n) fa[i] *= fb[i];
-    ntt(fa, true);
+    fft(fa, true);
     return fa;
-}
-
-void print(const vector<T>& a) {
-    bool first = true;
-    per(i, a.size() - 1, 0) if (a[i].v) {
-        cout << (first ? "" : " + ") << a[i] << "x^" << i;
-        first = false;
-    }
-    cout << '\n';
 }
 ``` 
 
@@ -1883,9 +1953,9 @@ struct BIT2D {
 ```c++
 struct DSU {
     /**
-     *  @param  n  Size.
+     *  @param  sz  Size.
     */
-    DSU(ll n) : parent(n), size(n, 1) { iota(all(parent), 0); }
+    DSU(ll sz) : parent(sz), size(sz, 1) { iota(all(parent), 0); }
 
     /**
      *  @param  x  Element.
@@ -2875,8 +2945,10 @@ struct Triangle {
 */
 template <typename T>
 struct Matrix {
-    Matrix(const vector<vector<T>>& matrix) : mat(matrix), n(mat.size()) {}
-    Matrix(ll m) : n(m) { mat.resize(n, vector<T>(n)); }
+    Matrix(const vector<vector<T>>& matrix) : n(matrix.size()), mat(matrix) {}
+    Matrix(ll sz, ll x = 0) : n(sz), mat(n, vector<T>(n)) {
+        rep(i, 0, n) mat[i][i] = x;
+    }
     vector<T>& operator[](ll i) { return mat[i]; }
 
     /**
@@ -2888,28 +2960,13 @@ struct Matrix {
     */
     Matrix operator*(Matrix& other) {
         Matrix res(n);
-        rep(i, 0, n) rep(j, 0, n) rep(k, 0, n)
-            res[i][k] += mat[i][j] * other[j][k];
+        rep(k, 0, n) rep(i, 0, n) rep(j, 0, n)
+            res[i][j] += mat[i][k] * other[k][j];
         return res;
     }
 
-    /**
-     *  @param  b  Exponent.
-     *  Time complexity: O(N^3 * log(B))
-    */
-    void exp(ll b) {
-        Matrix &self = *this, res(n);
-        rep(i, 0, n) res[i][i] = 1;
-        while (b > 0) {
-            if (b & 1) res = res * self;
-            self = self * self;
-            b /= 2;
-        }
-        self = res;
-    }
-
-    vector<vector<T>> mat;
     ll n;
+    vector<vector<T>> mat;
 };
 ```
 
@@ -3201,7 +3258,7 @@ struct Trie {
         }
     }
     
-    constexpr ll MAXN = 5e5;
+    static constexpr ll MAXN = 5e5;
     ll n;
     vvll to;  // 0 is head
     // mark: quantity of strings that ends in this node.
@@ -3332,16 +3389,6 @@ struct Psum3D {
 ### Aritmética modular
 
 ```c++
-template <typename T>
-T exp(T a, ll b) {
-    T res = 1;
-    while (b) {
-        if (b & 1) res *= a;
-        a *= a, b /= 2;
-    }
-    return res;
-}
-
 constexpr ll MOD = (ll)1e9 + 7;
 template <ll M = MOD>
 struct Mi {
@@ -3357,7 +3404,7 @@ struct Mi {
     Mi& operator+=(Mi b) { return v -= ((v += b.v) >= M ? M : 0), *this; }
     Mi& operator-=(Mi b) { return v += ((v -= b.v)  < 0 ? M : 0), *this; }
     Mi& operator*=(Mi b) { return v = v * b.v % M, *this; }
-    Mi& operator/=(Mi b) { return *this *= exp(b, M - 2); }
+    Mi& operator/=(Mi b) { return *this *= pot(b, M - 2); }
     friend Mi operator+(Mi a, Mi b) { return a += b; }
     friend Mi operator-(Mi a, Mi b) { return a -= b; }
     friend Mi operator*(Mi a, Mi b) { return a *= b; }
@@ -3532,6 +3579,10 @@ Outros
   menor número de casas alcançáveis.
   
 > Para utilizar ordenação customizada em sets/maps: `set<ll, decltype([](ll a, ll b) { ... })`.
+
+> Por padrão python faz operações com até `4000` dígitos, para aumentar:
+  `import sys
+  sys.set_int_max_str_digits(1000001)`
 
 ### Igualdade flutuante
 
