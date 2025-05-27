@@ -67,6 +67,7 @@ css: |-
     * Exponenciação rápida
     * Fatoração
     * Permutação com repetição
+    * Teorema chinês do resto
     * Teste de primalidade
     * Totiente de Euler
     * Transformada de Fourier
@@ -77,10 +78,11 @@ css: |-
     * Maior prefixo comum (LCP)
     * Manacher (substrings palíndromas)
     * Menor rotação
-    * Ocorrências de substring (suffix array)
+    * Ocorrências de substring (FFT)
     * Ocorrências de substring (Z-Function)
     * Palíndromo check
     * Períodos
+    * Quantidade de ocorrências de substring
     * Suffix array
     * Z-Function
 * Estruturas
@@ -319,7 +321,7 @@ bool ccw(pair<T, T> P, pair<T, T> Q, const pair<T, T>& O) {
     bool rqx = equals(Q.x, 0) or Q.x > 0, rqy = equals(Q.y, 0) or Q.y > 0;
     if (qqx != rqx || qqy != rqy) return qo[qqx][qqy] > qo[rqx][rqy];
     return equals(D(O, P, Q), 0) ?
-           (P.x * P.x - P.y * P.y) < (Q.x * Q.x - Q.y * Q.y) : D(O, P, Q) > 0;
+           (P.x * P.x + P.y * P.y) < (Q.x * Q.x + Q.y * Q.y) : D(O, P, Q) > 0;
 }
 ```
 
@@ -420,9 +422,10 @@ ll subtree_dfs(const vvll& g, ll u, ll p) {
  *  @return    A new root that makes the size of all subtrees be n/2 or less.
  *  Time complexity: O(N)
 */
-    ll n = g.size();
-    if (p == 0) { subtree = vll(g.size(), 1); subtree_dfs(g, u, p); }
-    for (ll v : g[u]) if (v != p and subtree[v] * 2 > g.size())
+ll centroid(const vvll& g, ll u, ll p = 0) {
+    ll sz = g.size();
+    if (p == 0) { subtree = vll(sz, 1); subtree_dfs(g, u, p); }
+    for (ll v : g[u]) if (v != p and subtree[v] * 2 > sz)
         return centroid(g, v, u);
     return u;
 }
@@ -447,7 +450,7 @@ ll subtree_dfs(const vvll& g, ll u, ll p) {
  *  Time complexity: O(Nlog(N))
 */
 void centroidDecomp(const vvll& g, ll u = 1, ll p = 0, ll sz = 0) {
-    if (p == 0) { p = -1; parent = subtree = vll(g.size()); }
+    if (p == 0) p = -1, parent = subtree = vll(g.size());
     if (sz == 0) sz = subtree_dfs(g, u, 0);
     for (ll v : g[u]) if (!parent[v] and subtree[v] * 2 > sz)
         return subtree[u] = 0, centroidDecomp(g, v, p, sz);
@@ -581,7 +584,7 @@ vll bfs01(const vvpll& g, ll s) {
  *  @return       Vector with the eulerian path. If e is specified: eulerian cycle.
  *  Empty if impossible or no edges.
  *  Eulerian path goes through every edge once, cycle starts and ends at the same node. 
- *  Time complexity: O(EVlog(EV))
+ *  Time complexity: O(Nlog(N))
 */
 vll eulerianPath(const vvll& g, bool d, ll s, ll e = -1) {
     ll n = g.size();
@@ -1228,7 +1231,7 @@ ll binom(ll n, ll k) {
  *  Time complexity: O(log(N))
 */
 vll toBase(ll x, ll b) {
-    assert(b != 0);
+    assert(b > 1);
     vll res;
     while (x) { res.eb(x % b); x /= b; }
     reverse(all(res));
@@ -1241,7 +1244,7 @@ vll toBase(ll x, ll b) {
 ```c++
 /**
  *  @return  Vectors with primes from [1, n] and smallest prime factors.
- *  Time complexity: O(Nlog(N))
+ *  Time complexity: O(Nlog(log(N)))
 */
 pair<vll, vll> sieve(ll n) {
     vll ps, spf(n + 1);
@@ -1302,20 +1305,18 @@ vvll divisors(const vll& xs) {
 ```c++
 /**
  *  @param  a, b, c  Numbers.
- *  @return          (x, y) integer solution for Ax + By = C.
+ *  @return          (x, y, d) integer solution for aX + bY = c and d is gcd(a, b).
  *  (LLONG_MAX, LLONG_MAX) if no solution is possible.
  *  Time complexity: O(log(N))
 */
-pll diophantine(ll a, ll b, ll c, ll x1 = 1, ll y1 = 0, ll x0 = 0, ll y0 = 1) {
-    if (!b) {
-        ll div = c / a;
-        if (div * a != c) return { LLONG_MAX, LLONG_MAX };
-        return { x1 * div, y1 * div };
+tuple<ll, ll, ll> diophantine(ll a, ll b, ll c = 1) {
+    if (b == 0) {
+        if (c % a != 0) return {LLONG_MAX, LLONG_MAX, a}; 
+        return { c / a, 0, a };
     }
-    ll x = x0, y = y0, div = a / b;
-    x0 = x1 - div * x0, y0 = y1 - div * y0;
-    x1 = x, y1 = y;
-    return diophantine(b, a - b * div, c, x1, y1, x0, y0);
+    auto [x, y, d] = diophantine(b, a % b, c);
+    if (x == LLONG_MAX) return {x, y, a}; 
+    return { y, x - a / b * y, d };
 }
 ```
 
@@ -1431,6 +1432,32 @@ ll rePerm(const map<T, ll>& hist) {
         total += v;
     }
     return res * fac[total] % M;
+}
+```
+
+### Teorema chinês do resto
+
+```c++
+/**
+ *  @param  congruences  Vector of pairs (a, m).
+ *  @return              (s, l) (s (mod l) is the answer for the equations)
+ *  (LLONG_MAX, LLONG_MAX) if no solution is possible.
+ *  s = a0 (mod m0)
+ *  s = a1 (mod m1)
+ *  ...
+ *  congruences vector has pairs (ai, mi).
+ *  Requires diophantine equations.
+ *  Time complexity: O(Nlog(N))
+*/
+pll crt(const vpll& congruences) {
+    auto [s, l] = congruences[0];
+    for (auto [a, m] : congruences) {
+        auto [x, y, d] = diophantine(l, -m, a - s);
+        if (x == LLONG_MAX) return { x, y };
+        s = (a + y % (l / d) * m + l * m / d) % (l * m / d);
+        l = l * m / d;
+    }
+    return { s, l };
 }
 ```
 
@@ -1747,25 +1774,38 @@ ll minRotation(const string& s) {
 }
 ```
 
-### Ocorrências de substring (suffix array)
+### Ocorrências de substring (FFT)
 
 ```c++
 /**
- *  @param  s   String.
- *  @param  t   Substring.
- *  @param  sa  Suffix array.
- *  @return     Amount of occurrences.
- *  Requires suffix array.
- *  Time complexity: O(Mlog(N))
+ *  @param  s  String.
+ *  @param  t  Substring (can have wildcards).
+ *  @return    Vector with the first index of occurrences.
+ *  Requires FFT.
+ *  Assert |s| >= |t|.
+ *  Time complexity: O(Nlog(N))
 */
-ll count(const string& s, const string& t, const vll& sa) {
-    auto it1 = lower_bound(all(sa), t, [&](ll i, const string& r) {
-        return s.compare(i, r.size(), r) < 0;
-    });
-    auto it2 = upper_bound(all(sa), t, [&](const string& r, ll i) {
-        return s.compare(i, r.size(), r) > 0;
-    });
-    return it2 - it1;
+vll occur(const string& s, const string& t) {
+    ll n = s.size(), m = t.size(), q = 0;
+    assert(n >= m);
+    vector<T> a(n), b(m);
+    rep(i, 0, n) {
+        double ang = acos(-1) * (s[i] - 'a') / 13;
+        a[i] = { cos(ang), sin(ang) };
+    }
+    rep(i, 0, m) {
+        if (t[m - i - 1] == '?') ++q;
+        else {
+            double ang = acos(-1) * (t[m - 1 - i] - 'a') / 13;
+            b[i] = { cos(ang), -sin(ang) };
+        }
+    }
+    auto c = convolution(a, b);
+    vll res;
+    rep(i, 0, n) 
+        if (abs(c[m - 1 + i].real() - (double)(m - q)) < 1e-3)
+            res.eb(i);
+    return res;
 }
 ```
 
@@ -1820,6 +1860,28 @@ vll periods(const string& s) {
         ps.eb(i);
     ps.eb(n);
     return ps;
+}
+```
+
+### Quantidade de ocorrências de substring
+
+```c++
+/**
+ *  @param  s   String.
+ *  @param  t   Substring.
+ *  @param  sa  Suffix array.
+ *  @return     Amount of occurrences.
+ *  Requires suffix array.
+ *  Time complexity: O(Mlog(N))
+*/
+ll count(const string& s, const string& t, const vll& sa) {
+    auto it1 = lower_bound(all(sa), t, [&](ll i, const string& r) {
+        return s.compare(i, r.size(), r) < 0;
+    });
+    auto it2 = upper_bound(all(sa), t, [&](const string& r, ll i) {
+        return s.compare(i, r.size(), r) > 0;
+    });
+    return it2 - it1;
 }
 ```
 
@@ -3390,6 +3452,7 @@ struct Psum3D {
 
 ```c++
 constexpr ll MOD = (ll)1e9 + 7;
+// constexpr ll MOD = (ll)998244353;
 template <ll M = MOD>
 struct Mi {
     ll v;
