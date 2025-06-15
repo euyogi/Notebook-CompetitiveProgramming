@@ -40,6 +40,7 @@ css: |-
     * Bellman-Ford
     * BFS 0/1
     * Caminho euleriano
+    * Detecção de ciclo
     * Dijkstra
     * Floyd-Warshall
     * Johnson
@@ -72,7 +73,8 @@ css: |-
     * Totiente de Euler
     * Transformada de Fourier
   * Strings
-    * Borda de prefixos (KMP)
+    * Autômato de borda dos prefixos (KMP)
+    * Borda dos prefixos (KMP)
     * Comparador de substring
     * Distância de edição
     * Maior prefixo comum (LCP)
@@ -259,7 +261,7 @@ vector<pair<T, T>> makeHull(const vector<pair<T, T>>& PS) {
     vector<pair<T, T>> hull;
     for (auto& P : PS) {
         ll sz = hull.size();  //           if want collinear < 0
-        while (sz >= 2 and D(hull[sz - 2], hull[sz - 1], P) <= 0) {
+        while (sz >= 2 && D(hull[sz - 2], hull[sz - 1], P) <= 0) {
             hull.pop_back();
             sz = hull.size();
         }
@@ -317,8 +319,8 @@ template <typename T>
 bool ccw(pair<T, T> P, pair<T, T> Q, const pair<T, T>& O) {
     static const char qo[2][2] = { { 2, 3 }, { 1, 4 } };
     P.x -= O.x, P.y -= O.y, Q.x -= O.x, Q.y -= O.y, O.x = 0, O.y = 0;
-    bool qqx = equals(P.x, 0) or P.x > 0, qqy = equals(P.y, 0) or P.y > 0;
-    bool rqx = equals(Q.x, 0) or Q.x > 0, rqy = equals(Q.y, 0) or Q.y > 0;
+    bool qqx = equals(P.x, 0) || P.x > 0, qqy = equals(P.y, 0) || P.y > 0;
+    bool rqx = equals(Q.x, 0) || Q.x > 0, rqy = equals(Q.y, 0) || Q.y > 0;
     if (qqx != rqx || qqy != rqy) return qo[qqx][qqy] > qo[rqx][rqy];
     return equals(D(O, P, Q), 0) ?
            (P.x * P.x + P.y * P.y) < (Q.x * Q.x + Q.y * Q.y) : D(O, P, Q) > 0;
@@ -398,7 +400,7 @@ void populate(const vvll& g) {
  *  Time complexity: O(log(N))
 */
 ll kthAncestor(ll u, ll k) {
-    assert(!parent.empty() and 1 <= u and u < parent.size() and k >= 0);
+    assert(!parent.empty() && 1 <= u && u < parent.size() && k >= 0);
     if (k > depth[u]) return -1;  // no kth ancestor
     rep(i, 0, LOG) if (k & (1LL << i))
         u = parent[u][i];
@@ -425,7 +427,7 @@ ll subtree_dfs(const vvll& g, ll u, ll p) {
 ll centroid(const vvll& g, ll u, ll p = 0) {
     ll sz = g.size();
     if (p == 0) { subtree = vll(sz, 1); subtree_dfs(g, u, p); }
-    for (ll v : g[u]) if (v != p and subtree[v] * 2 > sz)
+    for (ll v : g[u]) if (v != p && subtree[v] * 2 > sz)
         return centroid(g, v, u);
     return u;
 }
@@ -438,7 +440,7 @@ vll parent, subtree;
 
 ll subtree_dfs(const vvll& g, ll u, ll p) {
     subtree[u] = 1;
-    for (ll v : g[u]) if (v != p and !parent[v])
+    for (ll v : g[u]) if (v != p && !parent[v])
         subtree[u] += subtree_dfs(g, v, u);
     return subtree[u];
 }
@@ -452,7 +454,7 @@ ll subtree_dfs(const vvll& g, ll u, ll p) {
 void centroidDecomp(const vvll& g, ll u = 1, ll p = 0, ll sz = 0) {
     if (p == 0) p = -1, parent = subtree = vll(g.size());
     if (sz == 0) sz = subtree_dfs(g, u, 0);
-    for (ll v : g[u]) if (!parent[v] and subtree[v] * 2 > sz)
+    for (ll v : g[u]) if (!parent[v] && subtree[v] * 2 > sz)
         return subtree[u] = 0, centroidDecomp(g, v, p, sz);
     parent[u] = p;
     for (ll v : g[u]) if (!parent[v]) centroidDecomp(g, v, u);
@@ -490,7 +492,7 @@ void eulerTour(const vvll& g, ll u = 1, ll p = 0) {
  *  Time complexity: O(log(N))
 */
 ll lca(ll u, ll v) {
-    assert(1 <= u and u < parent.size() and 1 <= v and v < parent.size());
+    assert(1 <= u && u < parent.size() && 1 <= v && v < parent.size());
     if (depth[u] < depth[v]) swap(u, v);
     ll k = depth[u] - depth[v];
     u = kthAncestor(u, k);
@@ -532,8 +534,7 @@ pair<vll, vll> spfa(const vvpll& g, ll s) {
                     in_queue[v] = true;
                 }
                 ds[v] = NC;
-            }
-            else if (ds[u] + w < ds[v]) {
+            } else if (ds[u] + w < ds[v]) {
                 ds[v] = ds[u] + w, pre[v] = u;
                 if (!in_queue[v]) {
                     q.emplace(v);
@@ -599,11 +600,11 @@ vll eulerianPath(const vvll& g, bool d, ll s, ll e = -1) {
     }
 
     ll check = (in_degree[s] - (ll)h[s].size()) * (in_degree[e] - (ll)h[e].size());
-    if (e != -1 and check != -1) return {};  // impossible
+    if (e != -1 && check != -1) return {};  // impossible
 
     rep(u, 0, n) {
-        if (e != -1 and (u == s or u == e)) continue;
-        if (in_degree[u] != h[u].size() or (!d and in_degree[u] & 1))
+        if (e != -1 && (u == s || u == e)) continue;
+        if (in_degree[u] != h[u].size() || (!d && in_degree[u] & 1))
             return {};  // impossible
     }
 
@@ -628,6 +629,52 @@ vll eulerianPath(const vvll& g, bool d, ll s, ll e = -1) {
 }
 ```
 
+### Detecção de ciclo
+
+```c++
+/**
+ *  @param  g      Graph [id of edge, v].
+ *  @param  edges  Edges flag (true if wants edges).
+ *  @param  d      Directed flag (true if g is directed).
+ *  @return        Vector with cycle vertices or edges.
+ *  Empty if no cycle.
+ *  https://judge.yosupo.jp/problem/cycle_detection
+ *  https://judge.yosupo.jp/problem/cycle_detection_undirected
+ *  Time complexity: O(V + E)
+*/
+vll cycle(const vvpll& g, bool edges, bool d) {
+    ll n = g.size();
+    vll color(n + 1), parent(n + 1), edge(n + 1), res;
+    auto dfs = [&](auto& self, ll u, ll p) -> ll {
+        color[u] = 1;
+        bool parent_skipped = false;
+        for (auto [i, v] : g[u]) {
+            if (!d && v == p && !parent_skipped)
+                parent_skipped = true;
+            else if (color[v] == 0) {
+                parent[v] = u, edge[v] = i;
+                if (ll end = self(self, v, u); end != -1) return end;
+            } else if (color[v] == 1) {
+                parent[v] = u, edge[v] = i;
+                return v;
+            }
+        }
+        color[u] = 2;
+        return -1;
+    };
+    rep(u, 0, n) if (color[u] == 0)
+        if (ll end = dfs(dfs, u, -1), start = end; end != -1) {
+            do {
+                res.eb(edges ? edge[end] : end);
+                end = parent[end];
+            } while (end != start);
+            reverse(all(res));
+            return res;
+        }
+    return {};
+}
+```
+
 ### Dijkstra
 
 ```c++
@@ -643,6 +690,7 @@ vll eulerianPath(const vvll& g, bool d, ll s, ll e = -1) {
  *  A potential function is such that:
  *  new  weight is w' = w + p(u) - p(v) >= 0.
  *  real dist will be dist(u, v) = dist'(u, v) - p(u) + p(v).
+ *  https://judge.yosupo.jp/problem/shortest_path
  *  Time complexity: O(Elog(V))
 */
 pair<vll, vll> dijkstra(const vvpll& g, ll s) {
@@ -664,9 +712,8 @@ pair<vll, vll> dijkstra(const vvpll& g, ll s) {
 vll getPath(const vll& pre, ll s, ll u) {
     vll p { u };
     do {
-        p.eb(pre[u]);
-        u = pre[u];
-        if (u == 0) return {};
+        p.eb(pre[u]), u = pre[u];
+        assert(u != LLONG_MAX);
     } while (u != s);
     reverse(all(p));
     return p;
@@ -749,15 +796,14 @@ vvll johnson(vvpll& g) {
  *  A single vertex is a scc.
  *  The scc is ordered in the sense that if we have {a, b}, then there is a edge from
  *  a to b.
- *  scc is [comp, cc].
- *  comp[u] is the component "leader" of an original vertex.
+ *  scc is [leader, cc].
  *  Time complexity: O(Elog(V))
 */
 tuple<vvll, map<ll, vll>, vll> kosaraju(const vvll& g) {
     ll n = g.size();
     vvll inv(n), cond(n);
     map<ll, vll> scc;
-    vll vs(n), comp(n), order;
+    vll vs(n), leader(n), order;
     auto dfs = [&vs](auto& self, const vvll& h, vll& out, ll u) -> void {
         vs[u] = true;
         for (ll v : h[u]) if (!vs[v])
@@ -774,11 +820,11 @@ tuple<vvll, map<ll, vll>, vll> kosaraju(const vvll& g) {
         vll cc;
         dfs(dfs, inv, cc, u);
         scc[u] = cc;
-        for (ll v : cc) comp[v] = u;
+        for (ll v : cc) leader[v] = u;
     }
-    rep(u, 0, n) for (ll v : g[u]) if (comp[u] != comp[v])
-        cond[comp[u]].eb(comp[v]);
-    return { cond, scc, comp };
+    rep(u, 0, n) for (ll v : g[u]) if (leader[u] != leader[v])
+        cond[leader[u]].eb(leader[v]);
+    return { cond, scc, leader };
 }
 ```
 
@@ -866,7 +912,7 @@ pair<ll, vector<vtll>> maxFlow(const vvpll& g, ll s, ll t) {
         h[v].eb(0, u, h[u].size() - 1);
     }
     auto dfs = [&](auto& self, ll u, ll nf) -> ll {
-        if (u == t or nf == 0) return nf;
+        if (u == t || nf == 0) return nf;
         for (ll& i = ptr[u]; i < h[u].size(); i++) {
             auto& [w, v, rev] = h[u][i];
             if (lvl[v] == lvl[u] + 1)
@@ -883,10 +929,10 @@ pair<ll, vector<vtll>> maxFlow(const vvpll& g, ll s, ll t) {
         do {
             lvl = ptr = vll(n);
             ll qi = 0, qe = lvl[s] = 1;
-            while (qi < qe and !lvl[t]) {
+            while (qi < qe && !lvl[t]) {
                 ll u = q[qi++];
                 for (auto [w, v, rev] : h[u])
-                    if (!lvl[v] and w >> (30 - l))
+                    if (!lvl[v] && w >> (30 - l))
                         q[qe++] = v, lvl[v] = lvl[u] + 1;
             }
             while (ll nf = dfs(dfs, s, LLONG_MAX)) f += nf;
@@ -922,12 +968,12 @@ vll bridgesOrArticulations(const vvpll& g, bool get_bridges) {
             else {
                 self(self, v, u);
                 low[u] = min(low[u], low[v]);
-                if (get_bridges and low[v] > st[u]) res.eb(i);
-                else if (!get_bridges and p != 0 and low[v] >= st[u]) res.eb(u);
+                if (get_bridges && low[v] > st[u]) res.eb(i);
+                else if (!get_bridges && p != 0 && low[v] >= st[u]) res.eb(u);
                 ++children;
             }
         }
-        if (!get_bridges and p == 0 and children > 1) res.eb(u);
+        if (!get_bridges && p == 0 && children > 1) res.eb(u);
     };
     rep(i, 0, g.size()) if (!vs[i]) dfs(dfs, i, 0);
     if (!get_bridges) {
@@ -1009,7 +1055,7 @@ tuple<T, ll, ll> kadane(const vector<T>& xs, bool mx = true) {
     rep(i, 0, xs.size()) {
         csum += xs[i] * (mx ? 1 : -1);
         if (csum < 0) csum = 0, j = i + 1;  //            > if wants biggest interval
-        else if (csum > res or (csum == res and i - j + 1 < r - l + 1))
+        else if (csum > res || (csum == res && i - j + 1 < r - l + 1))
             res = csum, l = j, r = i;
     }
     return { res * (mx ? 1 : -1), l, r };
@@ -1082,6 +1128,7 @@ T lcs(const T& xs, const T& ys) {
  *  @param  xs      Vector.
  *  @param  values  True if want values, indexes otherwise.
  *  @return         Longest increasing subsequence as values or indexes.
+ *  https://judge.yosupo.jp/problem/longest_increasing_subsequence
  *  Time complexity: O(Nlog(N))
 */
 vll lis(const vll& xs, bool values) {
@@ -1090,16 +1137,14 @@ vll lis(const vll& xs, bool values) {
     rep(i, 0, xs.size()) {
         // change to upper_bound if want not decreasing
         ll j = lower_bound(all(ss), xs[i]) - ss.begin();
-        if (j == ss.size()) idx.eb(), ss.eb();
+        if (j == ss.size()) ss.eb(), idx.eb();
         if (j == 0) pre[i] = -1;
         else        pre[i] = idx[j - 1];
-        idx[j] = i, ss[j]  = xs[i];
+        ss[j] = xs[i], idx[j] = i;
     }
     ll i = idx.back();
-    while (i != -1) {
-        ys.eb((values ? xs[i] : i));
-        i = pre[i];
-    }
+    while (i != -1)
+        ys.eb((values ? xs[i] : i)), i = pre[i];
     reverse(all(ys));
     return ys;
 }
@@ -1145,7 +1190,7 @@ vector<T> closests(const vector<T>& xs) {
     stack<ll> prevs;
     // n - 1 -> 0: to the right
     rep(i, 0, xs.size()) {  //                    <= if want bigger
-        while (!prevs.empty() and xs[prevs.top()] >= xs[i])
+        while (!prevs.empty() && xs[prevs.top()] >= xs[i])
             prevs.pop();
         if (!prevs.empty()) c[i] = prevs.top();
         prevs.emplace(i);
@@ -1192,7 +1237,7 @@ ll binom(ll n, ll k) {
         rep(i, 1, MAXN + 1) rep(j, 0, i + 1)
             dp[i][j] = dp[i - 1][j] + (j ? (dp[i - 1][j - 1]) : 0);
     }
-    if (n < k or n * k < 0) return 0;
+    if (n < k || n * k < 0) return 0;
     return dp[n][k];
 }
 ```
@@ -1215,7 +1260,7 @@ ll binom(ll n, ll k) {
             finv[i] = finv[i - 1] * inv[i] % M;
         }
     }
-    if (n < k or n * k < 0) return 0;
+    if (n < k || n * k < 0) return 0;
     return fac[n] * finv[k] % M * finv[n - k] % M;
 }
 ```
@@ -1333,8 +1378,8 @@ template <typename T>
 T pot(T a, ll b) {
     T res(1);  // T's identity
     while (b) {
-        if (b & 1) res *= a;
-        a *= a, b /= 2;
+        if (b & 1) res = res * a;
+        a = a * a, b /= 2;
     }
     return res;
 }
@@ -1380,7 +1425,7 @@ vll factors(ll x, const vll& spf) {
 ll rho(ll x) {
     auto f  = [x](ll x) { return mul(x, x, x) + 1; };
     ll init = 0, x = 0, y = 0, prod = 2, i = 0;
-    while (i & 63 or gcd(prod, x) == 1) {
+    while (i & 63 || gcd(prod, x) == 1) {
         if (x == y) x = ++init, y = f(x);
         if (ll t = mul(prod, (x - y), x); t) prod = t;
         x = f(x), y = f(f(y)), ++i;
@@ -1496,7 +1541,7 @@ bool isPrime(ll x) {  // miller rabin
     for (ll a : {2, 3, 5, 7, 11, 13, 17, 19, 23}) {
         if (a == x) return true;
         a = pot(a, d, x);
-        if (a == 1 or a == x - 1) continue;
+        if (a == 1 || a == x - 1) continue;
         rep(i, 1, r) {
             a = mul(a, a, x);
             if (a == x - 1) break;
@@ -1518,10 +1563,9 @@ bool isPrime(ll x) {  // miller rabin
 vll totient(ll n) {
     vll phi(n + 1);
     iota(all(phi), 0);
-    rep(i, 2, n + 1)
-        if (phi[i] == i)
-            for (ll j = i; j <= n; j += i)
-                phi[j] -= phi[j] / i;
+    rep(i, 2, n + 1) if (phi[i] == i)
+        for (ll j = i; j <= n; j += i)
+            phi[j] -= phi[j] / i;
     return phi;
 }
 ```
@@ -1590,24 +1634,54 @@ vector<T> convolution(const vector<T>& a, const vector<T>& b) {
 
 ## Strings
 
-### Borda de prefixos (KMP)
+### Autômato de borda dos prefixos (KMP)
 
 ```c++
 /**
  *  @param  s  String.
- *  @return    Vector with the border size for each prefix size.
+ *  @return    KMP Automaton.
+ *  It allows to calculate the prefix function faster in some
+ *  cases and also deal with big strings formed by some rules.
+ *  Time complexity: O(26N)
+*/
+vvll kmpAutomaton(const string& s) {
+    ll n = s.size();
+    vll pi(n);
+    vvll aut(n, vll(26));
+    rep(i, 0, n) {
+        ll si = s[i] - 'a';
+        rep(c, 0, 26) {
+            if (i > 0 && c != si)
+                aut[i][c] = aut[pi[i - 1]][c];
+            else
+                aut[i][c] = i + (c == si);
+        }
+        if (i > 0)
+            pi[i] = aut[pi[i] - 1][si];
+    }
+    return aut;
+}
+```
+
+### Borda dos prefixos (KMP)
+
+```c++
+/**
+ *  @param  s  String.
+ *  @return    Vector with the border size for each prefix index.
  *  Used in KMP to count occurrences.
  *  Time complexity: O(N)
 */
-vll prefixBorder(const string& s) {
-    vll bs(s.size() + 1, -1);
-    ll t = -1;
-    rep(i, 0, s.size()) {
-        while (t > -1 and s[t] != s[i])
-            t = bs[t];
-        bs[i + 1] = ++t;
+vll prefixFunction(const string& s) {
+    ll n = s.size();
+    vll pi(n);
+    rep(i, 1, n) {
+        ll j = pi[i - 1];
+        while (j > 0 && s[i] != s[j])
+            j = pi[j - 1];
+        pi[i] = j + (s[i] == s[j]);
     }
-    return bs;
+    return pi;
 }
 ```
 
@@ -1661,13 +1735,10 @@ pair<ll, string> edit(const string& s,  string& t) {
     ll i = m, j = n;
     string ops;
 
-    while (i or j) {
-        if (pre[i][j] == 'i')
-            ops += t[--j];
-        else if (pre[i][j] == 'r') {
-            ops += '-';
-            --i;
-        }
+    while (i || j) {
+        if (pre[i][j] == 'i') ops += t[--j];
+        else if (pre[i][j] == 'r')
+            ops += '-', --i;
         else {
             --i, --j;
             if (s[i] == t[j]) ops += '=';
@@ -1704,7 +1775,7 @@ vll getLcp(const string& s, const vll& sa) {
             continue;
         }
         ll j = sa[rank[i] + 1];
-        while (i + k < n and j + k < n and s[i + k] == s[j + k])
+        while (i + k < n && j + k < n && s[i + k] == s[j + k])
             ++k;
         lcp[rank[i]] = k;
         if (k) --k;
@@ -1757,12 +1828,12 @@ ll minRotation(const string& s) {
     vll f(2 * n, -1);
     rep(j, 1, 2 * n) {
         ll i = f[j - k - 1];
-        while (i != -1 and s[j % n] != s[(k + i + 1) % n]) {
+        while (i != -1 && s[j % n] != s[(k + i + 1) % n]) {
             if (s[j % n] < s[(k + i + 1) % n])
                 k = j - i - 1;
             i = f[i];
         }
-        if (i == -1 and s[j % n] != s[(k + i + 1) % n]) {
+        if (i == -1 && s[j % n] != s[(k + i + 1) % n]) {
             if (s[j % n] < s[(k + i + 1) % n])
                 k = j;
             f[j - k] = -1;
@@ -1779,15 +1850,14 @@ ll minRotation(const string& s) {
 ```c++
 /**
  *  @param  s  String.
- *  @param  t  Substring (can have wildcards).
+ *  @param  t  Substring (can have wildcards '?').
  *  @return    Vector with the first index of occurrences.
  *  Requires FFT.
- *  Assert |s| >= |t|.
  *  Time complexity: O(Nlog(N))
 */
 vll occur(const string& s, const string& t) {
     ll n = s.size(), m = t.size(), q = 0;
-    assert(n >= m);
+    if (n < m) return {};
     vector<T> a(n), b(m);
     rep(i, 0, n) {
         double ang = acos(-1) * (s[i] - 'a') / 13;
@@ -1919,7 +1989,7 @@ vll suffixArray(string s, ll k = LLONG_MAX) {
     cSort(s, ps, 256);
     vpll ys(n);
     updEqClass(cs, ps, s);
-    for (ll mask = 1; mask < n and k > 0; mask *= 2, --k) {
+    for (ll mask = 1; mask < n && k > 0; mask *= 2, --k) {
         rep(i, 0, n) {
             rs[i] = ps[i] - mask + (ps[i] < mask) * n;
             xs[i] = cs[rs[i]];
@@ -1941,6 +2011,7 @@ vll suffixArray(string s, ll k = LLONG_MAX) {
  *  @param  s  String.
  *  @return    Vector with Z-Function value for every position.
  *  It's how much original prefix this suffix has as prefix.
+ *  https://judge.yosupo.jp/problem/zalgorithm
  *  Time complexity: O(N)
 */
 vll z(const string& s) {
@@ -1979,7 +2050,7 @@ struct BIT2D {
      *  Time complexity: O(log(N))
     */
     void add(ll y, ll x, T v) {
-        assert(0 < y and y <= n and 0 < x and x <= m)
+        assert(0 < y && y <= n && 0 < x && x <= m)
         for (; y <= n; y += y & -y)
             for (ll i = x; i <= m; i += i & -i)
                 bit[y][i] += v;
@@ -2001,7 +2072,7 @@ struct BIT2D {
      *  Time complexity: O(log(N))
     */
     T sum(ll ly, ll lx, ll hy, ll hx) {
-        assert(0 < ly and ly <= hy and hy <= n and 0 < lx and lx <= hx and hx <= m);
+        assert(0 < ly && ly <= hy && hy <= n && 0 < lx && lx <= hx && hx <= m);
         return sum(hy, hx) - sum(hy, lx - 1) - sum(ly - 1, hx) + sum(ly - 1, lx - 1);
     }
 
@@ -2024,7 +2095,7 @@ struct DSU {
      *  Time complexity: ~O(1)
     */
     ll setOf(ll x) {
-        assert(0 <= x and x < parent.size());
+        assert(0 <= x && x < parent.size());
         return parent[x] == x ? x : parent[x] = setOf(parent[x]);
     }
 
@@ -2059,13 +2130,13 @@ struct HLD {
     *  @param  def  Default value.
     *  @param  f    Merge function.
     *  Example: def in sum or gcd should be 0, in max LLONG_MIN, in min LLONG_MAX.
-    *  Initialize with setQueryPath(u, u) if values on vertex or setQueryPath(u, v)
+    *  Initialize with updQryPath(u, u) if values on vertex or updQryPath(u, v)
     *  if values on edges. The graph will need to be without weights even if there
     *  is on the edges.
     *  Time complexity: O(N)
     */
     HLD(vvll& g, bool values_on_edges, T def, Op f)
-            : seg(g.size(), def, f), op(f) {
+            : seg(g.size(), def, f), op(f), values_on_edges(values_on_edges) {
         idx = subtree = parent = head = vll(g.size());
         auto build = [&](auto& self, ll u = 1, ll p = 0) -> void {
             idx[u] = timer++, subtree[u] = 1, parent[u] = p;
@@ -2073,7 +2144,7 @@ struct HLD {
                 head[v] = (v == g[u][0] ? head[u] : v);
                 self(self, v, u);
                 subtree[u] += subtree[v];
-                if (subtree[v] > subtree[g[u][0]] or g[u][0] == p)
+                if (subtree[v] > subtree[g[u][0]] || g[u][0] == p)
                     swap(v, g[u][0]);
             }
 
@@ -2087,35 +2158,36 @@ struct HLD {
 
     /**
     *  @param  u, v  Vertices.
-    *  @param  x     Value to add     (if it's a set).
-    *  @return       f of path [u, v] (if it's a query).
+    *  @param  x     Value to add     (if it's an upd).
+    *  @return       f of path [u, v] (if it's a qry).
     *  It's a query if x is specified.
     *  Time complexity: O(log^2(N))
     */
-    ll setQueryPath(ll u, ll v, ll x = INT_MIN) {
-        assert(1 <= u and u < idx.size() and 1 <= v and v < idx.size());
+    ll updQryPath(ll u, ll v, ll x = INT_MIN) {
+        assert(1 <= u && u < idx.size() && 1 <= v && v < idx.size());
         if (idx[u] < idx[v]) swap(u, v);
-        if (head[u] == head[v]) return seg.setQuery(idx[v] + values_on_edges, idx[u], x);
-        return op(seg.setQuery(idx[head[u]], idx[u], x),
-                      setQueryPath(parent[head[u]], v, x));
+        if (head[u] == head[v]) return seg.updQry(idx[v] + values_on_edges, idx[u], x);
+        return op(seg.updQry(idx[head[u]], idx[u], x),
+                      updQryPath(parent[head[u]], v, x));
     }
 
 	  /**
     *  @param  u  Vertex.
-    *  @param  x  Value to add (if it's a set).
-    *  @return    f of subtree (if it's a query).
+    *  @param  x  Value to add (if it's an upd).
+    *  @return    f of subtree (if it's a qry).
     *  It's a query if x is specified.
     *  Time complexity: O(log(N))
     */
-    ll setQuerySubtree(ll u, ll x = INT_MIN) {
-        assert(1 <= u and u < idx.size());
-        return seg.setQuery(idx[u] + values_on_edges, idx[u] + subtree[u] - 1, x);
+    ll updQrySubtree(ll u, ll x = INT_MIN) {
+        assert(1 <= u && u < idx.size());
+        return seg.updQry(idx[u] + values_on_edges, idx[u] + subtree[u] - 1, x);
     }
 
     Segtree<T> seg;
+    Op op;
+    bool values_on_edges;
     vll idx, subtree, parent, head;
     ll timer = 0;
-    Op op;
 };
 ```
 
@@ -2170,17 +2242,17 @@ struct Segtree {
 
     /**
     *  @param  i, j  Interval.
-    *  @param  x     Value to add (if it's an update).
-    *  @return       f of interval [i, j] (if it's a query).
+    *  @param  x     Value to add         (if it's an upd).
+    *  @return       f of interval [i, j] (if it's a qry).
     *  It's a query if x is specified.
     *  Time complexity: O(log(N))
     */
     T updQry(ll i, ll j, T x = LLONG_MIN, ll l = 0, ll r = -1, ll no = 1) {
-        assert(0 <= i and i <= j and j < n);
+        assert(0 <= i && i <= j && j < n);
         if (r == -1) r = n - 1;
         if (lzy[no]) unlazy(l, r, no);
-        if (j < l or i > r) return DEF;
-        if (i <= l and r <= j) {
+        if (j < l || i > r) return DEF;
+        if (i <= l && r <= j) {
             if (x != LLONG_MIN) {
                 lzy[no] += x;  // seg[no] if no lazy
                 unlazy(l, r, no);
@@ -2255,9 +2327,9 @@ struct Node {
 *  Time complexity: O(log(N))
 */
 ll firstGreater(ll i, ll j, T x, ll l = 0, ll r = -1, ll no = 1) {
-    assert(0 <= i and i <= j and j < n);
+    assert(0 <= i && i <= j && j < n);
     if (r == -1) r = n - 1;
-    if (j < l or i > r or seg[no] <= x) return -1;
+    if (j < l || i > r || seg[no] <= x) return -1;
     if (l == r) return l;
     ll m = (l + r) / 2;
     ll left = firstGreater(i, j, x, l, m, 2 * no);
@@ -2285,7 +2357,7 @@ ll size(NP t) { return t ? t->sz : 0; }
 ll sum(NP t) { return t ? t->s : 0; }
 
 void unlazy(NP t) {
-    if (!t or !t->lazy_rev) return;
+    if (!t || !t->lazy_rev) return;
     t->lazy_rev = false;
     swap(t->l, t->r);
     if (t->l) t->l->lazy_rev ^= true;
@@ -2302,7 +2374,7 @@ void lazy(NP t) {
 NP merge(NP l, NP r) {
     NP t;
     unlazy(l), unlazy(r);
-    if (!l or !r) t = l ? l : r;
+    if (!l || !r) t = l ? l : r;
     else if (l->w > r->w) l->r = merge(l->r, r), t = l;
     else r->l = merge(l, r->l), t = r;
     lazy(t);
@@ -2421,7 +2493,7 @@ struct WaveletTree {
     *  Time complexity: O(log(N))
     */
     ll kTh(ll i, ll j, ll k) {
-        assert(0 <= i and i <= j and j < (ll)wav[1].size() and k > 0);
+        assert(0 <= i && i <= j && j < (ll)wav[1].size() && k > 0);
         ++j;
         ll l = 0, r = n - 1, no = 1;
         while (l != r) {
@@ -2441,7 +2513,7 @@ struct WaveletTree {
     *  Time complexity: O(log(N))
     */
     ll leq(ll i, ll j, ll x) {
-        assert(0 <= i and i <= j and j < (ll)wav[1].size() and 0 <= x and x < n);
+        assert(0 <= i && i <= j && j < (ll)wav[1].size() && 0 <= x && x < n);
         ++j;
         ll l = 0, r = n - 1, lx = 0, no = 1;
         while (l != r) {
@@ -2514,7 +2586,7 @@ struct Circle {
         double d = dist(c.C, C);
 
         // no intersection or same
-        if (d > c.r + r or d < abs(c.r - r) or (equals(d, 0) and equals(c.r, r)))
+        if (d > c.r + r || d < abs(c.r - r) || (equals(d, 0) && equals(c.r, r)))
             return {};
 
         double a = (c.r * c.r - r * r + d * d) / (2.0 * d);
@@ -2634,7 +2706,7 @@ struct Polygon {
             d ? (d > 0 ? ++P : ++N) : ++Z;
         }
 
-        return P == n or N == n;
+        return P == n || N == n;
     }
 
     /**
@@ -2748,7 +2820,7 @@ struct Line {
             : a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y) {
         if constexpr (is_floating_point_v<T>) b /= a, c /= a, a = 1;
         else {
-            if (a < 0 or (a == 0 and b < 0)) a *= -1, b *= -1, c *= -1;
+            if (a < 0 || (a == 0 && b < 0)) a *= -1, b *= -1, c *= -1;
             T gcd_abc = gcd(a, gcd(b, c));
             a /= gcd_abc, b /= gcd_abc, c /= gcd_abc;
         }
@@ -2816,7 +2888,7 @@ struct Line {
     }
 
     bool operator==(const Line& r) {
-        return equals(a, r.a) and equals(b, r.b) and equals(c, r.c);
+        return equals(a, r.a) && equals(b, r.b) && equals(c, r.c);
     }
 
     T a, b, c;
@@ -2856,13 +2928,13 @@ struct Segment {
         d1 /= d1 ? abs(d1) : 1, d2 /= d2 ? abs(d2) : 1;
         d3 /= d3 ? abs(d3) : 1, d4 /= d4 ? abs(d4) : 1;
 
-        if ((equals(d1, 0) and contains(r.A)) or (equals(d2, 0) and contains(r.B)))
+        if ((equals(d1, 0) && contains(r.A)) || (equals(d2, 0) && contains(r.B)))
             return true;
 
-        if ((equals(d3, 0) and r.contains(A)) or (equals(d4, 0) and r.contains(B)))
+        if ((equals(d3, 0) && r.contains(A)) || (equals(d4, 0) && r.contains(B)))
             return true;
 
-        return (d1 * d2 < 0) and (d3 * d4 < 0);
+        return (d1 * d2 < 0) && (d3 * d4 < 0);
     }
 
     /**
@@ -2920,8 +2992,8 @@ struct Triangle {
     *  Time complexity: O(1)
     */
     Class sidesClassification() {
-        if (equals(a, b) and equals(b, c)) return EQUILATERAL;
-        if (equals(a, b) or equals(a, c) or equals(b, c)) return ISOSCELES;
+        if (equals(a, b) && equals(b, c)) return EQUILATERAL;
+        if (equals(a, b) || equals(a, c) || equals(b, c)) return ISOSCELES;
         return SCALENE;
     }
 
@@ -3007,27 +3079,30 @@ struct Triangle {
 */
 template <typename T>
 struct Matrix {
-    Matrix(const vector<vector<T>>& matrix) : n(matrix.size()), mat(matrix) {}
-    Matrix(ll sz, ll x = 0) : n(sz), mat(n, vector<T>(n)) {
-        rep(i, 0, n) mat[i][i] = x;
+    Matrix(const vector<vector<T>>& matrix) : mat(matrix) {}
+    Matrix(ll n, ll m, ll x = 0) : mat(n, vector<T>(m)) {
+        if (n == m) rep(i, 0, n) mat[i][i] = x;
     }
     vector<T>& operator[](ll i) { return mat[i]; }
-
+    ll size() { return mat.size(); }
+    
     /**
      *  @param  other  Other matrix.
      *  @return        Product of matrices.
      *  It may happen that this needs to be custom.
      *  Think of it as a transition like on Floyd-Warshall.
+     *  https://judge.yosupo.jp/problem/matrix_product
      *  Time complexity: O(N^3)
     */
     Matrix operator*(Matrix& other) {
-        Matrix res(n);
-        rep(k, 0, n) rep(i, 0, n) rep(j, 0, n)
+        ll N = mat.size(), K = mat[0].size(), M = other[0].size();
+        assert(other.size() == K);
+        Matrix res(N, M);
+        rep(k, 0, K) rep(i, 0, N) rep(j, 0, M)
             res[i][j] += mat[i][k] * other[k][j];
         return res;
     }
 
-    ll n;
     vector<vector<T>> mat;
 };
 ```
@@ -3083,7 +3158,7 @@ H operator-(H a, H b) { return { sub(a.x, b.x, M1), sub(a.y, b.y, M2) }; }
      *  Time complexity: O(1), If using segtree: O(log(N))
     */
     H operator()(ll i, ll j) {
-        assert(0 <= i and i <= j and j < n);
+        assert(0 <= i && i <= j && j < n);
         return ps[j + 1] - ps[i] * pw[j + 1 - i];
         // return ps.setQuery(i, j) * pw[i];
     }
@@ -3236,7 +3311,7 @@ private:
         c -= 'a', ++n;
         ll u = make_node(len[last] + 1, len[last], 0, 1);
         ll p = last;
-        while (p != -1 and !next[p][c]) {
+        while (p != -1 && !next[p][c]) {
             next[p][c] = u;
             p = lnk[p];
         }
@@ -3247,7 +3322,7 @@ private:
             else {
                 ll v = make_node(len[p] + 1, fpos[q], lnk[q]);
                 next[v] = next[q];
-                while (p != -1 and next[p][c] == q) {
+                while (p != -1 && next[p][c] == q) {
                     next[p][c] = v;
                     p = lnk[p];
                 }
@@ -3353,7 +3428,7 @@ struct RMQ {
     *  Time complexity: O(1)
     */
     T query(ll l, ll r) {
-        assert(0 <= l and l <= r and r < n);
+        assert(0 <= l && l <= r && r < n);
         ll lg = (ll)log2(r - l + 1);
         return min(st[lg][l], st[lg][r - (1 << lg) + 1]);
     }
@@ -3388,7 +3463,7 @@ struct Psum2D {
      *  Time complexity: O(1)
     */
     T query(ll ly, ll lx, ll hy, ll hx) {
-        assert(0 <= ly and ly <= hy and hy < n and 0 <= lx and lx <= hx and hx < m);
+        assert(0 <= ly && ly <= hy && hy < n && 0 <= lx && lx <= hx && hx < m);
         ++ly, ++lx, ++hy, ++hx;
         return psum[hy][hx] - psum[hy][lx - 1] - psum[ly - 1][hx] + psum[ly - 1][lx - 1];
     }
@@ -3429,9 +3504,9 @@ struct Psum3D {
      *  Time complexity: O(1)
     */
     T query(ll lx, ll ly, ll lz, ll hx, ll hy, ll hz) {
-        assert(0 <= lx and lx <= hx and hx < n);
-        assert(0 <= ly and ly <= hy and hy < m);
-        assert(0 <= lz and lz <= hz and hz < o);
+        assert(0 <= lx && lx <= hx && hx < n);
+        assert(0 <= ly && ly <= hy && hy < m);
+        assert(0 <= lz && lz <= hz && hz < o);
         ++lx, ++ly, ++lz, ++hx, ++hy, ++hz;
         T res = psum[hx][hy][hz] - psum[lx - 1][hy][hz] - psum[hx][ly - 1][hz]
                                                         - psum[hx][hy][lz - 1];
@@ -3451,14 +3526,14 @@ struct Psum3D {
 ### Aritmética modular
 
 ```c++
-constexpr ll MOD = (ll)1e9 + 7;
-// constexpr ll MOD = (ll)998244353;
-template <ll M = MOD>
+constexpr ll M1 = (ll)1e9 + 7;
+constexpr ll M2 = (ll)998244353;
+template <ll M = M1>
 struct Mi {
     ll v;
     Mi() : v(0) {}
     Mi(ll x) : v(x) {
-        if (v >= M or v < -M) v %= M;
+        if (v >= M || v < -M) v %= M;
         v += v < 0 ? M : 0;
     }
     friend bool operator==(Mi a, Mi b) { return a.v == b.v; }
@@ -3604,6 +3679,8 @@ Matemática
 > `a^(b % p) % p != a^b % p`, então é necessário que `b` seja sempre menor que `p`, mas
   devido ao Pequeno Teorema de Fermat podemos fazer `b % (p - 1)` isso vai garantir que
   a operação tenha o valor correto.
+  
+> O inverso de `a (mod m)` é `a^(phi(m) - 1)`, mas precisa da condição que `gcd(a, m) = 1`.
 
 > Números de Catalan `Cn`: representa a quantidade de expressões válidas com parênteses
   de tamanho `2n`. Também são relacionados às árvores, existem `Cn` árvores binárias de `n`
