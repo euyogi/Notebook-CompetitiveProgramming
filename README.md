@@ -1604,6 +1604,26 @@ vll totient(ll n) {
 }
 ```
 
+### Totiente de Euler rápido
+
+```c++
+/**
+ *  @return  Euler totient value for x.
+ *  Euler totient counts coprimes of x in [1, x].
+ *  Requires pollard rho.
+ *  Time complexity: O(faster than sqrt)
+*/
+ll totient(ll x) {
+    vll fs = factors(x);  // Pollard rho
+    ll res = 1;
+    map<ll, ll> ys;
+    for (ll f : fs) ++ys[f];
+    for (auto [f, p] : ys)
+        res *= pot(f, p - 1) * (f - 1);
+    return res;
+}
+```
+
 ### Transformada de Fourier
 
 ```c++
@@ -3656,11 +3676,11 @@ Geometria
 
 Matemática
 
-> Quantidade de divisores de um número: produtório de `(a + 1)`. `a` é o expoente do
+> Quantidade de divisores de um número: produtório de `(p + 1)`. `p` é o expoente do
   `i`-ésimo fator primo.
 
-> Soma dos divisores de um número: produtório de `(p^(a + 1) - 1)/(p - 1)`. `a` é o
-  expoente do `i`-ésimo fator primo `p`.
+> Soma dos divisores de um número: produtório de `(f^(p + 1) - 1)/(f - 1)`. `p` é o
+  expoente do `i`-ésimo fator primo `f`.
 
 > Produto dos divisores de um número: `x^(qd(x)/2)`. `x` é o número, `qd(x)` é a
   quantidade de divisores dele.
@@ -3676,8 +3696,8 @@ Matemática
 
 > Números primos interessantes: `2^31 - 1, 2^31 + 11, 10^16 + 61, 10^18 - 11, 10^18 + 3`.
 
-> Quantidade de coprimos de `x` em `[1, x]`: produtório de `p^(a - 1)(p - 1)`.
-  `a` é o expoente do `i`-ésimo fator primo `p`.
+> Quantidade de coprimos de `x` em `[1, x]`: produtório de `f^(p - 1)(f - 1)`.
+  `p` é o expoente do `i`-ésimo fator primo `f`.
 
 > `gcd(a, b) = gcd(a, a - b)`, `gcd(a, b, c) = gcd(a, a - b, a - c)`, segue o padrão.
 
