@@ -131,8 +131,10 @@ using namespace std;
 
 #ifdef croquete  // BEGIN TEMPLATE ----------------------|
 #include "dbg/dbg.h"
+#define fio freopen("in.txt", "r", stdin)
 #else
 #define dbg(...)
+#define fio cin.tie(0)->sync_with_stdio(0)
 #endif
 #define ll           long long
 #define vll          vector<ll>
@@ -156,7 +158,7 @@ ostream& operator<<(ostream& os, vector<T>& xs) {
     return os.iword(0) = 0, os;
 } void solve();
 signed main() {
-    cin.tie(0)->sync_with_stdio(0);
+    fio;
     ll t = 1;
     cin >> t;
     while (t--) solve();
@@ -170,6 +172,7 @@ void solve() {
 
 ```c++
 // BEGIN EXTRAS -----------------------------------------|
+#define vvvll vector<vvll>
 #define vvpll vector<vpll>
 #define tll   tuple<ll, ll, ll>
 #define vtll  vector<tll>
@@ -1320,6 +1323,37 @@ vll divisors(ll x) {
 }
 ```
 
+### Divisores rápido
+
+```c++
+/**
+ *  @return  Ordered vector with all divisors of x.
+ *  Requires pollard rho.
+ *  Time complexity: O(faster than sqrt)
+*/
+vll divisors(ll x) {
+    vll fs = factors(x);  // pollard rho
+    map<ll, ll> ys;
+    for (ll f : fs) ++ys[f];
+    vll ds{1};
+    for (auto [f, p] : ys) {
+        ll pf = 1;
+        stack<ll> to_add;
+        rep(i, 0, p) {
+            pf *= f;
+            for (ll d : ds)
+                to_add.emplace(d * pf);
+        }
+        while (!to_add.empty()) {
+            ds.eb(to_add.top());
+            to_add.pop();
+        }
+    }
+    sort(all(ds));
+    return ds;
+}
+```
+
 ### Divisores de vários números
 
 ```c++
@@ -1389,7 +1423,7 @@ T pot(T a, ll b) {
 
 ```c++
 /**
- *  @return  Vector with prime factors of x.
+ *  @return  Ordered vector with prime factors of x.
  *  Time complexity: O(sqrt(N))
 */
 vll factors(ll x) {
@@ -1408,7 +1442,7 @@ vll factors(ll x) {
 /**
  *  @param  x    Number.
  *  @param  spf  Vector of smallest prime factors
- *  @return      Vector with prime factors of x.
+ *  @return      Ordered vector with prime factors of x.
  *  Requires sieve.
  *  Time complexity: O(log(N))
 */
@@ -1422,22 +1456,22 @@ vll factors(ll x, const vll& spf) {
 ### Fatoração rápida
 
 ```c++
-ll rho(ll x) {
-    auto f  = [x](ll x) { return mul(x, x, x) + 1; };
+ll rho(ll n) {
+    auto f  = [n](ll x) { return mul(x, x, n) + 1; };
     ll init = 0, x = 0, y = 0, prod = 2, i = 0;
-    while (i & 63 || gcd(prod, x) == 1) {
+    while (i & 63 || gcd(prod, n) == 1) {
         if (x == y) x = ++init, y = f(x);
-        if (ll t = mul(prod, (x - y), x); t) prod = t;
+        if (ll t = mul(prod, (x - y), n); t) prod = t;
         x = f(x), y = f(f(y)), ++i;
     }
-    return gcd(prod, x);
+    return gcd(prod, n);
 }
 
 /**
  *  @param  x  Number.
- *  @return    True if x is prime, false otherwise.
+ *  @return    Unordered vector with prime factors of x.
  *  Requires primality test.
- *  Time complexity: O(N^(1/4)log(N)
+ *  Time complexity: O(N^(1/4)log(N))
 */
 vll factors(ll x) {
     if (x == 1)     return {};
@@ -3692,7 +3726,6 @@ Matemática
   que dá para interpretar como as que vem do ponto simétrico à reta
   `y = x + k = n = m + k + 1` até `(M, N)`, cruzando a reta inválida. `k` é a quantidade
   de parênteses já abertos, aí fica `binom(N + M, N) - binom(N + M, M + K + 1)`.
- 
 
 > Lema de Burnside: o número de combinações em que simétricos são considerados iguais é
   o somatório de `k` entre `[1, n]` de `c(k)/n`. `n` é a quantidade de maneiras de mudar
@@ -3739,7 +3772,7 @@ bool equals(T a, S b) { return abs(a - b) < 1e-9; }
 
 ```c++
 ll mult(ll a, ll b) {
-    if (abs(a) >= LLONG_MAX / abs(b))
+    if (b && abs(a) >= LLONG_MAX / abs(b))
         return LLONG_MAX;  // overflow
     return a * b;
 }
