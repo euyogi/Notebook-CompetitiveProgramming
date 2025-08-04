@@ -109,6 +109,7 @@ css: |-
     * Suffix Automaton
     * Trie
   * Outros
+    * Compressão
     * RMQ
     * Soma de prefixo 2D
     * Soma de prefixo 3D
@@ -117,7 +118,6 @@ css: |-
   * Bits
   * Ceil division
   * Conversão de índices
-  * Compressão de coordenadas
   * Fatos
   * Igualdade flutuante
   * Overflow check
@@ -260,7 +260,7 @@ double dist(const pair<T, T>& P, const pair<S, S>& Q) {
 
 ```c++
 template <typename T>
-vector<pair<T, T>> makeHull(const vector<pair<T, T>>& PS) {
+vector<pair<T, T>> make_hull(const vector<pair<T, T>>& PS) {
     vector<pair<T, T>> hull;
     for (auto& P : PS) {
         ll sz = hull.size();  //           if want collinear < 0
@@ -282,12 +282,12 @@ vector<pair<T, T>> makeHull(const vector<pair<T, T>>& PS) {
  *  Time complexity: O(Nlog(N))
 */
 template <typename T>
-vector<pair<T, T>> monotoneChain(vector<pair<T, T>> PS) {
+vector<pair<T, T>> monotone_chain(vector<pair<T, T>> PS) {
     vector<pair<T, T>> lower, upper;
     sort(all(PS));
-    lower = makeHull(PS);
+    lower = make_hull(PS);
     reverse(all(PS));
-    upper = makeHull(PS);
+    upper = make_hull(PS);
     lower.pop_back();
     lower.emplace(lower.end(), all(upper));
     return lower;
@@ -339,7 +339,7 @@ bool ccw(pair<T, T> P, pair<T, T> Q, const pair<T, T>& O) {
  *  Time complexity: O(1)
 */
 template <typename T>
-Line<T> perpendicularBisector(const pair<T, T>& P, const pair<T, T>& Q) {
+Line<T> perpendicular_bisector(const pair<T, T>& P, const pair<T, T>& Q) {
     T a = 2 * (Q.x - P.x), b = 2 * (Q.y - P.y);
     T c = (P.x * P.x + P.y * P.y) - (Q.x * Q.x + Q.y * Q.y);
     return { a, b, c };
@@ -368,28 +368,18 @@ pd rotate(const pair<T, T>& P, double a) {
 ### Binary lifting
 
 ```c++
-constexpr ll LOG = 31;
+constexpr ll LOG = 22;
 vvll parent;
-vll depth;
 
 /**
- *  @param  g  Tree/Successor graph.
- *  @param  n  Amount of vertices.
+ *  @param  ps  Tree/Successor graph.
  *  Time complexity: O(Nlog(N))
 */
-void populate(const vvll& g) {
-    ll n = g.size();
+void populate(const vll& ps) {
+    ll n = ps.size();
     parent = vvll(n, vll(LOG));
-    depth  = vll(n);
-
-    // populate parent
-    auto dfs = [&](auto& self, ll u, ll p = 1) -> void {
-        parent[u][0] = p;
-        depth[u] = depth[p] + 1;
-        for (ll v : g[u]) if (v != p)
-            self(self, v, u);
-    }; dfs(dfs, 1);  // if not tree needs to loop for every vertex
-
+    rep(i, 0, n)
+        parent[i][0] = ps[i];
     rep(i, 1, LOG) rep(j, 0, n)
         parent[j][i] = parent[ parent[j][i - 1] ][i - 1];
 }
@@ -402,9 +392,8 @@ void populate(const vvll& g) {
  *  k = 0 is me, k = 1 my parent, and so on...
  *  Time complexity: O(log(N))
 */
-ll kthAncestor(ll u, ll k) {
-    assert(!parent.empty() && 1 <= u && u < parent.size() && k >= 0);
-    if (k > depth[u]) return -1;  // no kth ancestor
+ll kth(ll u, ll k) {
+    assert(!parent.empty() && 0 <= u && u < parent.size() && k >= 0);
     rep(i, 0, LOG) if (k & (1LL << i))
         u = parent[u][i];
     return u;
@@ -454,13 +443,13 @@ ll subtree_dfs(const vvll& g, ll u, ll p) {
  *  also be kinda like log(N) because it keeps dividing by 2.
  *  Time complexity: O(Nlog(N))
 */
-void centroidDecomp(const vvll& g, ll u = 1, ll p = 0, ll sz = 0) {
+void centroid_decomp(const vvll& g, ll u = 1, ll p = 0, ll sz = 0) {
     if (p == 0) p = -1, parent = subtree = vll(g.size());
     if (sz == 0) sz = subtree_dfs(g, u, 0);
     for (ll v : g[u]) if (!parent[v] && subtree[v] * 2 > sz)
-        return subtree[u] = 0, centroidDecomp(g, v, p, sz);
+        return subtree[u] = 0, centroid_decomp(g, v, p, sz);
     parent[u] = p;
-    for (ll v : g[u]) if (!parent[v]) centroidDecomp(g, v, u);
+    for (ll v : g[u]) if (!parent[v]) centroid_decomp(g, v, u);
 }
 ```
 
@@ -476,11 +465,11 @@ vll st, et;
  *  we can use stuff like segtrees on the subtrees.
  *  Time complexity: O(N)
 */
-void eulerTour(const vvll& g, ll u = 1, ll p = 0) {
+void euler_tour(const vvll& g, ll u = 1, ll p = 0) {
     if (p == 0) { timer = 0; st = et = vll(g.size()); }
     st[u] = timer++;
     for (ll v : g[u]) if (v != p)
-        eulerTour(g, v, u);
+        euler_tour(g, v, u);
     et[u] = timer++;
 }
 ```
@@ -498,7 +487,7 @@ ll lca(ll u, ll v) {
     assert(1 <= u && u < parent.size() && 1 <= v && v < parent.size());
     if (depth[u] < depth[v]) swap(u, v);
     ll k = depth[u] - depth[v];
-    u = kthAncestor(u, k);
+    u = kth(u, k);
     if (u == v) return u;
     per(i, LOG - 1, 0) if (parent[u][i] != parent[v][i])
         u = parent[u][i], v = parent[v][i];
@@ -590,7 +579,7 @@ vll bfs01(const vvpll& g, ll s) {
  *  Eulerian path goes through every edge once, cycle starts and ends at the same node. 
  *  Time complexity: O(Nlog(N))
 */
-vll eulerianPath(const vvll& g, bool d, ll s, ll e = -1) {
+vll eulerian_path(const vvll& g, bool d, ll s, ll e = -1) {
     ll n = g.size();
     vector<multiset<ll>> h(n);
     vll res, in_degree(n);
@@ -734,7 +723,7 @@ vll getPath(const vll& pre, ll s, ll u) {
  *  If ds[u][v] == LLONG_MIN, negative cycle.
  *  Time complexity: O(V^3)
 */
-vvll floydWarshall(const vvpll& g) {
+vvll floyd_warshall(const vvpll& g) {
     ll n = g.size();
     vvll ds(n, vll(n, LLONG_MAX));
     rep(u, 0, n) {
@@ -846,8 +835,8 @@ vtll kruskal(vtll& edges, ll n) {
     vtll mst;
     ll edges_sum = 0;
     sort(all(edges));  // change order if want maximum
-    for (auto [w, u, v] : edges) if (!dsu.sameSet(u, v)) {
-        dsu.mergeSetsOf(u, v);
+    for (auto [w, u, v] : edges) if (!dsu.same(u, v)) {
+        dsu.merge(u, v);
         mst.eb(w, u, v);
         edges_sum += w;
     }
@@ -864,7 +853,7 @@ vtll kruskal(vtll& edges, ll n) {
  *  It starts from a vertex with indegree 0, that is no one points to it.
  *  Time complexity: O(EVlog(V))
 */
-vll topoSort(const vvll& g) {
+vll topo_sort(const vvll& g) {
     ll n = g.size();
     vll degree(n), res;
     rep(u, 1, n) for (ll v : g[u])
@@ -906,7 +895,7 @@ vll topoSort(const vvll& g) {
  *  Capacities on edges, to limit a vertex create a new vertex and limit edge.
  *  Time complexity: O(EV^2) but there is cases where it's better (unit capacities).
 */
-pair<ll, vector<vtll>> maxFlow(const vvpll& g, ll s, ll t) {
+pair<ll, vector<vtll>> max_flow(const vvpll& g, ll s, ll t) {
     ll n = g.size();
     vector<vtll> h(n);  // (w, v, rev)
     vll lvl(n), ptr(n), q(n);
@@ -953,7 +942,7 @@ pair<ll, vector<vtll>> maxFlow(const vvpll& g, ll s, ll t) {
  *  Articulations are vertices that when removed increases components.
  *  Time complexity: O(E + V)
 */
-vll bridgesOrArticulations(const vvpll& g, bool get_bridges) {
+vll bridges_or_articulations(const vvpll& g, bool get_bridges) {
     ll n = g.size(), timer = 0;
     vector<bool> vs(n);
     vll st(n), low(n), res;
@@ -999,7 +988,7 @@ vll bridgesOrArticulations(const vvpll& g, bool get_bridges) {
  *  If it's an integer function use binary search.
  *  Time complexity: O(log(N))
 */
-double ternarySearch(double lo, double hi, function<double(double)> f) {
+double ternary_search(double lo, double hi, function<double(double)> f) {
     rep(i, 0, 100) {
         double mi1 = lo + (hi - lo) / 3.0, mi2 = hi - (hi - lo) / 3.0;
         if (f(mi1) < f(mi2)) lo = mi1;
@@ -1023,7 +1012,7 @@ double ternarySearch(double lo, double hi, function<double(double)> f) {
  *  Time complexity: O(Nlog(N))
 */
 template <typename T>
-ll countIntervals(const vector<T>& xs, T sum) {
+ll count_intervals(const vector<T>& xs, T sum) {
     map<T, ll> hist;
     hist[0] = 1;
     // oset<ll> csums;
@@ -1161,7 +1150,7 @@ vll lis(const vll& xs, bool values) {
  *  @return     Vector with amount of pairs with gcd equals i [1, 1e6].
  *  Time complexity: O(Nlog(N))
 */
-vll gcdPairs(const vll& xs) {
+vll gcd_pairs(const vll& xs) {
     ll MAXN = (ll)1e6 + 1;
     vll dp(MAXN, -1), ms(MAXN), hist(MAXN);
     for (ll x : xs) ++hist[x];
@@ -1192,7 +1181,7 @@ vector<T> closests(const vector<T>& xs) {
     vll c(xs.size(), -1);  // n if to the right
     stack<ll> prevs;
     // n - 1 -> 0: to the right
-    rep(i, 0, xs.size()) {  //                    <= if want bigger
+    rep(i, 0, xs.size()) {  //                   <= if want strictly bigger
         while (!prevs.empty() && xs[prevs.top()] >= xs[i])
             prevs.pop();
         if (!prevs.empty()) c[i] = prevs.top();
@@ -1212,7 +1201,7 @@ vector<T> closests(const vector<T>& xs) {
  *  Time complexity: O(N)
 */
 template <typename T>
-T sumAllIntervals(const vector<T>& xs) {
+T sum_of_all_intervals(const vector<T>& xs) {
     T sum = 0;
     ll opens = 0;
     rep(i, 0, xs.size()) {
@@ -1278,7 +1267,7 @@ ll binom(ll n, ll k) {
  *  Example: (x = 6, b = 2): { 1, 1, 0 }
  *  Time complexity: O(log(N))
 */
-vll toBase(ll x, ll b) {
+vll to_base(ll x, ll b) {
     assert(b > 1);
     vll res;
     while (x) { res.eb(x % b); x /= b; }
@@ -1475,7 +1464,7 @@ ll rho(ll n) {
 */
 vll factors(ll x) {
     if (x == 1)     return {};
-    if (isPrime(x)) return {x};
+    if (is_prime(x)) return {x};
     ll d  = rho(x);
     vll l = factors(d), r = factors(x / d);
     l.insert(l.end(), all(r));
@@ -1493,7 +1482,7 @@ vll factors(ll x) {
  *  Time complexity: O(N)
 */
 template <typename T>
-ll rePerm(const map<T, ll>& hist) {
+ll rep_perm(const map<T, ll>& hist) {
     constexpr ll MAXN = (ll)3e6, M = (ll)1e9 + 7;  // check mod value!
     static vll fac(MAXN + 1), inv(MAXN + 1), finv(MAXN + 1);
     if (fac[0] != 1) {
@@ -1567,7 +1556,7 @@ ll pot(ll a, ll b, ll p) {
  *  @return    True if x is prime, false otherwise.
  *  Time complexity: O(log^2(N))
 */
-bool isPrime(ll x) {  // miller rabin
+bool is_prime(ll x) {  // miller rabin
     if (x < 2)      return false;
     if (x <= 3)     return true;
     if (x % 2 == 0) return false;
@@ -1698,7 +1687,7 @@ vector<T> convolution(const vector<T>& a, const vector<T>& b) {
  *  cases and also deal with big strings formed by some rules.
  *  Time complexity: O(26N)
 */
-vvll kmpAutomaton(const string& s) {
+vvll kmp_automaton(const string& s) {
     ll n = s.size();
     vll pi(n);
     vvll aut(n, vll(26));
@@ -1726,7 +1715,7 @@ vvll kmpAutomaton(const string& s) {
  *  Used in KMP to count occurrences.
  *  Time complexity: O(N)
 */
-vll prefixFunction(const string& s) {
+vll prefix_function(const string& s) {
     ll n = s.size();
     vll pi(n);
     rep(i, 1, n) {
@@ -1819,7 +1808,7 @@ pair<ll, string> edit(const string& s,  string& t) {
  *  That would be lcp between suffix sa[i] and suffix sa[j].
  *  Time complexity: O(N)
 */
-vll getLcp(const string& s, const vll& sa) {
+vll lcp(const string& s, const vll& sa) {
     ll n = s.size(), k = 0;
     vll rank(n), lcp(n - 1);
     rep(i, 0, n) rank[sa[i]] = i;
@@ -1877,7 +1866,7 @@ vpll manacher(string s) {
  *  @return    Index of the minimum rotation.
  *  Time complexity: O(N)
 */
-ll minRotation(const string& s) {
+ll min_rotation(const string& s) {
     ll n = s.size(), k = 0;
     vll f(2 * n, -1);
     rep(j, 1, 2 * n) {
@@ -2013,7 +2002,7 @@ ll count(const string& s, const string& t, const vll& sa) {
 
 ```c++
 template <typename T>
-void cSort(const T& xs, vll& ps, ll alpha) {
+void csort(const T& xs, vll& ps, ll alpha) {
     vll hist(alpha + 1);
     for (auto x : xs) ++hist[x];
     rep(i, 1, alpha + 1) hist[i] += hist[i - 1];
@@ -2021,7 +2010,7 @@ void cSort(const T& xs, vll& ps, ll alpha) {
 }
 
 template <typename T>
-void updEqClass(vll& cs, const vll& ps, const T& xs) {
+void upd_eq_class(vll& cs, const vll& ps, const T& xs) {
     cs[0] = 0;
     rep(i, 1, ps.size())
         cs[ps[i]] = cs[ps[i - 1]] + (xs[ps[i - 1]] != xs[ps[i]]);
@@ -2036,22 +2025,22 @@ void updEqClass(vll& cs, const vll& ps, const T& xs) {
  *  pass k to this function to have the equivalence classes vector.
  *  Time complexity: O(Nlog(N))
 */
-vll suffixArray(string s, ll k = LLONG_MAX) {
+vll suffix_array(string s, ll k = LLONG_MAX) {
     s += ';';
     ll n = s.size();
     vll ps(n), rs(n), xs(n), cs(n);
-    cSort(s, ps, 256);
+    csort(s, ps, 256);
     vpll ys(n);
-    updEqClass(cs, ps, s);
+    upd_eq_class(cs, ps, s);
     for (ll mask = 1; mask < n && k > 0; mask *= 2, --k) {
         rep(i, 0, n) {
             rs[i] = ps[i] - mask + (ps[i] < mask) * n;
             xs[i] = cs[rs[i]];
             ys[i] = {cs[i], cs[i + mask - (i + mask >= n) * n]};
         }
-        cSort(xs, ps, cs[ps.back()] + 1);
+        csort(xs, ps, cs[ps.back()] + 1);
         rep(i, 0, n) ps[i] = rs[ps[i]];
-        updEqClass(cs, ps, ys);
+        upd_eq_class(cs, ps, ys);
     }
     ps.erase(ps.begin());
     return (k == 0 ? cs : ps);
@@ -2148,17 +2137,17 @@ struct DSU {
      *  @param  x  Element.
      *  Time complexity: ~O(1)
     */
-    ll setOf(ll x) {
+    ll find(ll x) {
         assert(0 <= x && x < parent.size());
-        return parent[x] == x ? x : parent[x] = setOf(parent[x]);
+        return parent[x] == x ? x : parent[x] = find(parent[x]);
     }
 
     /**
      *  @param  x, y  Elements.
      *  Time complexity: ~O(1)
     */
-    void mergeSetsOf(ll x, ll y) {
-        ll a = setOf(x), b = setOf(y);
+    void merge(ll x, ll y) {
+        ll a = find(x), b = find(y);
         if (size[a] > size[b]) swap(a, b);
         parent[a] = b;
         if (a != b) size[b] += size[a], size[a] = 0;
@@ -2168,7 +2157,7 @@ struct DSU {
      *  @param  x, y  Elements.
      *  Time complexity: ~O(1)
     */
-    bool sameSet(ll x, ll y) { return setOf(x) == setOf(y); }
+    bool same(ll x, ll y) { return find(x) == find(y); }
 
     vll parent, size;
 };
@@ -2184,7 +2173,7 @@ struct HLD {
     *  @param  def  Default value.
     *  @param  f    Merge function.
     *  Example: def in sum or gcd should be 0, in max LLONG_MIN, in min LLONG_MAX.
-    *  Initialize with updQryPath(u, u) if values on vertex or updQryPath(u, v)
+    *  Initialize with upd_qry_path(u, u) if values on vertex or upd_qry_path(u, v)
     *  if values on edges. The graph will need to be without weights even if there
     *  is on the edges.
     *  Time complexity: O(N)
@@ -2217,12 +2206,12 @@ struct HLD {
     *  It's a query if x is specified.
     *  Time complexity: O(log^2(N))
     */
-    ll updQryPath(ll u, ll v, ll x = INT_MIN) {
+    ll upd_qry_path(ll u, ll v, ll x = INT_MIN) {
         assert(1 <= u && u < idx.size() && 1 <= v && v < idx.size());
         if (idx[u] < idx[v]) swap(u, v);
-        if (head[u] == head[v]) return seg.updQry(idx[v] + values_on_edges, idx[u], x);
-        return op(seg.updQry(idx[head[u]], idx[u], x),
-                      updQryPath(parent[head[u]], v, x));
+        if (head[u] == head[v]) return seg.upd_qry(idx[v] + values_on_edges, idx[u], x);
+        return op(seg.upd_qry(idx[head[u]], idx[u], x),
+                      upd_qry_path(parent[head[u]], v, x));
     }
 
 	  /**
@@ -2232,9 +2221,9 @@ struct HLD {
     *  It's a query if x is specified.
     *  Time complexity: O(log(N))
     */
-    ll updQrySubtree(ll u, ll x = INT_MIN) {
+    ll upd_qry_subtree(ll u, ll x = INT_MIN) {
         assert(1 <= u && u < idx.size());
-        return seg.updQry(idx[u] + values_on_edges, idx[u] + subtree[u] - 1, x);
+        return seg.upd_qry(idx[u] + values_on_edges, idx[u] + subtree[u] - 1, x);
     }
 
     Segtree<T> seg;
@@ -2274,10 +2263,10 @@ struct Segtree {
     /**
     *  @param  sz   Size.
     *  @param  def  Default value.
-    *  @param  f    Merge function.
+    *  @param  f    Combine function.
     *  Example: def in sum or gcd should be 0, in max LLONG_MIN, in min LLONG_MAX
     */
-    Segtree(ll sz, T def, Op f) : seg(4 * sz, def), lzy(4 * sz), n(sz), DEF(def), op(f) {}
+    Segtree(ll sz, T def, Op f) : n(sz), DEF(def), seg(4 * n, DEF), lzy(4 * n), op(f) {}
 
     /**
     *  @param  xs  Vector.
@@ -2301,23 +2290,23 @@ struct Segtree {
     *  It's a query if x is specified.
     *  Time complexity: O(log(N))
     */
-    T updQry(ll i, ll j, T x = LLONG_MIN, ll l = 0, ll r = -1, ll no = 1) {
+    T upd_qry(ll i, ll j, T x = LLONG_MIN, ll l = 0, ll r = -1, ll no = 1) {
         assert(0 <= i && i <= j && j < n);
         if (r == -1) r = n - 1;
         if (lzy[no]) unlazy(l, r, no);
         if (j < l || i > r) return DEF;
         if (i <= l && r <= j) {
             if (x != LLONG_MIN) {
-                lzy[no] += x;  // seg[no] if no lazy
+                lzy[no] += x;
                 unlazy(l, r, no);
             }
             return seg[no];
         }
         ll m = (l + r) / 2;
-        T q = op(updQry(i, j, x, l, m, 2 * no),
-                 updQry(i, j, x, m + 1, r, 2 * no + 1));  // [qry]
-        seg[no] = op(seg[2 * no], seg[2 * no + 1]);  // [upd] comment if no lazy range upd
-        return q;  // [qry] q + seg[no] if no lazy range upd
+        T q = op(upd_qry(i, j, x, l, m, 2 * no),
+                 upd_qry(i, j, x, m + 1, r, 2 * no + 1));
+        seg[no] = op(seg[2 * no], seg[2 * no + 1]);
+        return q;
     }
 
 private:
@@ -2326,45 +2315,16 @@ private:
         seg[no] += (r - l + 1) * lzy[no];  // sum
         // seg[no] += lzy[no];  // min/max
         if (l < r) {
-            lzy[2 * no] += lzy[no];
+            lzy[2 * no]     += lzy[no];
             lzy[2 * no + 1] += lzy[no];
         }
         lzy[no] = 0;
     }
 
-    vector<T> seg, lzy;
     ll n;
     T DEF;
+    vector<T> seg, lzy;
     Op op;
-};
-```
-
-### Máximos
-
-```c++
-// for segment tree
-struct Node {
-    static constexpr ll n = 2;  // quantity of maxs
-    array<ll, n> xs;  // maxs
-    Node() = default;
-    Node(ll x) { xs.fill(0), xs[0] = x; }
-    operator bool() { return xs[0]; }
-    Node& operator+=(const Node& v) {
-        xs[0] += v.xs[0];
-        rep(i, 1, n) if (xs[i])
-            xs[i] += v.xs[0];
-        return *this;
-    }
-    bool operator!=(ll x) { return xs[0] != x; }
-    static Node f(Node u, const Node& v) {
-        vll ys(all(u.xs));
-        ys.insert(ys.end(), all(v.xs));
-        sort(all(ys), greater<>());
-        ys.erase(unique(all(ys)), ys.end());
-        rep(i, 0, n)
-            u.xs[i] = ys[i];
-        return u;
-    }
 };
 ```
 
@@ -2526,7 +2486,7 @@ struct WaveletTree {
     *  Sorts xs in the process.
     *  Time complexity: O(Nlog(N))
     */
-    WaveletTree(vll& xs, ll sz) : wav(2 * n), n(sz) {
+    WaveletTree(vll& xs, ll sz) : n(sz), wav(2 * n) {
         auto build = [&](auto& self, auto b, auto e, ll l, ll r, ll no) {
             if (l == r) return;
             ll m = (l + r) / 2, i = 0;
@@ -2546,7 +2506,7 @@ struct WaveletTree {
     *  @return       k-th smallest element in [i, j].
     *  Time complexity: O(log(N))
     */
-    ll kTh(ll i, ll j, ll k) {
+    ll kth(ll i, ll j, ll k) {
         assert(0 <= i && i <= j && j < (ll)wav[1].size() && k > 0);
         ++j;
         ll l = 0, r = n - 1, no = 1;
@@ -2580,8 +2540,8 @@ struct WaveletTree {
         return j - i + lx;
     }
 
-    vvll wav;
     ll n;
+    vvll wav;
 };
 ```
 
@@ -2679,7 +2639,7 @@ struct Circle {
     *  @return  Tangent points looking from origin.
     *  Time complexity: O(1)
     */
-    pair<pd, pd> tanPoints() {
+    pair<pd, pd> tan_points() {
         double b = hypot(C.x, C.y), th = acos(r / b);
         double d = atan2(-C.y, -C.x), d1 = d + th, d2 = d - th;
         return { {C.x + r * cos(d1), C.y + r * sin(d1)},
@@ -3045,7 +3005,7 @@ struct Triangle {
     *  @return  Sides class.
     *  Time complexity: O(1)
     */
-    Class sidesClassification() {
+    Class class_by_sides() {
         if (equals(a, b) && equals(b, c)) return EQUILATERAL;
         if (equals(a, b) || equals(a, c) || equals(b, c)) return ISOSCELES;
         return SCALENE;
@@ -3055,7 +3015,7 @@ struct Triangle {
     *  @return  Angle class.
     *  Time complexity: O(1)
     */
-    Angles anglesClassification() {
+    Angles class_by_angles() {
         double alpha = acos((a * a - b * b - c * c) / (-2.0 * b * c));
         double beta  = acos((b * b - a * a - c * c) / (-2.0 * a * c));
         double gamma = acos((c * c - a * a - b * b) / (-2.0 * a * b));
@@ -3236,13 +3196,13 @@ struct SuffixAutomaton {
         make_node();
         for (auto c : s) add(c);
 
-        // preprocessing for count of countAndFirst
+        // preprocessing for count of count_and_first
         vector<pll> order(sz - 1);
         rep(i, 1, sz) order[i - 1] = {len[i], i};
         sort(all(order), greater<>());
         for (auto [_, i] : order) cnt[lnk[i]] += cnt[i];
 
-        // preprocessing for kThSub and kThDSub
+        // preprocessing for kth_sub and kth_dsub
         dfs(0);
     }
 
@@ -3252,7 +3212,7 @@ struct SuffixAutomaton {
     *             appears and index of first occurrence.
     *  Time complexity: O(M)
     */
-    pll countAndFirst(const string &t) {
+    pll count_and_first(const string &t) {
         ll u = 0;
         for (auto c : t) {
             ll v = next[u][c - 'a'];
@@ -3266,7 +3226,7 @@ struct SuffixAutomaton {
     *  @returns  Amount of distinct substrings.
     *  Time complexity: O(N)
     */
-    ll dSubs() {
+    ll dsubs() {
         ll res = 0;
         rep(i, 1, sz)
             res += len[i] - len[lnk[i]];
@@ -3277,7 +3237,7 @@ struct SuffixAutomaton {
     *  @returns  Vector with amount of distinct substrings of each size.
     *  Time complexity: O(N)
     */
-    vll dSubsBySz() {
+    vll dsubs_by_size() {
         vll hs(sz, -1);
         hs[0] = 0;
         queue<ll> q;
@@ -3311,7 +3271,7 @@ struct SuffixAutomaton {
     *  @return    k-th substring lexographically.
     *  Time complexity: O(N)
     */
-    string kThSub(ll k) {
+    string kth_sub(ll k) {
         k += n;
         string res;
         ll u = 0;
@@ -3335,7 +3295,7 @@ struct SuffixAutomaton {
     *  @return    k-th distinct substring lexographically.
     *  Time complexity: O(N)
     */
-    string kThDSub(ll k) {
+    string kth_dsub(ll k) {
         string res;
         ll u = 0;
         while (k >= 0) {
@@ -3386,7 +3346,7 @@ private:
         last = u;
     }
 
-    void dfs(ll u) {  // for kThSub and kThDSub
+    void dfs(ll u) {  // for kth_sub and kth_dsub
         dcnt[u] = 1, rcnt[u] = cnt[u];
         rep(i, 0, alpha) {
             ll v = next[u][i];
@@ -3459,6 +3419,22 @@ struct Trie {
 ```
 
 ## Outros
+
+### Compressão
+
+```c++
+template <typename T>
+struct Compressed {
+    Compressed(const vector<T>& xs) : cs(xs) {
+        sort(all(cs));
+        cs.erase(unique(all(cs)), cs.end());
+    }
+    ll operator[](T x) { return lower_bound(all(cs), x) - cs.begin(); }
+    T ret(ll c) { return cs[c]; }
+    ll size() { return cs.size(); }
+    vector<T> cs;
+};
+```
 
 ### RMQ
 
@@ -3625,30 +3601,6 @@ ll ceilDiv(ll a, ll b) { assert(b != 0); return a / b + ((a ^ b) > 0 && a % b !=
 #define J(k)    ((k) % w)
 ```
 
-### Compressão de coordenadas
-
-```c++
-/**
- *  @brief      Compress values from a vector.
- *  @param  xs  Vector.
- *  @return     Maps with the compressed values and uncompressed values.
- *  Time complexity: O(Nlog(N))
-*/
-template <typename T>
-pair<map<T, ll>, map<ll, T>> compress(vector<T> xs) {
-    ll i = 0;
-    sort(all(xs));
-    xs.erase(unique(all(xs)), xs.end());
-    map<ll, T> pm;
-    map<T, ll> mp;
-    for (T x : xs) {
-        pm[i] = x;
-        mp[x] = i++;
-    }
-    return { mp, pm };
-}
-```
-
 ### Fatos
 
 Bitwise
@@ -3730,10 +3682,10 @@ Matemática
   número, na multiplicação e divisão conte e mantenha a quantidade de fatores iguais a
   dois.
 
-> `a^(b % p) % p != a^b % p`, então é necessário que `b` seja sempre menor que `p`, mas
-  devido ao Pequeno Teorema de Fermat podemos fazer `b % (p - 1)` isso vai garantir que
-  a operação tenha o valor correto.
-  
+> Teorema de Euler: `a^phi(m) = 1 (mod m)`. Se `m` é primo se reduz á `a^(m - 1) = 1 (mod m)`.
+
+> `a^b^c % m = a^(b^c % phi(m)) % m`. Se `m` é primo se reduz á `a^b^c % m = a^(b^c % (m - 1)) % m`.
+
 > O inverso de `a (mod m)` é `a^(phi(m) - 1)`, mas precisa da condição que `gcd(a, m) = 1`.
 
 > Números de Catalan `Cn`: representa a quantidade de expressões válidas com parênteses
