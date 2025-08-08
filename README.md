@@ -56,6 +56,7 @@ css: |-
     * Listar combinações
     * Maior subsequência comum (LCS)
     * Maior subsequência crescente (LIS)
+    * Mex
     * Pares com gcd x
     * Próximo maior/menor elemento
     * Soma de todos os intervalos
@@ -109,7 +110,9 @@ css: |-
     * Suffix Automaton
     * Trie
   * Outros
+    * Fila agregada
     * Compressão
+    * Mex
     * RMQ
     * Soma de prefixo 2D
     * Soma de prefixo 3D
@@ -179,6 +182,9 @@ void solve() {
 #define pd    pair<double, double>
 #define x     first
 #define y     second
+#define F 'a'
+#define I(c) (c) - F
+#define C(i) (i) + F
 map<char, pll> ds1 { {'R', {0, 1}}, {'D', {1, 0}}, {'L', {0, -1}}, {'U', {-1, 0}} };
 vpll ds2 { {0, 1}, {1, 0}, {0, -1}, {-1, 0}, {1,  1}, {1, -1}, {-1,  1}, {-1, -1} };
 vpll ds3 { {1, 2}, {2, 1}, {-1, 2}, {-2, 1}, {1, -2}, {2, -1}, {-1, -2}, {-2, -1} };
@@ -1142,6 +1148,23 @@ vll lis(const vll& xs, bool values) {
 }
 ```
 
+### Mex
+
+```c++
+/**
+ *  @param  xs  Target vector.
+ *  @return     Mex.
+ *  Time complexity: O(N)
+*/
+ll mex(const vll& xs) {
+    vector<bool> f(xs.size() + 1, 0);
+    for (ll x : xs) if (x <= a.size()) f[x] = 1;
+    ll res = 0;
+    while (f[res]) ++res;
+    return res;
+}
+```
+
 ### Pares com gcd x
 
 ```c++
@@ -2081,6 +2104,9 @@ vll z(const string& s) {
 ```c++
 template <typename T>
 struct BIT2D {
+    ll n, m;
+    vector<vector<T>> bit;
+    
     /**
      *  @param  h, w  Height and width.
     */
@@ -2118,9 +2144,6 @@ struct BIT2D {
         assert(0 < ly && ly <= hy && hy <= n && 0 < lx && lx <= hx && hx <= m);
         return sum(hy, hx) - sum(hy, lx - 1) - sum(ly - 1, hx) + sum(ly - 1, lx - 1);
     }
-
-    ll n, m;
-    vector<vector<T>> bit;
 };
 ```
 
@@ -2128,6 +2151,8 @@ struct BIT2D {
 
 ```c++
 struct DSU {
+    vll parent, size;
+    
     /**
      *  @param  sz  Size.
     */
@@ -2158,8 +2183,6 @@ struct DSU {
      *  Time complexity: ~O(1)
     */
     bool same(ll x, ll y) { return find(x) == find(y); }
-
-    vll parent, size;
 };
 ```
 
@@ -2168,6 +2191,12 @@ struct DSU {
 ```c++
 template <typename T, typename Op = function<T(T, T)>>
 struct HLD {
+    Segtree<T> seg;
+    Op op;
+    bool values_on_edges;
+    vll idx, subtree, parent, head;
+    ll timer = 0;
+    
     /**
     *  @param  g    Tree.
     *  @param  def  Default value.
@@ -2225,12 +2254,6 @@ struct HLD {
         assert(1 <= u && u < idx.size());
         return seg.upd_qry(idx[u] + values_on_edges, idx[u] + subtree[u] - 1, x);
     }
-
-    Segtree<T> seg;
-    Op op;
-    bool values_on_edges;
-    vll idx, subtree, parent, head;
-    ll timer = 0;
 };
 ```
 
@@ -2260,6 +2283,11 @@ using oset = tree<T, S, less<>, rb_tree_tag, tree_order_statistics_node_update>;
 ```c++
 template <typename T, typename Op = function<T(T, T)>>
 struct Segtree {
+    ll n;
+    T DEF;
+    vector<T> seg, lzy;
+    Op op;
+    
     /**
     *  @param  sz   Size.
     *  @param  def  Default value.
@@ -2320,11 +2348,6 @@ private:
         }
         lzy[no] = 0;
     }
-
-    ll n;
-    T DEF;
-    vector<T> seg, lzy;
-    Op op;
 };
 ```
 
@@ -2480,6 +2503,9 @@ struct Treap {
 
 ```c++
 struct WaveletTree {
+    ll n;
+    vvll wav;
+    
     /**
     *  @param  xs  Compressed vector.
     *  @param  sz  Distinct elements amount in xs (mp.size()).
@@ -2539,9 +2565,6 @@ struct WaveletTree {
         }
         return j - i + lx;
     }
-
-    ll n;
-    vvll wav;
 };
 ```
 
@@ -2554,6 +2577,9 @@ enum Position { IN, ON, OUT };
 
 template <typename T>
 struct Circle {
+    pair<T, T> C;
+    T r;
+    
     /**
     *  @param  P  Origin point.
     *  @param  r  Radius length.
@@ -2691,9 +2717,6 @@ struct Circle {
         }
         return c;
     }
-
-    pair<T, T> C;
-    T r;
 };
 ```
 
@@ -2702,6 +2725,9 @@ struct Circle {
 ```c++
 template <typename T>
 struct Polygon {
+    vector<pair<T, T>> vs;
+    ll n;
+    
     /**
     *  @param  PS  Clock-wise points.
     */
@@ -2812,9 +2838,6 @@ private:
         T u = abs(a * P.x + b * P.y + c), v = abs(a * Q.x + b * Q.y + c);
         return { (P.x * v + Q.x * u) / (u + v), (P.y * v + Q.y * u) / (u + v) };
     }
-
-    vector<pair<T, T>> vs;
-    ll n;
 };
 ```
 
@@ -2826,6 +2849,8 @@ private:
 */
 template <typename T>
 struct Line {
+    T a, b, c;
+    
     /**
     *  @param  P, Q  Points.
     *  Time complexity: O(1)
@@ -2904,8 +2929,6 @@ struct Line {
     bool operator==(const Line& r) {
         return equals(a, r.a) && equals(b, r.b) && equals(c, r.c);
     }
-
-    T a, b, c;
 };
 ```
 
@@ -2914,6 +2937,8 @@ struct Line {
 ```c++
 template <typename T>
 struct Segment {
+    pair<T, T> A, B;
+    
     /**
     *  @param  P, Q  Points.
     */
@@ -2964,8 +2989,6 @@ struct Segment {
         if (distA <= distB) return A;
         return B;
     }
-
-    pair<T, T> A, B;
 };
 ```
 
@@ -2977,6 +3000,9 @@ enum Angles { RIGHT, ACUTE, OBTUSE };
 
 template <typename T>
 struct Triangle {
+    pair<T, T> A, B, C;
+    T a, b, c;
+    
     /**
     *  @param  P, Q, R  Points.
     */
@@ -3073,9 +3099,6 @@ struct Triangle {
         double y = (-v.c * u.a + u.c * v.a) / det;
         return {x, y};
     }
-
-    pair<T, T> A, B, C;
-    T a, b, c;
 };
 ```
 
@@ -3133,7 +3156,12 @@ ll sub(ll a, ll b, ll m) { return (a -= b.x) >= m ? a + m : a; };
 H operator*(H a, H b) { return { a.x * b.x % M1, a.y * b.y % M2 }; }
 H operator+(H a, H b) { return { sum(a.x, b.x, M1), sum(a.y, b.y, M2) }; }
 H operator-(H a, H b) { return { sub(a.x, b.x, M1), sub(a.y, b.y, M2) }; }
-    struct Hash {
+struct Hash {
+    ll n;
+    // Segtree<H> ps;
+    vector<H> ps, pw;
+    H p = { 31, 29 };
+    
     /**
      *  @param  s  String.
      *  p^n + p^n-1 + ... + p^0.
@@ -3176,11 +3204,6 @@ H operator-(H a, H b) { return { sub(a.x, b.x, M1), sub(a.y, b.y, M2) }; }
         return ps[j + 1] - ps[i] * pw[j + 1 - i];
         // return ps.setQuery(i, j) * pw[i];
     }
-
-    ll n;
-    // Segtree<H> ps;
-    vector<H> ps, pw;
-    H p = { 31, 29 };
 };
 ```
 
@@ -3188,6 +3211,10 @@ H operator-(H a, H b) { return { sub(a.x, b.x, M1), sub(a.y, b.y, M2) }; }
 
 ```c++
 struct SuffixAutomaton {
+    vvll next;
+    vll len, fpos, lnk, cnt, rcnt, dcnt;
+    ll sz = 0, last = 0, n = 0, alpha = 26;
+    
     /**
     *  @param  s  String.
     *  Time complexity: O(Nlog(N))
@@ -3356,10 +3383,6 @@ private:
             rcnt[u] += rcnt[v];
         }
     }
-
-    vvll next;
-    vll len, fpos, lnk, cnt, rcnt, dcnt;
-    ll sz = 0, last = 0, n = 0, alpha = 26;
 };
 ```
 
@@ -3368,6 +3391,13 @@ private:
 ```c++
 // empty head, tree is made by the prefixs of each string in it.
 struct Trie {
+    static constexpr ll MAXN = 5e5;
+    ll n;
+    vvll to;  // 0 is head
+    // mark: quantity of strings that ends in this node.
+    // qnt: quantity of strings that pass through this node.
+    vll mark, qnt;
+    
     Trie() : n(0), to(MAXN + 1, vll(26)), mark(MAXN + 1), qnt(MAXN + 1) {}
     
     /**
@@ -3408,13 +3438,6 @@ struct Trie {
             }
         }
     }
-    
-    static constexpr ll MAXN = 5e5;
-    ll n;
-    vvll to;  // 0 is head
-    // mark: quantity of strings that ends in this node.
-    // qnt: quantity of strings that pass through this node.
-    vll mark, qnt;
 };
 ```
 
@@ -3436,11 +3459,60 @@ struct Compressed {
 };
 ```
 
+### Mex
+
+```c++
+struct Mex {
+    vll hist;
+    set<ll> missing;
+    Mex(ll n) : hist(n) { rep(i, 0, n + 1) missing.emplace(i); }
+    ll mex() { return *missing.begin(); }
+    void add(ll x) { if (x < hist.size() && ++hist[x] == 1) missing.erase(x); }
+    void remove(ll x) { if (x < hist.size() && --hist[x] == 0) missing.emplace(x); }
+};
+```
+
+### Fila agregada
+
+```c++
+template <typename T, typename Op = function<T(T, T)>>
+struct AggQueue {
+    stack<pair<T, T>> in, out;
+    Op f;
+    
+    AggQueue(Op op) : f(op) {}
+    
+    T query() {
+        if (in.empty()) return out.top().y;
+        if (out.empty()) return in.top().y;
+        return f(in.top().y, out.top().y);
+    }
+    
+    void insert(T x, bool is_user_insertion = true) {
+        auto& st = is_user_insertion ? in : out;
+        T cur = st.empty() ? x : f(st.top().y, x);
+        st.emplace(x, cur);
+    }
+    
+    void pop() {
+        if (out.empty())
+            while (!in.empty()) {
+                insert(in.top().x, false);
+                in.pop();
+            }
+        out.pop();
+    }
+};
+```
+
 ### RMQ
 
 ```c++
 template <typename T>
 struct RMQ {
+    ll n, LOG = 25;
+    vector<vector<T>> st;
+    
     /**
     *  @param  xs  Target vector.
     *  Time complexity: O(Nlog(N))
@@ -3462,9 +3534,6 @@ struct RMQ {
         ll lg = (ll)log2(r - l + 1);
         return min(st[lg][l], st[lg][r - (1 << lg) + 1]);
     }
-
-    ll n, LOG = 25;
-    vector<vector<T>> st;
 };
 ```
 
@@ -3476,6 +3545,9 @@ struct RMQ {
 */
 template <typename T>
 struct Psum2D {
+    ll n, m;
+    vector<vector<T>> psum;
+    
     /**
      *  @param  xs  Matrix.
      *  Time complexity: O(N^2)
@@ -3497,9 +3569,6 @@ struct Psum2D {
         ++ly, ++lx, ++hy, ++hx;
         return psum[hy][hx] - psum[hy][lx - 1] - psum[ly - 1][hx] + psum[ly - 1][lx - 1];
     }
-
-    ll n, m;
-    vector<vector<T>> psum;
 };
 ```
 
@@ -3511,6 +3580,9 @@ struct Psum2D {
 */
 template <typename T>
 struct Psum3D {
+    ll n, m, o;
+    vector<vector<vector<T>>> psum;
+    
     /**
      *  @param  xs  3D Matrix.
      *  Time complexity: O(N^3)
@@ -3545,9 +3617,6 @@ struct Psum3D {
         res -= psum[lx - 1][ly - 1][lz - 1];
         return res;
     }
-
-    ll n, m, o;
-    vector<vector<vector<T>>> psum;
 };
 ```
 
@@ -3593,7 +3662,7 @@ ll lsb(ll x) { return __builtin_ffsll(x); }
 ll ceilDiv(ll a, ll b) { assert(b != 0); return a / b + ((a ^ b) > 0 && a % b != 0); }
 ```
 
-### Conversão de índices
+### Conversão de índices (2D <-> 1D)
 
 ```c++
 #define K(i, j) ((i) * w + (j))
