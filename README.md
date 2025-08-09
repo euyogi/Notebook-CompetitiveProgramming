@@ -52,8 +52,6 @@ css: |-
     * Pontes e articulações
   * Outros
     * Busca ternária
-    * Counting sort
-    * Histograma
     * Intervalos com soma S
     * Kadane
     * Listar combinações
@@ -63,7 +61,6 @@ css: |-
     * Pares com gcd x
     * Próximo maior/menor elemento
     * Soma de todos os intervalos
-    * Radix sort
   * Matemática
     * Coeficiente binomial
     * Conversão de base
@@ -125,9 +122,13 @@ css: |-
   * Bits
   * Ceil division
   * Conversão de índices
+  * Comprimir par
+  * Counting sort
   * Fatos
+  * Histograma
   * Igualdade flutuante
   * Overflow check
+  * Radix sort
 
 ### Template
 
@@ -1020,53 +1021,6 @@ double ternary_search(double lo, double hi, function<double(double)> f) {
 }
 ```
 
-### Counting sort
-
-```c++
-/**
- *  @brief         Sorts a vector with integers up to a million.
- *  @param  xs     Target vector.
- *  @param  alpha  Size of alphabet (Max integer or character in xs).
- *  Time complexity: O(N)
-*/
-template <typename T>
-void csort(T& xs, ll alpha) {
-    vll hist(alpha + 1);
-    for (auto x : xs) ++hist[x];
-    ll j = 0;
-    rep(i, 0, alpha + 1) while (hist[i]--)
-        xs[j++] = i;
-}
-```
-
-### Histograma
-
-```c++
-/**
- *  @param  xs  Target vector.
- *  @return     Histogram of elements in xs.
- *  Keeps only the frequencies, elements can be retrivied
- *  by sorting xs and keeping only uniques.
- *  If xs is a 64 bit integer vector use radix sort for O(N) complexity.
- *  Time complexity: O(Nlog(N))
-*/
-template <typename T>
-vll histogram(vector<T>& xs) {
-    sort(all(xs));
-    vll hist;
-    ll n = xs.size(), qnt = 1;
-    rep(i, 1, n) {
-        if (xs[i] != xs[i - 1]) {
-            hist.eb(qnt);
-            qnt = 0;
-        }
-        ++qnt;
-    }
-    hist.eb(qnt);
-    return hist;
-}
-```
-
 ### Intervalos com soma S
 
 ```c++
@@ -1295,33 +1249,6 @@ T sum_of_all_intervals(const vector<T>& xs) {
         sum += xs[i] * opens;
     }
     return sum;
-}
-```
-
-### Radix sort
-
-```c++
-ll key(ll x, ll p) { return (x >> (p * 16)) & 0xFFFF; }
-
-/**
- *  @brief         Sorts a vector with 64 bit integers.
- *  @param  xs     Target vector.
- *  Time complexity: O(N)
-*/
-void rsort(vll& xs){
-    ll n = xs.size();
-    if (n <= 1) return;
-    const ll ALPHA = 1 << 16, MASK = 1LL << 63;
-    vll tmp(n), hist(ALPHA);
-    rep(i, 0, n) xs[i] ^= MASK;
-    rep(p, 0, 4) {
-        fill(all(hist), 0);
-        rep(i, 0, n) ++hist[key(xs[i], p)];
-        rep(i, 1, ALPHA) hist[i] += hist[i - 1];
-        per(i, n - 1, 0) tmp[--hist[key(xs[i], p)]] = xs[i];
-        xs.swap(tmp);
-    }
-    rep(i, 0, n) xs[i] ^= MASK;
 }
 ```
 
@@ -3760,6 +3687,31 @@ ll ceilDiv(ll a, ll b) { assert(b != 0); return a / b + ((a ^ b) > 0 && a % b !=
 #define J(k)    ((k) % w)
 ```
 
+### Comprimir par
+
+```c++
+ll pack(pll x) { return (x.first << 32) | (uint32_t)x.second; }
+```
+
+### Counting sort
+
+```c++
+/**
+ *  @brief         Sorts a vector with integers up to a million.
+ *  @param  xs     Target vector.
+ *  @param  alpha  Size of alphabet (Max integer or character in xs).
+ *  Time complexity: O(N)
+*/
+template <typename T>
+void csort(T& xs, ll alpha) {
+    vll hist(alpha + 1);
+    for (auto x : xs) ++hist[x];
+    ll j = 0;
+    rep(i, 0, alpha + 1) while (hist[i]--)
+        xs[j++] = i;
+}
+```
+
 ### Fatos
 
 Bitwise
@@ -3891,6 +3843,34 @@ Outros
   `import sys
   sys.set_int_max_str_digits(1000001)`
 
+### Histograma
+
+```c++
+/**
+ *  @param  xs  Target vector.
+ *  @return     Histogram of elements in xs.
+ *  Keeps only the frequencies, elements can be retrivied
+ *  by sorting xs and keeping only uniques.
+ *  If xs is a 64 bit integer vector use radix sort for O(N) complexity.
+ *  Time complexity: O(Nlog(N))
+*/
+template <typename T>
+vll histogram(vector<T>& xs) {
+    sort(all(xs));
+    vll hist;
+    ll n = xs.size(), qnt = 1;
+    rep(i, 1, n) {
+        if (xs[i] != xs[i - 1]) {
+            hist.eb(qnt);
+            qnt = 0;
+        }
+        ++qnt;
+    }
+    hist.eb(qnt);
+    return hist;
+}
+```
+
 ### Igualdade flutuante
 
 ```c++
@@ -3915,5 +3895,32 @@ ll sum(ll a, ll b) {
     if (abs(a) >= LLONG_MAX - abs(b))
         return LLONG_MAX;  // overflow
     return a + b;
+}
+```
+
+### Radix sort
+
+```c++
+ll key(ll x, ll p) { return (x >> (p * 16)) & 0xFFFF; }
+
+/**
+ *  @brief         Sorts a vector with 64 bit integers.
+ *  @param  xs     Target vector.
+ *  Time complexity: O(N)
+*/
+void rsort(vll& xs){
+    ll n = xs.size();
+    if (n <= 1) return;
+    const ll ALPHA = 1 << 16, MASK = 1LL << 63;
+    vll tmp(n), hist(ALPHA);
+    rep(i, 0, n) xs[i] ^= MASK;
+    rep(p, 0, 4) {
+        fill(all(hist), 0);
+        rep(i, 0, n) ++hist[key(xs[i], p)];
+        rep(i, 1, ALPHA) hist[i] += hist[i - 1];
+        per(i, n - 1, 0) tmp[--hist[key(xs[i], p)]] = xs[i];
+        xs.swap(tmp);
+    }
+    rep(i, 0, n) xs[i] ^= MASK;
 }
 ```
