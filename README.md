@@ -35,6 +35,7 @@ css: |-
     * Envoltório convexo
     * Mediatriz
     * Orientação de ponto
+    * Slope
     * Rotação de ponto
   * Grafos
     * Bellman-Ford
@@ -51,6 +52,7 @@ css: |-
     * Pontes e articulações
   * Outros
     * Busca ternária
+    * Histograma
     * Intervalos com soma S
     * Kadane
     * Listar combinações
@@ -333,6 +335,17 @@ bool ccw(pair<T, T> P, pair<T, T> Q, const pair<T, T>& O) {
     if (qqx != rqx || qqy != rqy) return qo[qqx][qqy] > qo[rqx][rqy];
     return equals(D(O, P, Q), 0) ?
            (P.x * P.x + P.y * P.y) < (Q.x * Q.x + Q.y * Q.y) : D(O, P, Q) > 0;
+}
+```
+
+### Slope
+
+```c++
+pll slope(const pll& P, const pll& Q) {
+    ll dy = P.y - Q.y, dx = P.x - Q.x;
+    if (dy < 0 || (dy == 0 && dx < 0)) dy *= -1, dx *= -1;
+    ll g = abs(gcd(dy, dx));
+    return { dy / g, dx / g };
 }
 ```
 
@@ -1004,6 +1017,26 @@ double ternary_search(double lo, double hi, function<double(double)> f) {
 }
 ```
 
+### Histograma
+
+```c++
+template <typename T>
+vll histogram(vector<T>& xs) {
+    sort(all(xs));
+    vll hist;
+    ll n = xs.size(), qnt = 1;
+    rep(i, 1, n) {
+        if (xs[i] != xs[i - 1]) {
+            hist.eb(qnt);
+            qnt = 0;
+        }
+        ++qnt;
+    }
+    hist.eb(qnt);
+    return hist;
+}
+```
+
 ### Intervalos com soma S
 
 ```c++
@@ -1052,7 +1085,7 @@ tuple<T, ll, ll> kadane(const vector<T>& xs, bool mx = true) {
     ll l = -1, r = -1, j = 0;
     rep(i, 0, xs.size()) {
         csum += xs[i] * (mx ? 1 : -1);
-        if (csum < 0) csum = 0, j = i + 1;  //            > if wants biggest interval
+        if (csum < 0) csum = 0, j = i + 1;  //           > if wants biggest interval
         else if (csum > res || (csum == res && i - j + 1 < r - l + 1))
             res = csum, l = j, r = i;
     }
@@ -1158,7 +1191,7 @@ vll lis(const vll& xs, bool values) {
 */
 ll mex(const vll& xs) {
     vector<bool> f(xs.size() + 1, 0);
-    for (ll x : xs) if (x <= a.size()) f[x] = 1;
+    for (ll x : xs) if (x <= xs.size()) f[x] = 1;
     ll res = 0;
     while (f[res]) ++res;
     return res;
