@@ -52,6 +52,7 @@ css: |-
     * Pontes e articulações
   * Outros
     * Busca ternária
+    * Counting sort
     * Histograma
     * Intervalos com soma S
     * Kadane
@@ -62,6 +63,7 @@ css: |-
     * Pares com gcd x
     * Próximo maior/menor elemento
     * Soma de todos os intervalos
+    * Radix sort
   * Matemática
     * Coeficiente binomial
     * Conversão de base
@@ -177,6 +179,7 @@ void solve() {
 
 ```c++
 // BEGIN EXTRAS -----------------------------------------|
+#define ull unsigned ll
 #define vvvll vector<vvll>
 #define vvpll vector<vpll>
 #define tll   tuple<ll, ll, ll>
@@ -1017,9 +1020,36 @@ double ternary_search(double lo, double hi, function<double(double)> f) {
 }
 ```
 
+### Counting sort
+
+```c++
+/**
+ *  @brief         Sorts a vector with integers up to a million.
+ *  @param  xs     Target vector.
+ *  @param  alpha  Size of alphabet (Max integer or character in xs).
+ *  Time complexity: O(N)
+*/
+template <typename T>
+void csort(T& xs, ll alpha) {
+    vll hist(alpha + 1);
+    for (auto x : xs) ++hist[x];
+    ll j = 0;
+    rep(i, 0, alpha + 1) while (hist[i]--)
+        xs[j++] = i;
+}
+```
+
 ### Histograma
 
 ```c++
+/**
+ *  @param  xs  Target vector.
+ *  @return     Histogram of elements in xs.
+ *  Keeps only the frequencies, elements can be retrivied
+ *  by sorting xs and keeping only uniques.
+ *  If xs is a 64 bit integer vector use radix sort for O(N) complexity.
+ *  Time complexity: O(Nlog(N))
+*/
 template <typename T>
 vll histogram(vector<T>& xs) {
     sort(all(xs));
@@ -1041,7 +1071,7 @@ vll histogram(vector<T>& xs) {
 
 ```c++
 /**
- *  @param  xs   Vector.
+ *  @param  xs   Target vector.
  *  @param  sum  Desired sum.
  *  @return      Amount of contiguous intervals with sum S.
  *  Can change to count odd/even sum intervals (hist of even and odd).
@@ -1073,7 +1103,7 @@ ll count_intervals(const vector<T>& xs, T sum) {
 
 ```c++
 /**
- *  @param  xs  Vector.
+ *  @param  xs  Target vector.
  *  @param  mx  Maximum Flag (true if want max).
  *  @return     Max/min contiguous sum and smallest interval inclusive.
  *  We consider valid an empty sum.
@@ -1156,7 +1186,7 @@ T lcs(const T& xs, const T& ys) {
 
 ```c++
 /**
- *  @param  xs      Vector.
+ *  @param  xs      Target Vector.
  *  @param  values  True if want values, indexes otherwise.
  *  @return         Longest increasing subsequence as values or indexes.
  *  https://judge.yosupo.jp/problem/longest_increasing_subsequence
@@ -1226,7 +1256,7 @@ vll gcd_pairs(const vll& xs) {
 
 ```c++
 /**
- *  @param  xs  Vector.
+ *  @param  xs  Target vector.
  *  @return     Vector of indexes of closest smaller.
  *  Example: c[i] = j where j < i and xs[j] < xs[i] and it's the closest.
  *  If there isn't then c[i] = -1.
@@ -1265,6 +1295,33 @@ T sum_of_all_intervals(const vector<T>& xs) {
         sum += xs[i] * opens;
     }
     return sum;
+}
+```
+
+### Radix sort
+
+```c++
+ll key(ll x, ll p) { return (x >> (p * 16)) & 0xFFFF; }
+
+/**
+ *  @brief         Sorts a vector with 64 bit integers.
+ *  @param  xs     Target vector.
+ *  Time complexity: O(N)
+*/
+void rsort(vll& xs){
+    ll n = xs.size();
+    if (n <= 1) return;
+    const ll ALPHA = 1 << 16, MASK = 1LL << 63;
+    vll tmp(n), hist(ALPHA);
+    rep(i, 0, n) xs[i] ^= MASK;
+    rep(p, 0, 4) {
+        fill(all(hist), 0);
+        rep(i, 0, n) ++hist[key(xs[i], p)];
+        rep(i, 1, ALPHA) hist[i] += hist[i - 1];
+        per(i, n - 1, 0) tmp[--hist[key(xs[i], p)]] = xs[i];
+        xs.swap(tmp);
+    }
+    rep(i, 0, n) xs[i] ^= MASK;
 }
 ```
 
@@ -3283,7 +3340,7 @@ struct SuffixAutomaton {
     }
 
     /**
-    *  @returns  Amount of distinct substrings.
+    *  @return  Amount of distinct substrings.
     *  Time complexity: O(N)
     */
     ll dsubs() {
@@ -3294,7 +3351,7 @@ struct SuffixAutomaton {
     }
 
     /**
-    *  @returns  Vector with amount of distinct substrings of each size.
+    *  @return  Vector with amount of distinct substrings of each size.
     *  Time complexity: O(N)
     */
     vll dsubs_by_size() {
@@ -3727,6 +3784,9 @@ Geometria
 > Manhattam para Chebyshev: Feita a transformação `(x, y) -> (x + y, x - y)`, temos uma
   equivalência entre as duas distâncias, podemos agora tratar `x` e `y` separadamente,
   fazer bounding boxes, entre outros...
+  
+> Para contar paralelogramos em um conjunto de pontos podemos marcar o centro de cada segmento,
+  coincidências entre dois centros formam um paralelogramo.
 
 Matemática
 
