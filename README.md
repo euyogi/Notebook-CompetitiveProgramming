@@ -115,8 +115,9 @@ script:
     * Suffix Automaton
     * Trie
   * Outros
-    * Fila agregada
     * Compressão
+    * Delta encoding
+    * Fila agregada
     * Mex
     * RMQ
     * Soma de prefixo 2D
@@ -3521,16 +3522,32 @@ struct Compressed {
 };
 ```
 
-### Mex
+### Delta encoding
 
 ```c++
-struct Mex {
-    vll hist;
-    set<ll> missing;
-    Mex(ll n) : hist(n) { rep(i, 0, n + 1) missing.emplace(i); }
-    ll mex() { return *missing.begin(); }
-    void add(ll x) { if (x < hist.size() && ++hist[x] == 1) missing.erase(x); }
-    void remove(ll x) { if (x < hist.size() && --hist[x] == 0) missing.emplace(x); }
+struct Delta {
+    vll xs;
+    
+    Delta(ll n) : xs(n + 1) {}
+    
+    /**
+    *  @brief        Adds x to each element in interval [i, j].
+    *  @param  i, j  Interval.
+    *  @param  x     Value to add.
+    *  Time complexity: O(1)
+    */
+    void upd(ll l, ll r, ll x) { xs[l] += x, xs[r + 1] -= x; }
+    
+    /**
+    *  @return  Vector after operations.
+    *  Time complexity: O(N)
+    */
+    vll get() {
+        vll res(xs.size() - 1);
+        res[0] = xs[0];
+        rep(i, 1, res.size()) res[i] = res[i - 1] + xs[i];
+        return res;
+    }
 };
 ```
 
@@ -3540,22 +3557,39 @@ struct Mex {
 template <typename T, typename Op = function<T(T, T)>>
 struct AggQueue {
     stack<pair<T, T>> in, out;
-    Op f;
+    Op op;
     
-    AggQueue(Op op) : f(op) {}
+    /**
+    *  @param  f  Function (without inverse, like max(), min(), or, and, gcd...)
+    *  Time complexity: ~O(1)
+    */
+    AggQueue(Op f) : op(f) {}
     
+    /**
+    *  @return  f of all elements in queue.
+    *  Time complexity: ~O(1)
+    */
     T query() {
         if (in.empty()) return out.top().y;
         if (out.empty()) return in.top().y;
-        return f(in.top().y, out.top().y);
+        return op(in.top().y, out.top().y);
     }
     
+    /**
+    *  @brief     Inserts x in queue.
+    *  @param  x  Value to insert.
+    *  Time complexity: ~O(1)
+    */
     void insert(T x, bool is_user_insertion = true) {
         auto& st = is_user_insertion ? in : out;
-        T cur = st.empty() ? x : f(st.top().y, x);
+        T cur = st.empty() ? x : op(st.top().y, x);
         st.emplace(x, cur);
     }
     
+    /**
+    *  @brief  Deletes first element in queue.
+    *  Time complexity: ~O(1)
+    */
     void pop() {
         if (out.empty())
             while (!in.empty()) {
@@ -3564,6 +3598,39 @@ struct AggQueue {
             }
         out.pop();
     }
+};
+```
+
+### Mex
+
+```c++
+struct Mex {
+    vll hist;
+    set<ll> missing;
+    
+    /**
+    *  @param  n  Size (max element).
+    *  Time complexity: O(Nlog(N))
+    */
+    Mex(ll n) : hist(n) { rep(i, 0, n + 1) missing.emplace(i); }
+    
+    /**
+    *  @returns  Mex of current elements.
+    *  Time complexity: O(1)
+    */
+    ll mex() { return *missing.begin(); }
+    
+    /**
+    *  @param  x  Value to insert.
+    *  Time complexity: O(log(N))
+    */
+    void insert(ll x) { if (x < hist.size() && ++hist[x] == 1) missing.erase(x); }
+    
+    /**
+    *  @param  x  Value to erase.
+    *  Time complexity: O(log(N))
+    */
+    void erase(ll x) { if (x < hist.size() && --hist[x] == 0) missing.emplace(x); }
 };
 ```
 
