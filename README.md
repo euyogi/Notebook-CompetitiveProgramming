@@ -14,7 +14,7 @@ script:
   - path: mathjax-config.js
   - url: https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js
 ---
- 
+  
 <figure style="break-after: always; display: flex; flex-direction: column; justify-content: center; height: 100vh; text-align: center;">
   <img src="title.png">
   <figcaption style="font-size: 14px;">As complexidades temporais são estimadas e simplificadas!</figcaption>
