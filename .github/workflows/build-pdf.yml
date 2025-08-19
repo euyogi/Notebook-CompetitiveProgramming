@@ -1,43 +1,42 @@
 name: Build README PDF
 
-# Controls when the action will run
 on:
   push:
     branches:
-      - main  # Or master, or whichever is your primary branch
+      - main
     paths:
-      - 'README.md' # Only run when README.md changes
+      - 'README.md'
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    # Grant permissions for the workflow to make commits
     permissions:
       contents: write
 
     steps:
-      # 1. Checks out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Sets up Node.js environment
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Specify a version of Node.js
+          node-version: '20'
 
-      # 3. Runs the command to generate the PDF
-      - name: Generate PDF from Markdown
-        run: npx md-to-pdf README.md --output notebook.pdf
+      # Step 1: Generate the PDF using the default, reliable command.
+      # This will create a file named README.pdf.
+      - name: Generate PDF with default name
+        run: npx md-to-pdf README.md
 
-      # 4. Commits the generated PDF file back to the repository
+      # Step 2: Rename the generated file to your desired name.
+      - name: Rename PDF to notebook.pdf
+        run: mv README.pdf notebook.pdf
+
+      # Step 3: Commit the final, correctly named file.
       - name: Commit and push PDF
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "docs: auto-generate PDF from README.md"
-          file_pattern: notebook.pdf
+          file_pattern: notebook.pdf # Commit the renamed file
           commit_user_name: "GitHub Actions"
           commit_user_email: "actions@github.com"
           commit_author: "GitHub Actions <actions@github.com>"
