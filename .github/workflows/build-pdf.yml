@@ -25,7 +25,7 @@ jobs:
       # Step 1: Generate the PDF, passing the --no-sandbox flag.
       # The '--' separates npx options from the script's options.
       - name: Generate PDF with default name
-        run: npx md-to-pdf README.md -- --no-sandbox
+        run: npx md-to-pdf README.md --launch-options '{ "args": ["--no-sandbox"] }'
 
       # Step 2: Rename the generated file to your desired name.
       - name: Rename PDF to notebook.pdf
