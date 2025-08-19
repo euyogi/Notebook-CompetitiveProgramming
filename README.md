@@ -3828,11 +3828,11 @@ void csort(T& xs, ll alpha) {
 
 Bitwise
 
-> $a + b = (a \text{\&} b) + (a | b)$.
+> `a + b = (a & b) + (a | b)`.
 
-> $a + b = a \text{\^} b + 2 * (a \text{\&} b)$.
+> `a + b = a ^ b + 2 * (a & b)`.
 
-> $a \text{\^} b = \text{~}(a \text{\&} b) \text{\&} (a | b)$.
+> `a ^ b = ~(a & b) & (a | b)`.
 
 Geometria
 
