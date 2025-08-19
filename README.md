@@ -10,6 +10,9 @@ css: |-
   h1, h2, h3 { break-after: avoid; }
   pre { break-inside: avoid; }
   h1 + ul { column-count: 2; }
+script:
+  - path: mathjax-config.js
+  - url: https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js
 ---
 
 <figure style="break-after: always; display: flex; flex-direction: column; justify-content: center; height: 100vh; text-align: center;">
@@ -69,6 +72,7 @@ css: |-
     * Equações diofantinas
     * Exponenciação rápida
     * Fatoração
+    * Gauss
     * Permutação com repetição
     * Teorema chinês do resto
     * Teste de primalidade
@@ -275,7 +279,7 @@ template <typename T>
 vector<pair<T, T>> make_hull(const vector<pair<T, T>>& PS) {
     vector<pair<T, T>> hull;
     for (auto& P : PS) {
-        ll sz = hull.size();  //           if want collinear < 0
+        ll sz = hull.size();  //          if want collinear < 0
         while (sz >= 2 && D(hull[sz - 2], hull[sz - 1], P) <= 0) {
             hull.pop_back();
             sz = hull.size();
@@ -345,6 +349,11 @@ bool ccw(pair<T, T> P, pair<T, T> Q, const pair<T, T>& O) {
 ### Slope
 
 ```c++
+/**
+ *  @param  P, Q  Points.
+ *  @return       The irreductible fraction dy/dx, dy always positive.
+ *  Time complexity: O(log(N))
+*/
 pll slope(const pll& P, const pll& Q) {
     ll dy = P.y - Q.y, dx = P.x - Q.x;
     if (dy < 0 || (dy == 0 && dx < 0)) dy *= -1, dx *= -1;
@@ -358,7 +367,7 @@ pll slope(const pll& P, const pll& Q) {
 ```c++
 /**
  *  @param  P, Q  Points.
- *  @return    Perpendicular bisector to segment PQ.
+ *  @return       Perpendicular bisector to segment PQ.
  *  Time complexity: O(1)
 */
 template <typename T>
@@ -401,8 +410,7 @@ vvll parent;
 void populate(const vll& ps) {
     ll n = ps.size();
     parent = vvll(n, vll(LOG));
-    rep(i, 0, n)
-        parent[i][0] = ps[i];
+    rep(i, 0, n) parent[i][0] = ps[i];
     rep(i, 1, LOG) rep(j, 0, n)
         parent[j][i] = parent[ parent[j][i - 1] ][i - 1];
 }
@@ -700,7 +708,7 @@ vll cycle(const vvpll& g, bool edges, bool d) {
  *  If want to calculate amount of paths or size of path, notice that when the
  *  distance for a vertex is calculated it probably won't be the best, remember to reset
  *  calculations if a better is found.
- *  It doesn't work with negative weights, but if you can find a potential Function
+ *  It doesn't work with negative weights, but if you can find a potential function
  *  we can turn all weights to positive.
  *  A potential function is such that:
  *  new  weight is w' = w + p(u) - p(v) >= 0.
@@ -876,7 +884,7 @@ vtll kruskal(vtll& edges, ll n) {
  *  It starts from a vertex with indegree 0, that is no one points to it.
  *  Time complexity: O(EVlog(V))
 */
-vll topo_sort(const vvll& g) {
+vll toposort(const vvll& g) {
     ll n = g.size();
     vll degree(n), res;
     rep(u, 1, n) for (ll v : g[u])
@@ -1512,6 +1520,45 @@ vll factors(ll x) {
 }
 ```
 
+### Gauss
+
+```c++
+// const double EPS = 1e-9;  // double
+const ll EPS = 0;  // mod
+#define abs(x) (x).v  // mod
+
+/**
+ *  @param  ls  Linear system matrix.
+ *  @return     Vector with value of each variable.
+ *  Time complexity: O(N^3)
+*/
+template <typename T>
+vector<T> gauss(vector<vector<T>>& ls) {
+    ll n = ls.size(), m = ls[0].size() - 1;
+    vll where(m, -1);
+    for (ll col = 0, row = 0; col < m && row < n; ++col) {
+        ll sel = row;
+        rep(i, row, n) if (abs(ls[i][col]) > abs(ls[sel][col])) sel = i;
+        if (abs(ls[sel][col]) <= EPS) continue;
+        rep(i, col, m + 1) swap(ls[sel][i], ls[row][i]);
+        where[col] = row;
+        rep(i, 0, n) if (i != row) {
+            T c = ls[i][col] / ls[row][col];
+            rep(j, col, m + 1) ls[i][j] -= ls[row][j] * c;
+        }
+        ++row;
+    }
+    vector<T> ans(m);
+    rep(i, 0, m) if (where[i] != -1) ans[i] = ls[where[i]][m] / ls[where[i]][i];
+    rep(i, 0, n) {
+        T sum = 0;
+        rep(j, 0, m) sum += ans[j] * ls[i][j];
+        if (abs(sum - ls[i][m]) > EPS) return {};
+    }
+    return ans;
+}
+```
+
 ### Permutação com repetição
 
 ```c++
@@ -1644,11 +1691,10 @@ vll totient(ll n) {
 */
 ll totient(ll x) {
     vll fs = factors(x);  // Pollard rho
-    ll res = 1;
-    map<ll, ll> ys;
-    for (ll f : fs) ++ys[f];
-    for (auto [f, p] : ys)
-        res *= pot(f, p - 1) * (f - 1);
+    sort(all(fs));
+    fs.erase(unique(all(fs)), fs.end());
+    ll res = x;
+    for (auto f : fs) res = (res / f) * (f - 1);
     return res;
 }
 ```
@@ -1974,9 +2020,8 @@ vll occur(const string& s, const string& t) {
 */
 vll occur(const string& s, const string& t) {
     vll zs = z(t + ';' + s), is;
-    rep(i, 0, zs.size())
-        if (zs[i] == t.size())
-            is.eb(i - t.size() - 1);
+    rep(i, 0, zs.size()) if (zs[i] == t.size())
+        is.eb(i - t.size() - 1);
     return is;
 }
 ```
@@ -2380,15 +2425,15 @@ private:
 *  Returns -1 if no element is greater.
 *  Time complexity: O(log(N))
 */
-ll firstGreater(ll i, ll j, T x, ll l = 0, ll r = -1, ll no = 1) {
+ll first_greater(ll i, ll j, T x, ll l = 0, ll r = -1, ll no = 1) {
     assert(0 <= i && i <= j && j < n);
     if (r == -1) r = n - 1;
     if (j < l || i > r || seg[no] <= x) return -1;
     if (l == r) return l;
     ll m = (l + r) / 2;
-    ll left = firstGreater(i, j, x, l, m, 2 * no);
+    ll left = first_greater(i, j, x, l, m, 2 * no);
     if (left != -1) return left;
-    return firstGreater(i, j, x, m + 1, r, 2 * no + 1);
+    return first_greater(i, j, x, m + 1, r, 2 * no + 1);
 }
 ```
 
@@ -3697,7 +3742,7 @@ ll pack(pll x) { return (x.first << 32) | (uint32_t)x.second; }
 
 ```c++
 /**
- *  @brief         Sorts a vector with integers up to a million.
+ *  @brief         Sorts a vector with integers up to a million or string.
  *  @param  xs     Target vector.
  *  @param  alpha  Size of alphabet (Max integer or character in xs).
  *  Time complexity: O(N)
@@ -3716,25 +3761,25 @@ void csort(T& xs, ll alpha) {
 
 Bitwise
 
-> `a + b = (a & b) + (a | b)`.
+> $a + b = (a \text{&} b) + (a | b)$.
 
-> `a + b = a ^ b + 2 * (a & b)`.
+> $a + b = a \text{^} b + 2 * (a \text{&} b)$.
 
-> `a ^ b = ~(a & b) & (a ∣ b)`.
+> $a \text{^} b = \text{~}(a \text{&} b) \text{&} (a | b)$.
 
 Geometria
 
-> Quantidade de pontos inteiros num segmento: `gcd(abs(Px - Qx), abs(Py - Qy)) + 1`.
-  `P, Q` são os pontos extremos do segmento.
+> Quantidade de pontos inteiros num segmento: $gcd(abs(P.x - Q.x), abs(P.y - Q.y)) + 1$.
+  $P, Q$ são os pontos extremos do segmento.
 
-> Teorema de Pick: Seja `A` a área da treliça, `I` a quantidade de pontos interiores com
-  coordenadas inteiras e `B` os pontos da borda com coordenadas inteiras.
-  Então, `A = I + B / 2 - 1` e `I = (2A + 2 - B) / 2`.
+> Teorema de Pick: Seja $A$ a área da treliça, `I` a quantidade de pontos interiores com
+  coordenadas inteiras e $B$ os pontos da borda com coordenadas inteiras.
+  Então, $A = I + \frac{B}{2} - 1$ e $I = \frac{2A + 2 - B}{2}$.
 
-> Distância de Chebyshev: `dist(P, Q) = max(Px - Qx, Py - Qy)`. `P, Q` são dois pontos.
+> Distância de Chebyshev: $dist(P, Q) = max(P.x - Q.x, P.y - Q.y)$. $P, Q$ são dois pontos.
 
-> Manhattam para Chebyshev: Feita a transformação `(x, y) -> (x + y, x - y)`, temos uma
-  equivalência entre as duas distâncias, podemos agora tratar `x` e `y` separadamente,
+> Manhattam para Chebyshev: Feita a transformação $(x, y) \to (x + y, x - y)$, temos uma
+  equivalência entre as duas distâncias, podemos agora tratar $x$ e $y$ separadamente,
   fazer bounding boxes, entre outros...
   
 > Para contar paralelogramos em um conjunto de pontos podemos marcar o centro de cada segmento,
@@ -3742,94 +3787,100 @@ Geometria
 
 Matemática
 
-> Quantidade de divisores de um número: produtório de `(p + 1)`. `p` é o expoente do
-  `i`-ésimo fator primo.
+> Quantidade de divisores de um número: $\prod (a_i + 1)$. $a_i$ é o expoente do
+  $i$-ésimo fator primo.
 
-> Soma dos divisores de um número: produtório de `(f^(p + 1) - 1)/(f - 1)`. `p` é o
-  expoente do `i`-ésimo fator primo `f`.
+> Soma dos divisores de um número: $\prod \frac{p_i^{a_i + 1} - 1}{p_i - 1}$. $a_i$ é o
+  expoente do $i$-ésimo fator primo $p_i$.
 
-> Produto dos divisores de um número: `x^(qd(x)/2)`. `x` é o número, `qd(x)` é a
+> Produto dos divisores de um número $x$: $x^{\frac{qd(x)}{2}}$. $qd(x)$ é a
   quantidade de divisores dele.
 
-> Maior quantidade de divisores de um número: `< 10^3` é `32`, `< 10^6` é `240`,
-  `< 10^18` é `107520`.
+> Maior quantidade de divisores de um número: $< 10^3$ é $32$; $< 10^6$ é $240$; $< 10^9$ é $1344$; 
+  $< 10^{18}$ é $107520$.
 
-> Maior diferença entre dois primos consecutivos: `< 10^18` é `1476`.
+> Maior diferença entre dois primos consecutivos: $< 10^{18}$ é $1476$.
   (Podemos concluir que a partir de um número arbitrário a distância para o coprimo
    mais próximo é bem menor que esse valor).
 
-> Maior quantidade de primos na fatoração de um número: `< 10^3` é `9`, `< 10^6` é `19`.
+> Maior quantidade de primos na fatoração de um número: $< 10^3$ é $9$, $< 10^6$ é $19$.
 
-> Números primos interessantes: `2^31 - 1, 2^31 + 11, 10^16 + 61, 10^18 - 11, 10^18 + 3`.
+> Números primos interessantes: $2^{31} - 1; 2^{31} + 11; 10^{16} + 61; 10^{18} - 11; 10^{18} + 3$.
 
-> Quantidade de coprimos de `x` em `[1, x]`: produtório de `f^(p - 1)(f - 1)`.
-  `p` é o expoente do `i`-ésimo fator primo `f`.
+> $gcd(a, b) = gcd(a, a - b)$, $gcd(a, b, c) = gcd(a, a - b, a - c)$, segue o padrão.
 
-> `gcd(a, b) = gcd(a, a - b)`, `gcd(a, b, c) = gcd(a, a - b, a - c)`, segue o padrão.
-
-> Para calcular o `lcm` de um conjunto de números com módulo, podemos fatorizar cada um,
+> Para calcular o $lcm$ de um conjunto de números com módulo, podemos fatorizar cada um,
   cada primo gerado vai ter uma potência que vai ser a maior, o produto desses primos
-  elevados à essa potência será o `lcm`, se queremos módulo basta fazer nessas operações.
+  elevados à essa potência será o $lcm$, se queremos módulo basta fazer nessas operações.
 
-> Divisibilidade por `3`: soma dos algarismos divisível por `3`.
+> Divisibilidade por $3$: soma dos algarismos divisível por $3$.
 
-> Divisibilidade por `4`: número formado pelos dois últimos algarismos, divisível por `4`.
+> Divisibilidade por $4$: número formado pelos dois últimos algarismos, divisível por $4$.
 
-> Divisibilidade por `6`: se divisível por `2` e `3`.
+> Divisibilidade por $6$: se divisível por $2$ e $3$.
 
-> Divisibilidade por `7`: soma alternada de blocos de três algarismos, divisível por `7`.
+> Divisibilidade por $7$: soma alternada de blocos de três algarismos, divisível por $7$.
 
-> Divisibilidade por `8`: número formado pelos três últimos algarismos, divisível por `8`.
+> Divisibilidade por $8$: número formado pelos três últimos algarismos, divisível por $8$.
 
-> Divisibilidade por `9`: soma dos algarismos divisível por `9`.
+> Divisibilidade por $9$: soma dos algarismos divisível por $9$.
 
-> Divisibilidade por `11`: soma alternada dos algarismos divisível por `11`.
+> Divisibilidade por $11$: soma alternada dos algarismos divisível por $11$.
 
-> Divisibilidade por `12`: se divisível por `3` e `4`.
+> Divisibilidade por $12$: se divisível por $3$ e $4$.
 
-> Soma da progressão geométrica: `(a_n * r - a_1) / (r - 1)`.
+> Soma da progressão geométrica: $\frac{a_n * r - a_1}{r - 1}$.
 
-> Soma de termos ao quadrado: `1^2 + 2^2 + ... + n^2 = n(n + 1)(2n + 1) / 6`.
+> Soma de termos ao quadrado: $1^2 + 2^2 + ... + n^2 = \frac{n(n + 1)(2n + 1)}{6}$.
 
 > Ao realizar operações com aritmética modular a paridade (sem módulo) não é preservada,
   se quer saber a paridade na soma vai checando a paridade do que está sendo somado e do
   número, na multiplicação e divisão conte e mantenha a quantidade de fatores iguais a
   dois.
 
-> Teorema de Euler: `a^phi(m) = 1 (mod m)`. Se `m` é primo se reduz á `a^(m - 1) = 1 (mod m)`.
+> Teorema de Euler: $a^{\varphi(m)} = 1 \bmod m$. Se $m$ é primo se reduz á $a^{m - 1} = 1 \bmod m$.
 
-> `a^b^c % m = a^(b^c % phi(m)) % m`. Se `m` é primo se reduz á `a^b^c % m = a^(b^c % (m - 1)) % m`.
+> $a^{b^c} \bmod m = a^{b^c \bmod phi(m)} \bmod m$. Se $m$ é primo se reduz á $a^{b^c} \bmod m = a^{b^c \bmod (m - 1)} \bmod m$.
 
-> O inverso de `a (mod m)` é `a^(phi(m) - 1)`, mas precisa da condição que `gcd(a, m) = 1`.
+> $a^{\varphi(m) - 1} = a^{-1} \bmod m$, mas precisa da condição que $gcd(a, m) = 1$.
 
-> Números de Catalan `Cn`: representa a quantidade de expressões válidas com parênteses
-  de tamanho `2n`. Também são relacionados às árvores, existem `Cn` árvores binárias de `n`
-  vértices e `Cn-1` árvores de `n` vértices (as árvores são caracterizadas por sua
-  aparência). `Cn = binom(2n, n)/(n + 1)`.
-  A intuição boa é imaginar o problema como uma caminhada numa matriz, do ponto `(0,0)`
-  até o ponto `(M, N)`, onde `M, N` é a quantidade de parênteses de abrir e de fechar,
-  aí a quantidade de expressões válidas é o total `binom(N + M, N)` menos as inválidas,
-  que dá para interpretar como as que vem do ponto simétrico à reta
-  `y = x + k = n = m + k + 1` até `(M, N)`, cruzando a reta inválida. `k` é a quantidade
-  de parênteses já abertos, aí fica `binom(N + M, N) - binom(N + M, M + K + 1)`.
+> $(a+b)^n = \binom{n}{0} a^n + \binom{n}{1} a^{n-1} b + \binom{n}{2} a^{n-2} b^2 + \cdots +
+  \binom{n}{k} a^{n-k} b^k + \cdots + \binom{n}{n} b^n$
+  
+> Soma da $n$-ésima linha do triângulo de Pascal: $2^n$.
+
+> Soma da $m$-ésima coluna do triângulo de Pascal: $\binom{n + 1}{m + 1}$. $n$ é a
+  quantidade de linhas.
+
+> A quantidade de ímpares na $𝑛$−ésima linha do triângulo de Pascal: $2^𝑐$.
+  $𝑐$ é a quantidade de bits ligados na representação binária de $𝑛$.
+  
+> Números de Catalan $C_n$: representa a quantidade de expressões válidas com parênteses
+  de tamanho $2n$. Também são relacionados às árvores, existem $C_n$ árvores binárias de $n$
+  vértices e $C_n-1$ árvores de $n$ vértices (as árvores são caracterizadas por sua
+  aparência). $C_n = \frac{\binom{2n}{n}}{n + 1}$.
 
 > Lema de Burnside: o número de combinações em que simétricos são considerados iguais é
-  o somatório de `k` entre `[1, n]` de `c(k)/n`. `n` é a quantidade de maneiras de mudar
-  a posição de uma combinação e `c(k)` é a quantidade de combinações que são consideradas
-  iguais na `k`-ésima maneira.
+  o somatório de $\sum_{k=1}^{n} \frac{c(k)}{n}$. $n$ é a quantidade de maneiras de mudar
+  a posição de uma combinação e $c(k)$ é a quantidade de combinações que são consideradas
+  iguais na $k$-ésima maneira.
+  
+> $min(f, g) = \frac{f + g}{2} - \frac{|f - g|}{2}$. Se estamos fazendo para vários valores, para
+  lidar com o módulo, se temos $f$ fixo, tentamos lidar com os $g$ maiores que $f$ e com os
+  menores que $f$ separadamente.
 
 Strings
 
-> Sejam `p` e `q` dois períodos de uma string `s`. Se `p + q − mdc(p, q) ≤ |s|`,
-  então `mdc(p, q)` também é período de `s`.
+> Sejam $p$ e $q$ dois períodos de uma string $s$. Se $p + q − mdc(p, q) ≤ |s|$,
+  então $mdc(p, q)$ também é período de $s$.
 
 > Relação entre bordas e períodos: A sequência
-  `|s| − |border(s)|, |s| − |border^2(s)|, ..., |s| − |border^k(s)|` é a sequência
-  crescente de todos os possíveis períodos de `s`.
+  $|s| − |border(s)|, |s| − |border^2(s)|, ..., |s| − |border^k(s)|$ é a sequência
+  crescente de todos os possíveis períodos de $s$.
 
 Outros
 
-> Princípio da inclusão e exclusão: a união de `n` conjuntos é a soma de todas as
+> Princípio da inclusão e exclusão: a união de $n$ conjuntos é a soma de todas as
   interseções de um número ímpar de conjuntos menos a soma de todas as interseções de um
   número par de conjuntos.
 
@@ -3847,15 +3898,16 @@ Outros
 
 ```c++
 /**
- *  @param  xs  Target vector.
+ *  @param  xs  Target vector/string.
  *  @return     Histogram of elements in xs.
  *  Keeps only the frequencies, elements can be retrivied
  *  by sorting xs and keeping only uniques.
  *  If xs is a 64 bit integer vector use radix sort for O(N) complexity.
+ *  If it's string or vector with smaller integers use counting sort.
  *  Time complexity: O(Nlog(N))
 */
 template <typename T>
-vll histogram(vector<T>& xs) {
+vll histogram(T& xs) {
     sort(all(xs));
     vll hist;
     ll n = xs.size(), qnt = 1;
