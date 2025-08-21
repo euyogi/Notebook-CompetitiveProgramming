@@ -61,6 +61,7 @@ script:
     * Maior subsequência comum (LCS)
     * Maior subsequência crescente (LIS)
     * Mex
+    * Moda
     * Pares com gcd x
     * Próximo maior/menor elemento
     * Soma de todos os intervalos
@@ -111,6 +112,7 @@ script:
   * Matemática
     * Matriz
   * Strings
+    * Aho-Corasick
     * Hash
     * Suffix Automaton
     * Trie
@@ -1188,6 +1190,28 @@ ll mex(const vll& xs) {
     ll res = 0;
     while (f[res]) ++res;
     return res;
+}
+```
+
+### Moda
+
+```c++
+/**
+ *  @param  xs  Target vector.
+ *  @return     Mode element and frequency.
+ *  Time complexity: O(Nlog(N))
+*/
+template <typename T>
+pair<T, ll> mode(vector<T>& xs) {
+    sort(all(xs));
+    T best = xs[0];
+    ll bfreq = 1, cfreq = 1;
+    rep(i, 1, xs.size()) {
+        if (xs[i] == xs[i - 1]) ++cfreq;
+        else cfreq = 1;
+        if (cfreq > bfreq) bfreq = cfreq, best = xs[i];
+    }
+    return { best, bfreq };
 }
 ```
 
@@ -3209,13 +3233,70 @@ struct Matrix {
 
 ## Strings
 
+### Aho-Corasick
+
+```c++
+struct AhoCorasick {
+    static constexpr ll MAXN = 5e5 + 1;
+    ll n, m;
+    vvll to, go, idx;
+    vll mark, qnt, p, pc, link, exit;
+
+    AhoCorasick() : n(0), m(0), to(MAXN, vll(52)), go(MAXN, vll(52, -1)), idx(MAXN), mark(MAXN),
+                    qnt(MAXN), p(MAXN), pc(MAXN), link(MAXN, -1), exit(MAXN, -1) {}
+    
+    void insert(const string& s) {
+        ll u = 0;
+        for (char ch : s) {
+            ll c = ch - 'a';
+            ll& v = to[u][c];
+            if (!v) v = ++n, p[v] = u, pc[v] = c;
+            u = v, ++qnt[u];
+        }
+        ++mark[u], ++qnt[0], idx[u].eb(m++);
+    }
+    
+    vpll occur(const string& s) {
+        vll occ(n + 1);
+        vpll res;
+        ll u = 0;
+        for (char ch : s) {
+            u = go_to(u, ch - 'a');
+            for (ll v = u; v != 0; v = get_exit(v)) ++occ[v];
+        }
+        rep(v, 0, n + 1) for (auto i : idx[v])
+            if (occ[v])
+                res.eb(i, occ[v]);
+        return res;
+    }
+    
+    ll get_link(ll u) {
+        if (link[u] != -1) return link[u];
+        if (u == 0 || p[u] == 0) return link[u] = 0;
+        return link[u] = go_to(get_link(p[u]), pc[u]);
+    }
+
+    ll go_to(ll u, ll c) {
+        if (go[u][c] != -1) return go[u][c];
+        if (to[u][c]) return go[u][c] = to[u][c];
+        return go[u][c] = u == 0 ? 0 : go_to(get_link(u), c);
+    }
+    
+    ll get_exit(ll u) {
+        ll v = get_link(u);
+        if (exit[u] != -1) return exit[u];
+        return exit[u] = (v == 0 || mark[v]) ? v : get_exit(v);
+    }
+};
+```
+
 ### Hash
 
 ```c++
 constexpr ll M1 = (ll)1e9 + 7, M2 = (ll)1e9 + 9;
 #define H pll
-ll sum(ll a, ll b, ll m) { return (a += b.x) >= m ? a - m : a; };
-ll sub(ll a, ll b, ll m) { return (a -= b.x) >= m ? a + m : a; };
+ll sum(ll a, ll b, ll m) { return (a += b) >= m ? a - m : a; };
+ll sub(ll a, ll b, ll m) { return (a -= b) < 0 ? a + m : a; };
 H operator*(H a, H b) { return { a.x * b.x % M1, a.y * b.y % M2 }; }
 H operator+(H a, H b) { return { sum(a.x, b.x, M1), sum(a.y, b.y, M2) }; }
 H operator-(H a, H b) { return { sub(a.x, b.x, M1), sub(a.y, b.y, M2) }; }
