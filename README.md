@@ -80,20 +80,18 @@ script:
     * Totiente de Euler
     * Transformada de Fourier
   * Strings
-    * Autômato de borda dos prefixos (KMP)
-    * Borda dos prefixos (KMP)
+    * Autômato KMP
+    * Bordas
     * Comparador de substring
     * Distância de edição
+    * KMP
     * Maior prefixo comum (LCP)
     * Manacher (substrings palíndromas)
     * Menor rotação
     * Ocorrências de substring (FFT)
-    * Ocorrências de substring (Z-Function)
     * Palíndromo check
-    * Períodos
     * Quantidade de ocorrências de substring
     * Suffix array
-    * Z-Function
 * Estruturas
   * Árvores
     * BIT tree 2D
@@ -1245,22 +1243,20 @@ vll gcd_pairs(const vll& xs) {
 /**
  *  @param  xs  Target vector.
  *  @return     Vector of indexes of closest smaller.
- *  Example: c[i] = j where j < i and xs[j] < xs[i] and it's the closest.
- *  If there isn't then c[i] = -1.
  *  Time complexity: O(N)
 */
 template <typename T>
 vector<T> closests(const vector<T>& xs) {
-    vll c(xs.size(), -1);  // n if to the right
-    stack<ll> prevs;
-    // n - 1 -> 0: to the right
-    rep(i, 0, xs.size()) {  //                   <= if want strictly bigger
-        while (!prevs.empty() && xs[prevs.top()] >= xs[i])
-            prevs.pop();
-        if (!prevs.empty()) c[i] = prevs.top();
-        prevs.emplace(i);
+    ll n = xs.size();
+    vll dp(n, -1);  // n: to right
+    // n - 1 -> 0: to right
+    rep(i, 0, n) {
+        ll j = i - 1;  // i + 1: to the right
+        //       <  n          <= strictly bigger
+        while (j >= 0 && xs[j] >= xs[i]) j = dp[j];
+        dp[i] = j;
     }
-    return c;
+    return dp;
 }
 ```
 
@@ -1788,54 +1784,42 @@ vector<T> convolution(const vector<T>& a, const vector<T>& b) {
 
 ## Strings
 
-### Autômato de borda dos prefixos (KMP)
+### Autômato KMP
 
 ```c++
 /**
  *  @param  s  String.
  *  @return    KMP Automaton.
- *  It allows to calculate the prefix function faster in some
- *  cases and also deal with big strings formed by some rules.
  *  Time complexity: O(26N)
 */
 vvll kmp_automaton(const string& s) {
     ll n = s.size();
     vll pi(n);
-    vvll aut(n, vll(26));
-    rep(i, 0, n) {
-        ll si = s[i] - 'a';
-        rep(c, 0, 26) {
-            if (i > 0 && c != si)
-                aut[i][c] = aut[pi[i - 1]][c];
-            else
-                aut[i][c] = i + (c == si);
-        }
-        if (i > 0)
-            pi[i] = aut[pi[i] - 1][si];
+    vvll aut(n + 1, vll(26));
+    rep(i, 0, n + 1) {
+        rep(c, 0, 26)
+            if (i < n && c == s[i] - 'a') aut[i][c] = i + 1;
+            else if (i > 0) aut[i][c] = aut[pi[i - 1]][c];
+        if (i > 0 && i < n) pi[i] = aut[pi[i - 1]][s[i] - 'a'];
     }
     return aut;
 }
 ```
 
-### Borda dos prefixos (KMP)
+### Bordas
 
 ```c++
 /**
  *  @param  s  String.
- *  @return    Vector with the border size for each prefix index.
- *  Used in KMP to count occurrences.
+ *  @return    Borders.
  *  Time complexity: O(N)
 */
-vll prefix_function(const string& s) {
-    ll n = s.size();
-    vll pi(n);
-    rep(i, 1, n) {
-        ll j = pi[i - 1];
-        while (j > 0 && s[i] != s[j])
-            j = pi[j - 1];
-        pi[i] = j + (s[i] == s[j]);
-    }
-    return pi;
+vll borders(const T& s) {
+    vll pi = kmp(s), res;
+    ll b = pi[s.size() - 1];
+    while (b >= 1) res.eb(b), b = pi[b - 1];
+    reverse(all(res));
+    return res;
 }
 ```
 
@@ -1903,6 +1887,28 @@ pair<ll, string> edit(const string& s,  string& t) {
 
     reverse(all(ops));
     return { dp[m][n], ops };
+}
+```
+
+### KMP
+
+```c++
+/**
+ *  @param  s  String.
+ *  @return    Vector with the border size for each prefix index.
+ *  Time complexity: O(N)
+*/
+template <typename T>
+vll kmp(const T& s) {
+    ll n = s.size();
+    vll pi(n);
+    rep(i, 1, n) {
+        ll j = pi[i - 1];
+        while (j > 0 && s[i] != s[j])
+            j = pi[j - 1];
+        pi[i] = j + (s[i] == s[j]);
+    }
+    return pi;
 }
 ```
 
@@ -2033,24 +2039,6 @@ vll occur(const string& s, const string& t) {
 }
 ```
 
-### Ocorrências de substring (Z-Function)
-
-```c++
-/**
- *  @param  s  String.
- *  @param  t  Substring.
- *  @return    Vector with the first index of occurrences.
- *  Requires Z-Function.
- *  Time complexity: O(N)
-*/
-vll occur(const string& s, const string& t) {
-    vll zs = z(t + ';' + s), is;
-    rep(i, 0, zs.size()) if (zs[i] == t.size())
-        is.eb(i - t.size() - 1);
-    return is;
-}
-```
-
 ### Palíndromo check
 
 ```c++
@@ -2063,26 +2051,6 @@ vll occur(const string& s, const string& t) {
 */
 bool palindrome(ll i, ll j, Hash& h, Hash& rh) {
     return h(i, j) == rh(h.n - j - 1, h.n - i - 1);
-}
-```
-
-### Períodos
-
-```c++
-/**
- *  @param  s  String.
- *  @return    Vector with the periods.
- *  Requires Z-Function.
- *  Includes period of size n.
- *  Time complexity: O(N)
-*/
-vll periods(const string& s) {
-    ll n = s.size();
-    vll zs = z(s), ps;
-    rep(i, 0, n) if (zs[i] == n - i)
-        ps.eb(i);
-    ps.eb(n);
-    return ps;
 }
 ```
 
@@ -2154,31 +2122,6 @@ vll suffix_array(string s, ll k = LLONG_MAX) {
     }
     ps.erase(ps.begin());
     return (k == 0 ? cs : ps);
-}
-```
-
-### Z-Function
-
-```c++
-/**
- *  @param  s  String.
- *  @return    Vector with Z-Function value for every position.
- *  It's how much original prefix this suffix has as prefix.
- *  https://judge.yosupo.jp/problem/zalgorithm
- *  Time complexity: O(N)
-*/
-vll z(const string& s) {
-    ll n = s.size(), l = 0, r = 0;
-    vll zs(n);
-    rep(i, 1, n) {
-        if (i <= r)
-            zs[i] = min(zs[i - l], r - i + 1);
-        while (zs[i] + i < n && s[zs[i]] == s[i + zs[i]])
-            ++zs[i];
-        if (r < i + zs[i] - 1)
-            l = i, r = i + zs[i] - 1;
-    }
-    return zs;
 }
 ```
 
@@ -3295,16 +3238,23 @@ struct AhoCorasick {
 ```c++
 constexpr ll M1 = (ll)1e9 + 7, M2 = (ll)1e9 + 9;
 #define H pll
+#define x first
+#define y second
+mt19937_64 rng(chrono::steady_clock::now().time_since_epoch().count());
+H P(
+    uniform_int_distribution<ll>(256, 1e9)(rng),
+    uniform_int_distribution<ll>(256, 1e9)(rng)
+);
 ll sum(ll a, ll b, ll m) { return (a += b) >= m ? a - m : a; };
 ll sub(ll a, ll b, ll m) { return (a -= b) < 0 ? a + m : a; };
 H operator*(H a, H b) { return { a.x * b.x % M1, a.y * b.y % M2 }; }
 H operator+(H a, H b) { return { sum(a.x, b.x, M1), sum(a.y, b.y, M2) }; }
 H operator-(H a, H b) { return { sub(a.x, b.x, M1), sub(a.y, b.y, M2) }; }
+template <typename T>
 struct Hash {
     ll n;
     // Segtree<H> ps;
     vector<H> ps, pw;
-    H p = { 31, 29 };
     
     /**
      *  @param  s  String.
@@ -3312,14 +3262,13 @@ struct Hash {
      *  Can use a segtree to update as seen in the commented blocks.
      *  Time complexity: O(N)
     */
-    Hash(const string& s) : n(s.size()), ps(n + 1), pw(n + 1) {
+    Hash(const T& s) : n(s.size()), ps(n + 1), pw(n + 1) {
         pw[0] = { 1, 1 };
-        vector<H> ps_(n);
         rep(i, 0, n) {
-            ll v      = s[i] - 'a' + 1;
-            ps[i + 1] = ps[i] * p + H(v, v);
-            pw[i + 1] = pw[i] * p;
+            ps[i + 1] = ps[i] * P + H(s[i], s[i]);
+            pw[i + 1] = pw[i] * P;
         }
+        // vector<H> ps_(n);
         // rep(i, 0, n) {
         //     ll v   = s[i] - 'a' + 1;
         //     ps_[i] = pw[n - i - 1] * H(v, v);
@@ -3334,8 +3283,7 @@ struct Hash {
      *  Time complexity: O(log(N))
     */
     // void set(ll i, char c) {
-    //     ll v = c - 'a' + 1;
-    //     ps.setQuery(i, i, pw[n - i - 1] * H(v, v));
+    //     ps.upd_qry(i, i, pw[n - i - 1] * H(c, c));
     // }
 
     /**
@@ -3346,7 +3294,7 @@ struct Hash {
     H operator()(ll i, ll j) {
         assert(0 <= i && i <= j && j < n);
         return ps[j + 1] - ps[i] * pw[j + 1 - i];
-        // return ps.setQuery(i, j) * pw[i];
+        // return ps.upd_qry(i, j) * pw[i];
     }
 };
 ```
@@ -3538,11 +3486,11 @@ struct Trie {
     static constexpr ll MAXN = 5e5;
     ll n;
     vvll to;  // 0 is head
-    // mark: quantity of strings that ends in this node.
+    // term: quantity of strings that ends in this node.
     // qnt: quantity of strings that pass through this node.
-    vll mark, qnt;
+    vll term, qnt;
     
-    Trie() : n(0), to(MAXN + 1, vll(26)), mark(MAXN + 1), qnt(MAXN + 1) {}
+    Trie() : n(0), to(MAXN + 1, vll(26)), term(MAXN + 1), qnt(MAXN + 1) {}
     
     /**
     *  @param  s  String.
@@ -3555,7 +3503,7 @@ struct Trie {
             if (!v) v = ++n;
             u = v, ++qnt[u];
         }
-        ++mark[u], ++qnt[0];
+        ++term[u], ++qnt[0];
     }
     
     /**
@@ -3569,14 +3517,14 @@ struct Trie {
             u = v, --qnt[u];
             if (!qnt[u]) v = 0, --n;
         }
-        --mark[u], --qnt[0];
+        --term[u], --qnt[0];
     }
     
     void dfs(ll u) {
         rep(i, 0, 26) {
             ll v = to[u][i];
             if (v) {
-                if (mark[v]) cout << "\e[31m";
+                if (term[v]) cout << "\e[31m";
                 cout << (char)(i + 'a') << " \e[m";
                 dfs(to[u][i]);
             }
