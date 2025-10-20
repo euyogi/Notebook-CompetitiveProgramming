@@ -38,6 +38,7 @@ script:
     * Envoltório convexo
     * Mediatriz
     * Orientação de ponto
+    * Quadrado?
     * Slope
     * Rotação de ponto
   * Grafos
@@ -345,6 +346,25 @@ bool ccw(pair<T, T> P, pair<T, T> Q, const pair<T, T>& O) {
     return equals(D(O, P, Q), 0) ?
            (P.x * P.x + P.y * P.y) < (Q.x * Q.x + Q.y * Q.y) : D(O, P, Q) > 0;
 }
+```
+
+### Quadrado?
+
+```c++
+/**
+ *  @param  PS  Points.
+ *  @return     True if those 4 points forms a square.
+ *  Time complexity: ~O(1)
+*/
+bool is_square(const vpll& ps) {
+    if (ps.size() != 4) return false;
+    vll ds;
+    rep(i, 0, 4) rep(j, i + 1, 4)
+        ds.eb(dist(ps[i], ps[j]));
+    sort(all(ds));
+    ds.erase(unique(all(ds)), ds.end());
+    return ds.size() == 2 && 2 * ds[0] == ds[1];
+} 
 ```
 
 ### Slope
@@ -733,12 +753,11 @@ pair<vll, vll> dijkstra(const vvpll& g, ll s) {
     return { ds, pre };
 }
 
-vll getPath(const vll& pre, ll s, ll u) {
-    vll p { u };
-    do {
-        p.eb(pre[u]), u = pre[u];
-        assert(u != LLONG_MAX);
-    } while (u != s);
+vll get_path(const vll& pre, ll u) {
+    vll p;
+    while (u != LLONG_MAX) {
+        p.eb(u), u = pre[u];
+    }
     reverse(all(p));
     return p;
 }
@@ -883,7 +902,7 @@ vtll kruskal(vtll& edges, ll n) {
  *  @param  g  Directed graph.
  *  @return    Vector with vertices in topological order or empty if has cycle.
  *  It starts from a vertex with indegree 0, that is no one points to it.
- *  Time complexity: O(EVlog(V))
+ *  Time complexity: O(Vlog(V))
 */
 vll toposort(const vvll& g) {
     ll n = g.size();
@@ -3303,7 +3322,7 @@ struct Hash {
 
 ```c++
 struct SuffixAutomaton {
-    vvll next;
+    vvll next;  // if mle change to vector<map<ll, ll>>
     vll len, fpos, lnk, cnt, rcnt, dcnt;
     ll sz = 0, last = 0, n = 0, alpha = 26;
     
@@ -3315,8 +3334,8 @@ struct SuffixAutomaton {
         make_node();
         for (auto c : s) add(c);
 
-        // preprocessing for count of count_and_first
-        vector<pll> order(sz - 1);
+        // preprocessing for count (topologic order)
+        vpll order(sz - 1);
         rep(i, 1, sz) order[i - 1] = {len[i], i};
         sort(all(order), greater<>());
         for (auto [_, i] : order) cnt[lnk[i]] += cnt[i];
@@ -3342,47 +3361,18 @@ struct SuffixAutomaton {
     }
 
     /**
-    *  @return  Amount of distinct substrings.
-    *  Time complexity: O(N)
-    */
-    ll dsubs() {
-        ll res = 0;
-        rep(i, 1, sz)
-            res += len[i] - len[lnk[i]];
-        return res;
-    }
-
-    /**
     *  @return  Vector with amount of distinct substrings of each size.
     *  Time complexity: O(N)
     */
     vll dsubs_by_size() {
-        vll hs(sz, -1);
-        hs[0] = 0;
-        queue<ll> q;
-        q.emplace(0);
-        ll mx = 0;
-        while (!q.empty()) {
-            ll u = q.front();
-            q.pop();
-            rep(i, 0, alpha) {
-                ll v = next[u][i];
-                if (!v) continue;
-                if (hs[v] == -1) {
-                    q.emplace(v);
-                    hs[v] = hs[u] + 1;
-                    mx    = max(mx, len[v]);
-                }
-            }
-        }
-
-        vll res(mx);
+        vll delta(n);
         rep(i, 1, sz) {
-            ++res[hs[i] - 1];
-            if (len[i] < mx) --res[len[i]];
+            ll mnlen = len[lnk[i]];
+            ++delta[mnlen];
+            if (len[i] < n) --delta[len[i]];
         }
-        rep(i, 1, mx) res[i] += res[i - 1];
-        return res;
+        rep(i, 1, n) delta[i] += delta[i - 1];
+        return delta;
     }
 
     /**
@@ -3432,22 +3422,17 @@ struct SuffixAutomaton {
     }
 
 private:
-    ll make_node(ll _len = 0, ll _fpos = -1, ll _lnk = -1, ll _cnt = 0,
-                 ll _rcnt = 0, ll _dcnt = 0) {
-        next.eb(vll(alpha));
-        len.eb(_len), fpos.eb(_fpos), lnk.eb(_lnk);
-        cnt.eb(_cnt), rcnt.eb(_rcnt), dcnt.eb(_dcnt);
+    ll make_node(ll LEN = 0, ll FPOS = -1, ll LNK = -1, ll CNT = 0) {
+        next.eb(vll(alpha)), rcnt.eb(0), dcnt.eb(0);
+        len.eb(LEN), fpos.eb(FPOS), lnk.eb(LNK), cnt.eb(CNT);
         return sz++;
     }
 
     void add(char c) {
         c -= 'a', ++n;
-        ll u = make_node(len[last] + 1, len[last], 0, 1);
-        ll p = last;
-        while (p != -1 && !next[p][c]) {
-            next[p][c] = u;
-            p = lnk[p];
-        }
+        ll u = make_node(len[last] + 1, len[last], 0, 1), p = last;
+        while (p != -1 && !next[p][c])
+            next[p][c] = u, p = lnk[p];
         if (p == -1) lnk[u] = 0;
         else {
             ll q = next[p][c];
@@ -3455,10 +3440,8 @@ private:
             else {
                 ll v = make_node(len[p] + 1, fpos[q], lnk[q]);
                 next[v] = next[q];
-                while (p != -1 && next[p][c] == q) {
-                    next[p][c] = v;
-                    p = lnk[p];
-                }
+                while (p != -1 && next[p][c] == q)
+                    next[p][c] = v, p = lnk[p];
                 lnk[q] = lnk[u] = v;
             }
         }
@@ -3529,6 +3512,67 @@ struct Trie {
                 dfs(to[u][i]);
             }
         }
+    }
+};
+```
+
+### Bit Trie
+
+```c++
+// empty head, tree is made by the prefixs of each string in it.
+struct BitTrie {
+    static constexpr ll MAXN = 5e6;
+    ll n;
+    vvll to;  // 0 is head
+    // qnt: quantity of strings that pass through this node.
+    vll qnt;
+    
+    BitTrie() : n(0), to(MAXN + 1, vll(2)), qnt(MAXN + 1) {}
+    
+    /**
+    *  @param  s  String.
+    *  Time complexity: O(N)
+    */
+    void insert(ll x) {
+        ll u = 0;
+        rep(i, 0, 32) {
+            ll& v = to[u][(x >> i) & 1];
+            if (!v) v = ++n;
+            u = v, ++qnt[u];
+        }
+        ++qnt[0];
+    }
+    
+    /**
+    *  @param  s  String.
+    *  Time complexity: O(N)
+    */
+    void erase(ll x) {
+        ll u = 0;
+        rep(i, 0, 32) {
+            ll& v = to[u][(x >> i) & 1];
+            u = v, --qnt[u];
+            if (!qnt[u]) v = 0, --n;
+        }
+        --qnt[0];
+    }
+    
+    ll mx_or(ll x) {
+        ll u = 0;
+        ll res = 0;
+        rep(i, 0, 32) {
+            ll desired = !((x >> i) & 1);
+            ll v = to[u][desired];
+            if (v) {
+                u = v;
+                res |= desired << i;
+            }
+            else {
+                u = to[u][!desired];
+                res |= (!desired) << i;
+            }
+        }
+        return res;
     }
 };
 ```
