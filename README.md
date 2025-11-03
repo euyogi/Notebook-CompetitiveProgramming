@@ -884,12 +884,10 @@ tuple<vvll, map<ll, vll>, vll> kosaraju(const vvll& g) {
 vtll kruskal(vtll& edges, ll n) {
     DSU dsu(n);
     vtll mst;
-    ll edges_sum = 0;
     sort(all(edges));  // change order if want maximum
     for (auto [w, u, v] : edges) if (!dsu.same(u, v)) {
         dsu.merge(u, v);
         mst.eb(w, u, v);
-        edges_sum += w;
     }
     return mst;
 }
