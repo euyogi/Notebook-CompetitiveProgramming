@@ -2904,10 +2904,13 @@ struct Line {
     */
     Line(const pair<T, T>& P, const pair<T, T>& Q)
             : a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y) {
-        if constexpr (is_floating_point_v<T>) b /= a, c /= a, a = 1;
+        if constexpr (is_floating_point_v<T>) {
+            if (a != 0) b /= a, c /= a, a = 1;
+            else a /= b, c /= b, b = 1;
+        }
         else {
             if (a < 0 || (a == 0 && b < 0)) a *= -1, b *= -1, c *= -1;
-            T gcd_abc = gcd(a, gcd(b, c));
+            T gcd_abc = abs(gcd(a, gcd(b, c)));
             a /= gcd_abc, b /= gcd_abc, c /= gcd_abc;
         }
     }
@@ -3967,7 +3970,10 @@ Matemática
 
 > Divisibilidade por $12$: se divisível por $3$ e $4$.
 
-> Soma da progressão geométrica: $\frac{a_n * r - a_1}{r - 1}$.
+> Soma da progressão geométrica ($\sum_{k=1}^{n} x^k$ é uma progressão geométrica): $\frac{a_n * r - a_1}{r - 1}$.
+
+> Soma de progressão geométrica da forma: $\sum_{k=1}^{n} kx^k = \frac {x(1-x^n)}{(1-x)^2}-\frac{nx^{n+1}}{1-x}$,
+  parte da fórmula normal, multiplica por x e subtrai.
 
 > Soma de termos ao quadrado: $1^2 + 2^2 + ... + n^2 = \frac{n(n + 1)(2n + 1)}{6}$.
 
@@ -4069,7 +4075,7 @@ vll histogram(T& xs) {
  *  @return       True if they are equal.
 */
 template <typename T, typename S>
-bool equals(T a, S b) { return abs(a - b) < 1e-9; }
+bool equals(T a, S b) { return abs(a - b) < 1e-7; }
 ```
 
 ### Overflow check
