@@ -212,27 +212,21 @@ vpll ds3 { {1, 2}, {2, 1}, {-1, 2}, {-2, 1}, {1, -2}, {2, -1}, {-1, -2}, {-2, -1
 # Debug
 
 ```c++
-#pragma once
 #include <bits/stdc++.h>
 using namespace std;
 template <typename T> void p(T x) {
     int f = 0;
+    #define _(a, b) if constexpr (requires {(a);}) { (b); } else
     #define D(d) cerr << "\e[94m" << (f++ ? d : "")
-    if constexpr (!requires {cout << x;}) {
+    _(cout << x, cerr << x)
+    _(x.pop(), {struct y : T {using T::c;}; p(static_cast<y>(x).c);}) {
         cerr << '{';
-        if constexpr (requires {get<0>(x);})
-            apply([&](auto... args) {((D(","), p(args)), ...);}, x);
-        else if constexpr (requires {x.pop();}) while (size(x)) {
-            D(",");
-            if constexpr (requires {x.top();}) p(x.top());
-            else p(x.front());
-            x.pop();
-        } else for (auto i : x)
-            (requires {begin(*begin(x));} ? cerr << "\n\t" : D(",")), p(i);
+        _(get<0>(x), apply([&](auto... a) {((D(","), p(a)), ...);}, x))
+        for (auto i : x) (requires {begin(*begin(x));} ? cerr << "\n\t" : D(",")), p(i);
         cerr << '}';
-    } else D("") << x;
-} template <typename... A>
-void pr(A... a) {int f = 0; ((D(" | "), p(a)), ...); cerr << "\e[m\n";}
+    }
+} template <typename... T>
+void pr(T... a) {int f = 0; ((D(" | "), p(a)), ...); cerr << "\e[m\n";}
 #define dbg(...) { cerr << __LINE__ << ": [" << #__VA_ARGS__ << "] = "; pr(__VA_ARGS__); }
 ```
 
