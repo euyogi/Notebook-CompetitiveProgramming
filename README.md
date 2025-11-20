@@ -63,6 +63,7 @@ script:
     * Maior subsequência crescente (LIS)
     * Mex
     * Moda
+    * Mo's algorítmo
     * Pares com gcd x
     * Próximo maior/menor elemento
     * Soma de todos os intervalos
@@ -90,7 +91,6 @@ script:
     * Manacher (substrings palíndromas)
     * Menor rotação
     * Ocorrências de substring (FFT)
-    * Palíndromo check
     * Quantidade de ocorrências de substring
     * Suffix array
 * Estruturas
@@ -1224,6 +1224,58 @@ pair<T, ll> mode(vector<T>& xs) {
 }
 ```
 
+### Mo's algorítmo
+
+```c++
+struct Query {
+    ll l, r, idx, block;
+    bool operator<(const Query& q) const {
+        if (block != q.block) return block < q.block;
+        return (block & 1 ? (r < q.r) : (r > q.r));
+    }
+};
+
+template <typename T, typename Tans>
+struct Mo {
+    vector<T> vs;
+    vector<Query> qs;
+    const ll block_size;
+    
+    Mo(const vector<T>& xs) : vs(xs), block_size((int)ceil(sqrt(xs.size()))) {}
+
+    void add_query(ll l, ll r) {
+        qs.emplace_back(l, r, qs.size(), l / block_size);
+    }
+
+    // Time complexity: O(N sqrt(N))
+    auto solve() {
+        vector<Tans> answers(qs.size());
+        sort(all(qs));
+
+        int cur_l = 0, cur_r = -1;
+        for (auto q : qs) {
+            while (cur_l > q.l) add(--cur_l);
+            while (cur_r < q.r) add(++cur_r);
+            while (cur_l < q.l) remove(cur_l++);
+            while (cur_r > q.r) remove(cur_r--);
+            answers[q.idx] = get_answer();
+        }
+
+        return answers;
+    }
+
+private:
+    // add value at idx from data structure
+    inline void add(ll idx) {}
+
+    // remove value at idx from data structure
+    inline void remove(ll idx) {}
+
+    // extract current answer of the data structure
+    inline Tans get_answer() {}
+};
+```
+
 ### Pares com gcd x
 
 ```c++
@@ -2047,21 +2099,6 @@ vll occur(const string& s, const string& t) {
         if (abs(c[m - 1 + i].real() - (double)(m - q)) < 1e-3)
             res.eb(i);
     return res;
-}
-```
-
-### Palíndromo check
-
-```c++
-/**
- *  @param  i, j   Interval of substring.
- *  @param  h, rh  Hash of string and reverse string.
- *  @return        True if substring [i, j] is a palindrome.
- *  Requires hash.
- *  Time complexity: O(1)
-*/
-bool palindrome(ll i, ll j, Hash& h, Hash& rh) {
-    return h(i, j) == rh(h.n - j - 1, h.n - i - 1);
 }
 ```
 
@@ -3313,6 +3350,17 @@ struct Hash {
 };
 ```
 
+### Hash Inverso
+
+```c++
+template <typename T>
+struct HashInv {
+    Hash<T> h;
+    HashInv(T s) : h("") { reverse(all(s)), h = Hash<T>(s); }
+    H operator()(ll i, ll j) { return h(h.n - j - 1, h.n - i - 1); }
+};
+```
+
 ### Suffix Automaton
 
 ```c++
@@ -3981,6 +4029,10 @@ Matemática
 > $a^{b^c} \bmod m = a^{b^c \bmod phi(m)} \bmod m$. Se $m$ é primo se reduz á $a^{b^c} \bmod m = a^{b^c \bmod (m - 1)} \bmod m$.
 
 > $a^{\varphi(m) - 1} = a^{-1} \bmod m$, mas precisa da condição que $gcd(a, m) = 1$.
+
+> $x! = 0 \bmod m$, se $x >= m$.
+
+> Teoream de Wilson: $(n - 1)! = -1 \bmod n$. Dá para calcular $x! \bmodn$ se $n - x <= 1e6$ pois $x! = -[(x+1)...(m-1)]^-1 \bmod n$.
 
 > $(a+b)^n = \binom{n}{0} a^n + \binom{n}{1} a^{n-1} b + \binom{n}{2} a^{n-2} b^2 + \cdots +
   \binom{n}{k} a^{n-k} b^k + \cdots + \binom{n}{n} b^n$
