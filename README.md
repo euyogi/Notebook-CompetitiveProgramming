@@ -25,6 +25,7 @@ script:
 * Template
 * Flags
 * Debug
+* Pragmas
 * Algoritmos
   * Árvores
     * Binary lifting
@@ -139,7 +140,6 @@ script:
 ### Template
 
 ```c++
-// #pragma GCC target("popcnt")  // if solution involves bitset
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -208,6 +208,10 @@ vpll ds3 { {1, 2}, {2, 1}, {-1, 2}, {-2, 1}, {1, -2}, {2, -1}, {-1, -2}, {-2, -1
 `g++ -g -std=c++20 -fsanitize=undefined -fno-sanitize-recover -Wall -Wextra -Wshadow
  -Wconversion -Wduplicated-cond -Winvalid-pch -Wno-sign-compare -Wno-sign-conversion
  -Dcroquete -D_GLIBCXX_ASSERTIONS -fmax-errors=1`
+
+# Pragmas
+
+`#pragma GCC target("popcnt")  // if solution involves bitset`
 
 # Debug
 
@@ -1448,29 +1452,20 @@ vll divisors(ll x) {
 
 ```c++
 /**
- *  @return  Ordered vector with all divisors of x.
+ *  @return  Unordered vector with all divisors of x.
  *  Requires pollard rho.
  *  Time complexity: O(faster than sqrt)
 */
-vll divisors(ll x) {
-    vll fs = factors(x);  // pollard rho
-    map<ll, ll> ys;
-    for (ll f : fs) ++ys[f];
-    vll ds{1};
-    for (auto [f, p] : ys) {
-        ll pf = 1;
-        stack<ll> to_add;
-        rep(i, 0, p) {
-            pf *= f;
-            for (ll d : ds)
-                to_add.emplace(d * pf);
-        }
-        while (!to_add.empty()) {
-            ds.eb(to_add.top());
-            to_add.pop();
-        }
+vll divisors(ll x) {  
+    vll fs = factors(x), ds{1};  // use fast factorization (and sort)
+    ll prev = 1, sz_prev = 1;
+    rep(i, 0, fs.size()) {
+        ll f = fs[i];
+        if (i > 0 && fs[i] == fs[i - 1])
+            prev = f *= prev;
+        else prev = fs[i], sz_prev = ds.size();
+        rep(j, 0, sz_prev) ds.eb(ds[j] * f);
     }
-    sort(all(ds));
     return ds;
 }
 ```
@@ -2451,6 +2446,32 @@ ll first_greater(ll i, ll j, T x, ll l = 0, ll r = -1, ll no = 1) {
     if (left != -1) return left;
     return first_greater(i, j, x, m + 1, r, 2 * no + 1);
 }
+```
+
+### Lazy Segment Tree de multiplicar e somar
+
+```c++
+// fora da seg
+template <typename T>
+struct Affine {
+    T mul = 1, add = 0;
+    Affine operator*=(const Affine& other) {
+        return *this = { mul * other.mul, add * other.mul + other.add };
+    }
+    operator bool() { return mul != 1 || add != 0; }
+};
+
+// dentro da seg
+vector<Affine<T>> lzy;
+
+// dentro do upd_qry
+Affine<T> x = Affine<T>()
+    
+// troca todos os += por *=
+
+// dentro do unlazy
+seg[no] = seg[no] * lzy[no].mul + (r - l + 1) * lzy[no].add;
+lzy[no] = Affine<T>();  // em vez de = 0
 ```
 
 ### Treap
@@ -3985,6 +4006,8 @@ Matemática
 > Maior diferença entre dois primos consecutivos: $< 10^{18}$ é $1476$.
   (Podemos concluir que a partir de um número arbitrário a distância para o coprimo
    mais próximo é bem menor que esse valor).
+   
+> Maior diferença entre dois primos consecutivos: $< 10^{7}$ é $180$.
 
 > Maior quantidade de primos na fatoração de um número: $< 10^3$ é $9$, $< 10^6$ é $19$.
 
@@ -4083,6 +4106,8 @@ Outros
 > Por padrão python faz operações com até `4000` dígitos, para aumentar:
   `import sys
   sys.set_int_max_str_digits(1000001)`
+  
+> Dado um grafo a quantidade de vértices pesados é $sqrt(N)$, vértices leves são aqueles com degrau $<= sqrt(N)$. 
 
 ### Histograma
 
