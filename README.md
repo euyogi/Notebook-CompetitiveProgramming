@@ -466,9 +466,9 @@ ll subtree_dfs(const vvll& g, ll u, ll p) {
  *  @return    A new root that makes the size of all subtrees be n/2 or less.
  *  Time complexity: O(N)
 */
-ll centroid(const vvll& g, ll u, ll p = 0) {
+ll centroid(const vvll& g, ll u, ll p = -1) {
     ll sz = g.size();
-    if (p == 0) { subtree = vll(sz, 1); subtree_dfs(g, u, p); }
+    if (p == -1) { subtree = vll(sz, 1); subtree_dfs(g, u, p); }
     for (ll v : g[u]) if (v != p && subtree[v] * 2 > sz)
         return centroid(g, v, u);
     return u;
@@ -493,8 +493,8 @@ ll subtree_dfs(const vvll& g, ll u, ll p) {
  *  also be kinda like log(N) because it keeps dividing by 2.
  *  Time complexity: O(Nlog(N))
 */
-void centroid_decomp(const vvll& g, ll u = 1, ll p = 0, ll sz = 0) {
-    if (p == 0) p = -1, parent = subtree = vll(g.size());
+void centroid_decomp(const vvll& g, ll u = 1, ll p = -1, ll sz = 0) {
+    if (p == -1) p = -2, parent = subtree = vll(g.size());
     if (sz == 0) sz = subtree_dfs(g, u, 0);
     for (ll v : g[u]) if (!parent[v] && subtree[v] * 2 > sz)
         return subtree[u] = 0, centroid_decomp(g, v, p, sz);
@@ -515,12 +515,12 @@ vll st, et;
  *  we can use stuff like segtrees on the subtrees.
  *  Time complexity: O(N)
 */
-void euler_tour(const vvll& g, ll u = 1, ll p = 0) {
-    if (p == 0) { timer = 0; st = et = vll(g.size()); }
-    st[u] = timer++;
+void euler_tour(const vvll& g, ll u = 1, ll p = -1) {
+    if (p == -1) { timer = 0; st = et = vll(g.size()); }
+    st[u] = ++timer;
     for (ll v : g[u]) if (v != p)
         euler_tour(g, v, u);
-    et[u] = timer++;
+    et[u] = timer;
 }
 ```
 
@@ -687,7 +687,7 @@ vll eulerian_path(const vvll& g, bool d, ll s, ll e = -1) {
 vll cycle(const vvpll& g, bool edges, bool d) {
     ll n = g.size();
     vll color(n + 1), parent(n + 1), edge(n + 1), res;
-    auto dfs = [&](auto& self, ll u, ll p) -> ll {
+    auto dfs = [&](auto&& self, ll u, ll p) -> ll {
         color[u] = 1;
         bool parent_skipped = false;
         for (auto [i, v] : g[u]) {
@@ -845,7 +845,7 @@ tuple<vvll, map<ll, vll>, vll> kosaraju(const vvll& g) {
     vvll inv(n), cond(n);
     map<ll, vll> scc;
     vll vs(n), leader(n), order;
-    auto dfs = [&vs](auto& self, const vvll& h, vll& out, ll u) -> void {
+    auto dfs = [&vs](auto&& self, const vvll& h, vll& out, ll u) -> void {
         vs[u] = true;
         for (ll v : h[u]) if (!vs[v])
             self(self, h, out, v);
@@ -950,7 +950,7 @@ pair<ll, vector<vtll>> max_flow(const vvpll& g, ll s, ll t) {
         h[u].eb(w, v, h[v].size());
         h[v].eb(0, u, h[u].size() - 1);
     }
-    auto dfs = [&](auto& self, ll u, ll nf) -> ll {
+    auto dfs = [&](auto&& self, ll u, ll nf) -> ll {
         if (u == t || nf == 0) return nf;
         for (ll& i = ptr[u]; i < h[u].size(); i++) {
             auto& [w, v, rev] = h[u][i];
@@ -993,7 +993,7 @@ vll bridges_or_articulations(const vvpll& g, bool get_bridges) {
     ll n = g.size(), timer = 0;
     vector<bool> vs(n);
     vll st(n), low(n), res;
-    auto dfs = [&](auto& self, ll u, ll p) -> void {
+    auto dfs = [&](auto&& self, ll u, ll p) -> void {
         vs[u] = true;
         st[u] = low[u] = timer++;
         ll children = 0;
@@ -1114,7 +1114,7 @@ tuple<T, ll, ll> kadane(const vector<T>& xs, bool mx = true) {
 */
 void binom(ll k, const vll& xs) {
     vll ks;
-    auto f = [&](auto& self, ll i, ll rem) {
+    auto f = [&](auto&& self, ll i, ll rem) {
         if (rem == 0) {  // do stuff here
             cout << ks << '\n';
             return;
@@ -2283,7 +2283,7 @@ struct HLD {
     HLD(vvll& g, bool values_on_edges, T def, Op f)
             : seg(g.size(), def, f), op(f), values_on_edges(values_on_edges) {
         idx = subtree = parent = head = vll(g.size());
-        auto build = [&](auto& self, ll u = 1, ll p = 0) -> void {
+        auto build = [&](auto&& self, ll u = 1, ll p = -1) -> void {
             idx[u] = timer++, subtree[u] = 1, parent[u] = p;
             for (ll& v : g[u]) if (v != p) {
                 head[v] = (v == g[u][0] ? head[u] : v);
@@ -2429,8 +2429,8 @@ private:
 ```c++
 /**
 *  @param  i, j  Interval;
-*  @param  x     Value to comppare.
-*  @return       First index with element greater than x.
+*  @param  x     Value to compare.
+*  @return       First index from i->j with element greater than x.
 *  This is a segment tree's method.
 *  The segment tree function must be max().
 *  Returns -1 if no element is greater.
@@ -2612,7 +2612,7 @@ struct WaveletTree {
     *  Time complexity: O(Nlog(N))
     */
     WaveletTree(vll& xs, ll sz) : n(sz), wav(2 * n) {
-        auto build = [&](auto& self, auto b, auto e, ll l, ll r, ll no) {
+        auto build = [&](auto&& self, auto b, auto e, ll l, ll r, ll no) {
             if (l == r) return;
             ll m = (l + r) / 2, i = 0;
             wav[no].resize(e - b + 1);
@@ -3386,18 +3386,22 @@ struct HashInv {
 
 ```c++
 struct SuffixAutomaton {
-    vvll next;  // if mle change to vector<map<ll, ll>>
+    vvll to;  // if mle change to vector<map<ll, ll>>
     vll len, fpos, lnk, cnt, rcnt, dcnt;
     ll sz = 0, last = 0, n = 0, alpha = 26;
     
+    SuffixAutomaton() { make_node(); }
+    
     /**
     *  @param  s  String.
-    *  Time complexity: O(Nlog(N))
+    *  Time complexity: O(N)
     */
-    SuffixAutomaton(const string &s) {
-        make_node();
-        for (auto c : s) add(c);
-
+    void insert(const string& s) {
+        last = 0;
+        for (auto c : s) add(c - 'a');
+    }
+    
+    void finalize() {
         // preprocessing for count (topologic order)
         vpll order(sz - 1);
         rep(i, 1, sz) order[i - 1] = {len[i], i};
@@ -3417,7 +3421,7 @@ struct SuffixAutomaton {
     pll count_and_first(const string &t) {
         ll u = 0;
         for (auto c : t) {
-            ll v = next[u][c - 'a'];
+            ll v = to[u][c - 'a'];
             if (!v) return {0, -1};
             u = v;
         }
@@ -3445,13 +3449,13 @@ struct SuffixAutomaton {
     *  Time complexity: O(N)
     */
     string kth_sub(ll k) {
-        k += n;
+        k += cnt[0];
         string res;
         ll u = 0;
         while (k >= cnt[u]) {
             k -= cnt[u];
             rep(i, 0, alpha) {
-                ll v = next[u][i];
+                ll v = to[u][i];
                 if (!v) continue;
                 if (rcnt[v] > k) {
                     res += i + 'a', u = v;
@@ -3473,7 +3477,7 @@ struct SuffixAutomaton {
         ll u = 0;
         while (k >= 0) {
             rep(i, 0, alpha) {
-                ll v = next[u][i];
+                ll v = to[u][i];
                 if (!v) continue;
                 if (dcnt[v] > k) {
                     res += i + 'a', --k, u = v;
@@ -3487,35 +3491,35 @@ struct SuffixAutomaton {
 
 private:
     ll make_node(ll LEN = 0, ll FPOS = -1, ll LNK = -1, ll CNT = 0) {
-        next.eb(vll(alpha)), rcnt.eb(0), dcnt.eb(0);
+        to.eb(vll(alpha)), rcnt.eb(0), dcnt.eb(0);
         len.eb(LEN), fpos.eb(FPOS), lnk.eb(LNK), cnt.eb(CNT);
         return sz++;
     }
 
-    void add(char c) {
-        c -= 'a', ++n;
-        ll u = make_node(len[last] + 1, len[last], 0, 1), p = last;
-        while (p != -1 && !next[p][c])
-            next[p][c] = u, p = lnk[p];
-        if (p == -1) lnk[u] = 0;
-        else {
-            ll q = next[p][c];
-            if (len[p] + 1 == len[q]) lnk[u] = q;
+    void add(ll c) {
+        ++n;
+        ll p = last;
+        ll u = make_node(len[p] + 1, len[p], 0, 1);
+    		last = u;
+    		for (; p != -1 && !to[p][c]; p = lnk[p]) to[p][c] = u;
+    		if (p == -1) lnk[u] = 0;
+    		else {
+            ll v = to[p][c];
+            if (len[p] + 1 == len[v]) lnk[u] = v;
             else {
-                ll v = make_node(len[p] + 1, fpos[q], lnk[q]);
-                next[v] = next[q];
-                while (p != -1 && next[p][c] == q)
-                    next[p][c] = v, p = lnk[p];
-                lnk[q] = lnk[u] = v;
+                ll clone = make_node(len[p] + 1, fpos[v], lnk[v]);
+                to[clone] = to[v];
+                lnk[u] = lnk[v] = clone;
+                for (; p != -1 && to[p][c] == v; p = lnk[p])
+                    to[p][c] = clone;
             }
         }
-        last = u;
     }
 
     void dfs(ll u) {  // for kth_sub and kth_dsub
         dcnt[u] = 1, rcnt[u] = cnt[u];
         rep(i, 0, alpha) {
-            ll v = next[u][i];
+            ll v = to[u][i];
             if (!v) continue;
             if (!dcnt[v]) dfs(v);
             dcnt[u] += dcnt[v];
@@ -4007,7 +4011,7 @@ Matemática
   (Podemos concluir que a partir de um número arbitrário a distância para o coprimo
    mais próximo é bem menor que esse valor).
    
-> Maior diferença entre dois primos consecutivos: $< 10^{7}$ é $180$.
+> Maior diferença entre dois primos consecutivos: $< 10^7$ é $180$.
 
 > Maior quantidade de primos na fatoração de um número: $< 10^3$ é $9$, $< 10^6$ é $19$.
 
@@ -4035,9 +4039,9 @@ Matemática
 
 > Divisibilidade por $12$: se divisível por $3$ e $4$.
 
-> Soma da progressão geométrica ($\sum_{k=1}^{n} x^k$ é uma progressão geométrica): $\frac{a_n * r - a_1}{r - 1}$.
+> Soma da progressão geométrica ($\sum_{k=1}^n x^k$ é uma progressão geométrica): $\frac{a_n * r - a_1}{r - 1}$.
 
-> Soma de progressão geométrica da forma: $\sum_{k=1}^{n} kx^k = \frac {x(1-x^n)}{(1-x)^2}-\frac{nx^{n+1}}{1-x}$,
+> Soma de progressão geométrica da forma: $\sum_{k=1}^n kx^k = \frac {x(1-x^n)}{(1-x)^2}-\frac{nx^{n+1}}{1-x}$,
   parte da fórmula normal, multiplica por x e subtrai.
 
 > Soma de termos ao quadrado: $1^2 + 2^2 + ... + n^2 = \frac{n(n + 1)(2n + 1)}{6}$.
@@ -4053,9 +4057,9 @@ Matemática
 
 > $a^{\varphi(m) - 1} = a^{-1} \bmod m$, mas precisa da condição que $gcd(a, m) = 1$.
 
-> $x! = 0 \bmod m$, se $x >= m$.
+> $x! = 0 \bmod m$, se $x \geq m$.
 
-> Teoream de Wilson: $(n - 1)! = -1 \bmod n$. Dá para calcular $x! \bmodn$ se $n - x <= 1e6$ pois $x! = -[(x+1)...(m-1)]^-1 \bmod n$.
+> Teoream de Wilson: $(n - 1)! = -1 \bmod n$. Dá para calcular $x! \bmod n$ se $n - x \leq 10^6$ pois $x! = -[(x+1)...(m-1)]^{-1} \bmod n$.
 
 > $(a+b)^n = \binom{n}{0} a^n + \binom{n}{1} a^{n-1} b + \binom{n}{2} a^{n-2} b^2 + \cdots +
   \binom{n}{k} a^{n-k} b^k + \cdots + \binom{n}{n} b^n$
@@ -4074,9 +4078,9 @@ Matemática
   aparência). $C_n = \frac{\binom{2n}{n}}{n + 1}$.
 
 > Lema de Burnside: o número de combinações em que simétricos são considerados iguais é
-  o somatório de $\sum_{k=1}^{n} \frac{c(k)}{n}$. $n$ é a quantidade de maneiras de mudar
+  o somatório $\frac{1}{n} \sum_{k=1}^{n} c(k)$. $n$ é a quantidade de maneiras de mudar
   a posição de uma combinação e $c(k)$ é a quantidade de combinações que são consideradas
-  iguais na $k$-ésima maneira.
+  iguais à primeira maneira na $k$-ésima maneira.
   
 > $min(f, g) = \frac{f + g}{2} - \frac{|f - g|}{2}$. Se estamos fazendo para vários valores, para
   lidar com o módulo, se temos $f$ fixo, tentamos lidar com os $g$ maiores que $f$ e com os
@@ -4084,7 +4088,7 @@ Matemática
 
 Strings
 
-> Sejam $p$ e $q$ dois períodos de uma string $s$. Se $p + q − mdc(p, q) ≤ |s|$,
+> Sejam $p$ e $q$ dois períodos de uma string $s$. Se $p + q − mdc(p, q) \leq |s|$,
   então $mdc(p, q)$ também é período de $s$.
 
 > Relação entre bordas e períodos: A sequência
@@ -4107,7 +4111,7 @@ Outros
   `import sys
   sys.set_int_max_str_digits(1000001)`
   
-> Dado um grafo a quantidade de vértices pesados é $sqrt(N)$, vértices leves são aqueles com degrau $<= sqrt(N)$. 
+> Dado um grafo a quantidade de vértices pesados é $\sqrt{N}$, vértices leves são aqueles com degrau $\leq \sqrt{N}$. 
 
 ### Histograma
 
