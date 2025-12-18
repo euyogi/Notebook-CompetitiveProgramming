@@ -24,8 +24,8 @@ script:
 
 * Template
 * Flags
-* Debug
 * Pragmas
+* Debug
 * Algoritmos
   * Árvores
     * Binary lifting
@@ -56,6 +56,7 @@ script:
     * Max flow/min cut (Dinic)
     * Pontes e articulações
   * Outros
+    * Algoritmo de Mo
     * Busca ternária
     * Intervalos com soma S
     * Kadane
@@ -64,7 +65,6 @@ script:
     * Maior subsequência crescente (LIS)
     * Mex
     * Moda
-    * Mo's algorítmo
     * Pares com gcd x
     * Próximo maior/menor elemento
     * Soma de todos os intervalos
@@ -128,7 +128,6 @@ script:
   * Aritmética modular
   * Bits
   * Ceil division
-  * Conversão de índices
   * Comprimir par
   * Counting sort
   * Fatos
@@ -194,9 +193,6 @@ void solve() {
 #define pd    pair<double, double>
 #define x     first
 #define y     second
-#define F 'a'
-#define I(c) (c) - F
-#define C(i) (i) + F
 map<char, pll> ds1 { {'R', {0, 1}}, {'D', {1, 0}}, {'L', {0, -1}}, {'U', {-1, 0}} };
 vpll ds2 { {0, 1}, {1, 0}, {0, -1}, {-1, 0}, {1,  1}, {1, -1}, {-1,  1}, {-1, -1} };
 vpll ds3 { {1, 2}, {2, 1}, {-1, 2}, {-2, 1}, {1, -2}, {2, -1}, {-1, -2}, {-2, -1} };
@@ -249,12 +245,12 @@ void pr(T... a) {int f = 0; ((D(" | "), p(a)), ...); cerr << "\e[m\n";}
 template <typename T>
 double angle(const pair<T, T>& P, const pair<T, T>& Q,
              const pair<T, T>& R, const pair<T, T>& S) {
+    assert(P != Q && R != S);
     T ux = P.x - Q.x, uy = P.y - Q.y;
     T vx = R.x - S.x, vy = R.y - S.y;
-    T num = ux * vx + uy * vy;
-    double den = hypot(ux, uy) * hypot(vx, vy);
-    assert(den != 0.0);  // degenerate segment
-    return acos(num / den);
+    T cross = ux * vy - uy * vx;
+    T dot = ux * vx + uy * vy;
+    return atan2(cross, dot);  // oriented
 }
 ```
 
@@ -314,16 +310,17 @@ vector<pair<T, T>> monotone_chain(vector<pair<T, T>> PS) {
 
 ```c++
 /**
- *  @param  A, B, P  Points.
- *  @return          Value that represents orientation of P to segment AB.
- *  If orientation is collinear: zero;
- *  If point is to the left:     positive;
- *  If point is to the right:    negative;
- *  Time complexity: O(1)
+ * @param  A, B     Points defining the line segment AB.
+ * @param  P        The point to check.
+ * @return          Cross product value (2 * signed area).
+ * Positive: P is to the left of AB (Counter-Clockwise).
+ * Negative: P is to the right of AB (Clockwise).
+ * Zero:     P is collinear with AB.
+ * Time complexity: O(1)
 */
 template <typename T>
 T D(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
-    return (A.x * B.y + A.y * P.x + B.x * P.y) - (P.x * B.y + P.y * A.x + B.x * A.y);
+    return (B.x - A.x) * (P.y - A.y) - (B.y - A.y) * (P.x - A.x);
 }
 ```
 
@@ -357,8 +354,10 @@ bool ccw(pair<T, T> P, pair<T, T> Q, const pair<T, T>& O) {
 bool is_square(const vpll& ps) {
     if (ps.size() != 4) return false;
     vll ds;
-    rep(i, 0, 4) rep(j, i + 1, 4)
-        ds.eb(dist(ps[i], ps[j]));
+    rep(i, 0, 4) rep(j, i + 1, 4) {
+        ll dx = ps[i].x - ps[j].x, dy = ps[i].y - ps[j].y;
+        ds.eb(dx * dx + dy * dy);
+    }
     sort(all(ds));
     ds.erase(unique(all(ds)), ds.end());
     return ds.size() == 2 && 2 * ds[0] == ds[1];
@@ -482,7 +481,7 @@ vll parent, subtree;
 
 ll subtree_dfs(const vvll& g, ll u, ll p) {
     subtree[u] = 1;
-    for (ll v : g[u]) if (v != p && !parent[v])
+    for (ll v : g[u]) if (v != p && parent[v] == -1)
         subtree[u] += subtree_dfs(g, v, u);
     return subtree[u];
 }
@@ -493,13 +492,13 @@ ll subtree_dfs(const vvll& g, ll u, ll p) {
  *  also be kinda like log(N) because it keeps dividing by 2.
  *  Time complexity: O(Nlog(N))
 */
-void centroid_decomp(const vvll& g, ll u = 1, ll p = -1, ll sz = 0) {
-    if (p == -1) p = -2, parent = subtree = vll(g.size());
-    if (sz == 0) sz = subtree_dfs(g, u, 0);
-    for (ll v : g[u]) if (!parent[v] && subtree[v] * 2 > sz)
+void centroid_decomp(const vvll& g, ll u = 0, ll p = -1, ll sz = 0) {
+    if (p == -1) p = -2, parent= vll(g.size(), -1), subtree = vll(g.size());
+    if (sz == 0) sz = subtree_dfs(g, u, -1);
+    for (ll v : g[u]) if (parent[v] == -1 && subtree[v] * 2 > sz)
         return subtree[u] = 0, centroid_decomp(g, v, p, sz);
     parent[u] = p;
-    for (ll v : g[u]) if (!parent[v]) centroid_decomp(g, v, u);
+    for (ll v : g[u]) if (parent[v] == -1) centroid_decomp(g, v, u);
 }
 ```
 
@@ -515,7 +514,7 @@ vll st, et;
  *  we can use stuff like segtrees on the subtrees.
  *  Time complexity: O(N)
 */
-void euler_tour(const vvll& g, ll u = 1, ll p = -1) {
+void euler_tour(const vvll& g, ll u, ll p = -1) {
     if (p == -1) { timer = 0; st = et = vll(g.size()); }
     st[u] = ++timer;
     for (ll v : g[u]) if (v != p)
@@ -966,7 +965,7 @@ pair<ll, vector<vtll>> max_flow(const vvpll& g, ll s, ll t) {
     ll f = 0; q[0] = s;
     rep(l, 0, 31)
         do {
-            lvl = ptr = vll(n);
+            fill(all(lvl), 0), fill(all(ptr), 0);
             ll qi = 0, qe = lvl[s] = 1;
             while (qi < qe && !lvl[t]) {
                 ll u = q[qi++];
@@ -1024,6 +1023,58 @@ vll bridges_or_articulations(const vvpll& g, bool get_bridges) {
 ```
 
 ## Outros
+
+### Algoritmo de Mo
+
+```c++
+struct Query {
+    ll l, r, idx, block;
+    bool operator<(const Query& q) const {
+        if (block != q.block) return block < q.block;
+        return (block & 1 ? (r < q.r) : (r > q.r));
+    }
+};
+
+template <typename T, typename Tans>
+struct Mo {
+    vector<T> vs;
+    vector<Query> qs;
+    const ll block_size;
+    
+    Mo(const vector<T>& xs) : vs(xs), block_size((int)ceil(sqrt(xs.size()))) {}
+
+    void add_query(ll l, ll r) {
+        qs.emplace_back(l, r, qs.size(), l / block_size);
+    }
+
+    // Time complexity: O(N sqrt(N))
+    auto solve() {
+        vector<Tans> answers(qs.size());
+        sort(all(qs));
+
+        int cur_l = 0, cur_r = -1;
+        for (auto q : qs) {
+            while (cur_l > q.l) add(--cur_l);
+            while (cur_r < q.r) add(++cur_r);
+            while (cur_l < q.l) remove(cur_l++);
+            while (cur_r > q.r) remove(cur_r--);
+            answers[q.idx] = get_answer();
+        }
+
+        return answers;
+    }
+
+private:
+    // add value at idx from data structure
+    inline void add(ll idx) {}
+
+    // remove value at idx from data structure
+    inline void remove(ll idx) {}
+
+    // extract current answer of the data structure
+    inline Tans get_answer() {}
+};
+```
 
 ### Busca ternária
 
@@ -1165,12 +1216,10 @@ T lcs(const T& xs, const T& ys) {
 ```c++
 /**
  *  @param  xs      Target Vector.
- *  @param  values  True if want values, indexes otherwise.
- *  @return         Longest increasing subsequence as values or indexes.
- *  https://judge.yosupo.jp/problem/longest_increasing_subsequence
+ *  @return         Longest increasing subsequence as indexes.
  *  Time complexity: O(Nlog(N))
 */
-vll lis(const vll& xs, bool values) {
+vll lis(const vll& xs) {
     assert(!xs.empty());
     vll ss, idx, pre(xs.size()), ys;
     rep(i, 0, xs.size()) {
@@ -1182,8 +1231,7 @@ vll lis(const vll& xs, bool values) {
         ss[j] = xs[i], idx[j] = i;
     }
     ll i = idx.back();
-    while (i != -1)
-        ys.eb((values ? xs[i] : i)), i = pre[i];
+    while (i != -1) ys.eb(i), i = pre[i];
     reverse(all(ys));
     return ys;
 }
@@ -1226,58 +1274,6 @@ pair<T, ll> mode(vector<T>& xs) {
     }
     return { best, bfreq };
 }
-```
-
-### Mo's algorítmo
-
-```c++
-struct Query {
-    ll l, r, idx, block;
-    bool operator<(const Query& q) const {
-        if (block != q.block) return block < q.block;
-        return (block & 1 ? (r < q.r) : (r > q.r));
-    }
-};
-
-template <typename T, typename Tans>
-struct Mo {
-    vector<T> vs;
-    vector<Query> qs;
-    const ll block_size;
-    
-    Mo(const vector<T>& xs) : vs(xs), block_size((int)ceil(sqrt(xs.size()))) {}
-
-    void add_query(ll l, ll r) {
-        qs.emplace_back(l, r, qs.size(), l / block_size);
-    }
-
-    // Time complexity: O(N sqrt(N))
-    auto solve() {
-        vector<Tans> answers(qs.size());
-        sort(all(qs));
-
-        int cur_l = 0, cur_r = -1;
-        for (auto q : qs) {
-            while (cur_l > q.l) add(--cur_l);
-            while (cur_r < q.r) add(++cur_r);
-            while (cur_l < q.l) remove(cur_l++);
-            while (cur_r > q.r) remove(cur_r--);
-            answers[q.idx] = get_answer();
-        }
-
-        return answers;
-    }
-
-private:
-    // add value at idx from data structure
-    inline void add(ll idx) {}
-
-    // remove value at idx from data structure
-    inline void remove(ll idx) {}
-
-    // extract current answer of the data structure
-    inline Tans get_answer() {}
-};
 ```
 
 ### Pares com gcd x
@@ -1422,8 +1418,9 @@ vll to_base(ll x, ll b) {
 pair<vll, vll> sieve(ll n) {
     vll ps, spf(n + 1);
     rep(i, 2, n + 1) if (!spf[i]) {
+        spf[i] = i;
         ps.eb(i);
-        for (ll j = i; j <= n; j += i)
+        for (ll j = i * i; j <= n; j += i)
             if (!spf[j]) spf[j] = i;
     }
     return { ps, spf };
@@ -1781,11 +1778,9 @@ ll totient(ll x) {
 ### Transformada de Fourier
 
 ```c++
-// constexpr ll mod     = 998244353;  // ntt
-// constexpr ll root    = 15311432;  // ntt
-// constexpr ll rootinv = 469870224;  // ntt
-// constexpr ll root_pw = 1 << 23;  // ntt
-// #define T Mi<mod>  // ntt
+constexpr ll M = 998244353;  // ntt
+constexpr ll G = 3;
+// #define T Mi<M>  // ntt
 #define T complex<double>  // fft
 
 /**
@@ -1798,13 +1793,13 @@ void fft(vector<T>& a, bool invert) {
     ll n = a.size();
     for (ll i = 1, j = 0; i < n; ++i) {
         ll bit = n >> 1;
-        while (j & bit) j ^= bit, bit >>= 1;
+        for (; j & bit; bit >>= 1) j ^= bit;
         j ^= bit;
         if (i < j) swap(a[i], a[j]);
     }
     for (ll len = 2; len <= n; len <<= 1) {
-        // T wlen = invert ? rootinv : root;  // ntt
-        // for (ll i = len; i < root_pw; i <<= 1) wlen *= wlen;  // ntt
+        // T wlen = pot<T>(G, (M - 1) / len);  // ntt 
+        // if (invert) wlen = pot(wlen, M - 2);  // ntt
         double ang = 2 * acos(-1) / len * (invert ? -1 : 1);  // fft
         T wlen(cos(ang), sin(ang));  // fft
         for (ll i = 0; i < n; i += len) {
@@ -2013,10 +2008,9 @@ vll lcp(const string& s, const vll& sa) {
  *  at i means that it's centered at both i - 1 and i, because they are equal.
  *  Time complexity: O(N)
 */
-vpll manacher(string s) {
-    string t;
-    for(char c : s) t += string("#") + c;
-    t += '#';
+vpll manacher(const string& s) {
+    string t = "#";
+    for(char c : s) t += c, t += '#';
     ll n = t.size(), l = 0, r = 1;
     t = "$" + t + "^";
     vll p(n + 2);  // qnt of palindromes centered in i.
@@ -2326,6 +2320,17 @@ struct HLD {
     ll upd_qry_subtree(ll u, ll x = INT_MIN) {
         assert(1 <= u && u < idx.size());
         return seg.upd_qry(idx[u] + values_on_edges, idx[u] + subtree[u] - 1, x);
+    }
+
+    /**
+    *  @param  u, v  Vertices.
+    *  @return       Lowest common ancestor between u and v.
+    *  Time complexity: O(log(N))
+    */
+    ll lca(ll u, ll v) {
+        for (; head[u] != head[v]; u = parent[head[u]])
+            if (idx[u] < idx[v]) swap(u, v);
+        return idx[u] < idx[v] ? u : v;
     }
 };
 ```
@@ -2877,17 +2882,13 @@ struct Polygon {
     */
     bool contains(const pair<T, T>& P) {
         if (n < 3) return false;
-        double sum = 0;
-
+        bool in = false;
         rep(i, 0, n) {
-            // border points are considered outside, should
-            // use contains point in segment to count them
-            auto d = D(vs[i], vs[i + 1], P);
-            double a = angle(P, vs[i], P, vs[i + 1]);
-            sum += d > 0 ? a : (d < 0 ? -a : 0);
+            if (((vs[i].y > P.y) != (vs[i + 1].y > P.y)) &&
+                (P.x < (vs[i + 1].x - vs[i].x) * (P.y - vs[i].y) / (double)(vs[i + 1].y - vs[i].y) + vs[i].x))
+                in = !in;
         }
-
-        return equals(abs(sum), 2.0 * acos(-1.0));  // check precision
+        return in;
     }
 
     /**
@@ -3237,7 +3238,7 @@ struct Matrix {
         ll N = mat.size(), K = mat[0].size(), M = other[0].size();
         assert(other.size() == K);
         Matrix res(N, M);
-        rep(k, 0, K) rep(i, 0, N) rep(j, 0, M)
+        rep(i, 0, N) rep(k, 0, K) rep(j, 0, M)
             res[i][j] += mat[i][k] * other[k][j];
         return res;
     }
@@ -3859,7 +3860,7 @@ struct Psum3D {
     */
     Psum3D(const vector<vector<vector<T>>>& xs)
             : n(xs.size()), m(xs[0].size()), o(xs[0][0].size()),
-              psum(n + 1, vector<vector<T>>(m + 1, vector<T>(o + 1)) {
+              psum(n + 1, vector<vector<T>>(m + 1, vector<T>(o + 1))) {
         rep(i, 1, n + 1) rep(j, 1, m + 1) rep(k, 1, o + 1) {
             psum[i][j][k] = psum[i - 1][j][k] + psum[i][j - 1][k] + psum[i][j][k - 1];
             psum[i][j][k] -= psum[i][j - 1][k - 1] + psum[i - 1][j][k - 1]
@@ -3900,22 +3901,20 @@ constexpr ll M2 = (ll)998244353;
 template <ll M = M1>
 struct Mi {
     ll v;
-    Mi() : v(0) {}
-    Mi(ll x) : v(x) {
+    Mi(ll x = 0) : v(x) {
         if (v >= M || v < -M) v %= M;
-        v += v < 0 ? M : 0;
+        if (v < 0) v += M;
     }
-    friend bool operator==(Mi a, Mi b) { return a.v == b.v; }
-    friend bool operator!=(Mi a, Mi b) { return a.v != b.v; }
-    friend ostream& operator<<(ostream& os, Mi a) { return os << a.v; }
-    Mi& operator+=(Mi b) { return v -= ((v += b.v) >= M ? M : 0), *this; }
-    Mi& operator-=(Mi b) { return v += ((v -= b.v)  < 0 ? M : 0), *this; }
-    Mi& operator*=(Mi b) { return v = v * b.v % M, *this; }
-    Mi& operator/=(Mi b) { return *this *= pot(b, M - 2); }
+    explicit operator ll() const { return v; }
+    Mi& operator+=(Mi o) { if ((v += o.v) >= M) v -= M; return *this; }
+    Mi& operator-=(Mi o) { if ((v -= o.v) < 0) v += M; return *this; }
+    Mi& operator*=(Mi o) { v = v * o.v % M; return *this; }
+    Mi& operator/=(Mi o) { return *this *= pot(o, M - 2); }
     friend Mi operator+(Mi a, Mi b) { return a += b; }
     friend Mi operator-(Mi a, Mi b) { return a -= b; }
     friend Mi operator*(Mi a, Mi b) { return a *= b; }
     friend Mi operator/(Mi a, Mi b) { return a /= b; }
+    friend ostream& operator<<(ostream& os, Mi a) { return os << a.v; }
 };
 ```
 
@@ -3930,14 +3929,6 @@ ll lsb(ll x) { return __builtin_ffsll(x); }
 
 ```c++
 ll ceilDiv(ll a, ll b) { assert(b != 0); return a / b + ((a ^ b) > 0 && a % b != 0); }
-```
-
-### Conversão de índices (2D <-> 1D)
-
-```c++
-#define K(i, j) ((i) * w + (j))
-#define I(k)    ((k) / w)
-#define J(k)    ((k) % w)
 ```
 
 ### Comprimir par
