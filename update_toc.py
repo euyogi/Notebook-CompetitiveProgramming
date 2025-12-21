@@ -6,7 +6,7 @@ def main():
         lines = f.readlines()
 
     toc = ["* Template\n", "* Flags\n", "* Pragmas\n", "* Debug\n"]
-    sections = {"Algoritmos", "Estruturas", "Utils"}
+    sections = {"Algoritmos", "Estruturas", "Utils", "Fatos"}
     capturing = False
 
     for line in lines:
