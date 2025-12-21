@@ -1,39 +1,29 @@
-name: Build README PDF
+name: Build PDF
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'README.md'
+      - "README.md"
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      # CORRECTED STEP: Using a literal block scalar `|` for the command
-      - name: Generate PDF from Markdown
+      - name: Build PDF
         run: |
           npx md-to-pdf README.md --launch-options '{ "args": ["--no-sandbox", "--disable-setuid-sandbox"] }'
+          mv README.pdf notebook.pdf
 
-      - name: Rename PDF to notebook.pdf
-        run: mv README.pdf notebook.pdf
-
-      - name: Commit and push PDF
-        uses: stefanzweifel/git-auto-commit-action@v5
+      - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "docs: auto-generate PDF from README.md"
+          commit_message: "docs: update notebook.pdf"
           file_pattern: notebook.pdf
           commit_user_name: "GitHub Actions"
           commit_user_email: "actions@github.com"

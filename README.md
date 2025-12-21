@@ -27,31 +27,31 @@ script:
 * Pragmas
 * Debug
 * Algoritmos
-  * Árvores
-    * Binary lifting
-    * Centróide
-    * Centróide decomposition
-    * Euler tour
-    * Menor ancestral comum (LCA)
   * Geometria
     * Ângulo entre segmentos
     * Distância entre pontos
     * Envoltório convexo
-    * Mediatriz
     * Orientação de ponto
     * Quadrado?
     * Slope
+    * Mediatriz
     * Rotação de ponto
+  * Árvores
+    * Binary lifting
+    * Centróide
+    * Centróide decomposition
+    * Euler Tour
+    * Menor ancestral comum (LCA)
   * Grafos
     * Bellman-Ford
     * BFS 0/1
     * Caminho euleriano
     * Detecção de ciclo
     * Dijkstra
-    * Floyd-Warshall
+    * Floyd Warshall
     * Johnson
     * Kosaraju
-    * Kruskal (Árvore geradora mínima)
+    * Kruskal
     * Ordenação topológica
     * Max flow/min cut (Dinic)
     * Pontes e articulações
@@ -70,17 +70,23 @@ script:
     * Soma de todos os intervalos
   * Matemática
     * Coeficiente binomial
+    * Coeficiente binomial mod
     * Conversão de base
     * Crivo de Eratóstenes
     * Divisores
+    * Divisores rápido
+    * Divisores de vários números
     * Equações diofantinas
     * Exponenciação rápida
     * Fatoração
+    * Fatoração com crivo
+    * Fatoração rápida
     * Gauss
     * Permutação com repetição
     * Teorema chinês do resto
     * Teste de primalidade
     * Totiente de Euler
+    * Totiente de Euler rápido
     * Transformada de Fourier
   * Strings
     * Autômato KMP
@@ -101,21 +107,25 @@ script:
     * Heavy-light decomposition
     * Ordered-set
     * Segment tree
+    * Primeiro maior
+    * Lazy Segment Tree de multiplicar e somar
     * Treap
-    * Wavelet tree
+    * Wavelet Tree
   * Geometria
     * Círculo
+    * Polígono
     * Reta
     * Segmento
     * Triângulo
-    * Polígono
   * Matemática
     * Matriz
   * Strings
     * Aho-Corasick
     * Hash
+    * Hash Inverso
     * Suffix Automaton
     * Trie
+    * Bit Trie
   * Outros
     * Compressão
     * Delta encoding
@@ -125,16 +135,16 @@ script:
     * Soma de prefixo 2D
     * Soma de prefixo 3D
 * Utils
-  * Aritmética modular
-  * Bits
-  * Ceil division
-  * Comprimir par
-  * Counting sort
-  * Fatos
-  * Histograma
-  * Igualdade flutuante
-  * Overflow check
-  * Radix sort
+    * Aritmética modular
+    * Bits
+    * Ceil division
+    * Comprimir par
+    * Counting sort
+    * Fatos
+    * Histograma
+    * Igualdade flutuante
+    * Overflow check
+    * Radix sort
 
 ### Template
 
@@ -4048,9 +4058,7 @@ Matemática
 
 > $a^{\varphi(m) - 1} = a^{-1} \bmod m$, mas precisa da condição que $gcd(a, m) = 1$.
 
-> $x! = 0 \bmod m$, se $x \geq m$.
-
-> Teoream de Wilson: $(n - 1)! = -1 \bmod n$. Dá para calcular $x! \bmod n$ se $n - x \leq 10^6$ pois $x! = -[(x+1)...(m-1)]^{-1} \bmod n$.
+> Teorema de Wilson: $(n - 1)! = -1 \bmod n$. Dá para calcular $x! \bmod n$ se $n - x \leq 10^6$ pois $x! = -[(x+1)...(m-1)]^{-1} \bmod n$.
 
 > $(a+b)^n = \binom{n}{0} a^n + \binom{n}{1} a^{n-1} b + \binom{n}{2} a^{n-2} b^2 + \cdots +
   \binom{n}{k} a^{n-k} b^k + \cdots + \binom{n}{n} b^n$
