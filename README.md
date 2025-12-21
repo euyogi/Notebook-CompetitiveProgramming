@@ -22,134 +22,7 @@ script:
 
 # Sumário
 
-* Template
-* Flags
-* Pragmas
-* Debug
-* Algoritmos
-  * Geometria
-    * Ângulo entre segmentos
-    * Distância entre pontos
-    * Envoltório convexo
-    * Orientação de ponto
-    * Quadrado?
-    * Slope
-    * Mediatriz
-    * Rotação de ponto
-  * Árvores
-    * Binary lifting
-    * Centróide
-    * Centróide decomposition
-    * Euler Tour
-    * Menor ancestral comum (LCA)
-  * Grafos
-    * Bellman-Ford
-    * BFS 0/1
-    * Caminho euleriano
-    * Detecção de ciclo
-    * Dijkstra
-    * Floyd Warshall
-    * Johnson
-    * Kosaraju
-    * Kruskal
-    * Ordenação topológica
-    * Max flow/min cut (Dinic)
-    * Pontes e articulações
-  * Outros
-    * Algoritmo de Mo
-    * Busca ternária
-    * Intervalos com soma S
-    * Kadane
-    * Listar combinações
-    * Maior subsequência comum (LCS)
-    * Maior subsequência crescente (LIS)
-    * Mex
-    * Moda
-    * Pares com gcd x
-    * Próximo maior/menor elemento
-    * Soma de todos os intervalos
-  * Matemática
-    * Coeficiente binomial
-    * Coeficiente binomial mod
-    * Conversão de base
-    * Crivo de Eratóstenes
-    * Divisores
-    * Divisores rápido
-    * Divisores de vários números
-    * Equações diofantinas
-    * Exponenciação rápida
-    * Fatoração
-    * Fatoração com crivo
-    * Fatoração rápida
-    * Gauss
-    * Permutação com repetição
-    * Teorema chinês do resto
-    * Teste de primalidade
-    * Totiente de Euler
-    * Totiente de Euler rápido
-    * Transformada de Fourier
-  * Strings
-    * Autômato KMP
-    * Bordas
-    * Comparador de substring
-    * Distância de edição
-    * KMP
-    * Maior prefixo comum (LCP)
-    * Manacher (substrings palíndromas)
-    * Menor rotação
-    * Ocorrências de substring (FFT)
-    * Quantidade de ocorrências de substring
-    * Suffix array
-* Estruturas
-  * Árvores
-    * BIT tree 2D
-    * Disjoint set union
-    * Heavy-light decomposition
-    * Ordered-set
-    * Segment tree
-    * Primeiro maior
-    * Lazy Segment Tree de multiplicar e somar
-    * Treap
-    * Wavelet Tree
-  * Geometria
-    * Círculo
-    * Polígono
-    * Reta
-    * Segmento
-    * Triângulo
-  * Matemática
-    * Matriz
-  * Strings
-    * Aho-Corasick
-    * Hash
-    * Hash Inverso
-    * Suffix Automaton
-    * Trie
-    * Bit Trie
-  * Outros
-    * Compressão
-    * Delta encoding
-    * Fila agregada
-    * Mex
-    * RMQ
-    * Soma de prefixo 2D
-    * Soma de prefixo 3D
-* Utils
-    * Aritmética modular
-    * Bits
-    * Ceil division
-    * Comprimir par
-    * Counting sort
-    * Histograma
-    * Igualdade flutuante
-    * Overflow check
-    * Radix sort
-* Fatos
-  * Bitwise
-  * Geometria
-  * Matemática
-  * Strings
-  * Outros
+
 
 ### Template
 
@@ -358,7 +231,7 @@ bool ccw(pair<T, T> P, pair<T, T> Q, const pair<T, T>& O) {
 }
 ```
 
-### Quadrado?
+### Verificar Quadrado
 
 ```c++
 /**
@@ -430,7 +303,7 @@ pd rotate(const pair<T, T>& P, double a) {
 
 ## Árvores
 
-### Binary lifting
+### Binary Lifting
 
 ```c++
 constexpr ll LOG = 22;
@@ -489,7 +362,7 @@ ll centroid(const vvll& g, ll u, ll p = -1) {
 }
 ```
 
-### Centróide decomposition
+### Decomposição de Centróide
 
 ```c++
 vll parent, subtree;
@@ -897,8 +770,7 @@ vtll kruskal(vtll& edges, ll n) {
     DSU dsu(n);
     vtll mst;
     sort(all(edges));  // change order if want maximum
-    for (auto [w, u, v] : edges) if (!dsu.same(u, v)) {
-        dsu.merge(u, v);
+    for (auto [w, u, v] : edges) if (dsu.merge(u, v)) {
         mst.eb(w, u, v);
     }
     return mst;
@@ -940,7 +812,7 @@ vll toposort(const vvll& g) {
 }
 ```
 
-### Max flow/min cut (Dinic)
+### Fluxo Máximo (Dinic)
 
 ```c++
 /**
@@ -2181,7 +2053,7 @@ vll suffix_array(string s, ll k = LLONG_MAX) {
 
 ## Árvores
 
-### BIT tree 2D
+### BIT 2D
 
 ```c++
 template <typename T>
@@ -2229,7 +2101,7 @@ struct BIT2D {
 };
 ```
 
-### Disjoint set union
+### DSU
 
 ```c++
 struct DSU {
@@ -2251,13 +2123,16 @@ struct DSU {
 
     /**
      *  @param  x, y  Elements.
+     *  @return       True if merged, false if already same set.
      *  Time complexity: ~O(1)
     */
-    void merge(ll x, ll y) {
-        ll a = find(x), b = find(y);
-        if (size[a] > size[b]) swap(a, b);
-        parent[a] = b;
-        if (a != b) size[b] += size[a], size[a] = 0;
+    bool merge(ll x, ll y) {
+        x = find(x), y = find(y);
+        if (x == y) return false;
+        if (size[x] > size[y]) swap(x, y);
+        parent[x] = y;
+        size[y] += size[x], size[x] = 0;
+        return true;
     }
 
     /**
@@ -2350,7 +2225,7 @@ struct HLD {
 };
 ```
 
-### Ordered-set
+### Ordered Set
 
 ```c++
 #include <ext/pb_ds/assoc_container.hpp>
@@ -2468,7 +2343,7 @@ ll first_greater(ll i, ll j, T x, ll l = 0, ll r = -1, ll no = 1) {
 }
 ```
 
-### Lazy Segment Tree de multiplicar e somar
+### SegTree Lazy (Affine)
 
 ```c++
 // fora da seg
@@ -3239,7 +3114,7 @@ struct Matrix {
         if (n == m) rep(i, 0, n) mat[i][i] = x;
     }
     vector<T>& operator[](ll i) { return mat[i]; }
-    ll size() { return mat.size(); }
+    ll size() const { return mat.size(); }
     
     /**
      *  @param  other  Other matrix.
@@ -3249,7 +3124,7 @@ struct Matrix {
      *  https://judge.yosupo.jp/problem/matrix_product
      *  Time complexity: O(N^3)
     */
-    Matrix operator*(Matrix& other) {
+    Matrix operator*(const Matrix& other) const {
         ll N = mat.size(), K = mat[0].size(), M = other[0].size();
         assert(other.size() == K);
         Matrix res(N, M);
@@ -3273,7 +3148,7 @@ struct AhoCorasick {
     vvll to, go, idx;
     vll mark, qnt, p, pc, link, exit;
 
-    AhoCorasick() : n(0), m(0), to(MAXN, vll(52)), go(MAXN, vll(52, -1)), idx(MAXN), mark(MAXN),
+    AhoCorasick() : n(0), m(0), to(MAXN, vll(26)), go(MAXN, vll(26, -1)), idx(MAXN), mark(MAXN),
                     qnt(MAXN), p(MAXN), pc(MAXN), link(MAXN, -1), exit(MAXN, -1) {}
     
     void insert(const string& s) {
@@ -3582,7 +3457,7 @@ struct Trie {
         for (char c : s) {
             ll& v = to[u][c - 'a'];
             u = v, --qnt[u];
-            if (!qnt[u]) v = 0, --n;
+            if (!qnt[u]) v = 0;
         }
         --term[u], --qnt[0];
     }
@@ -3636,7 +3511,7 @@ struct BitTrie {
         rep(i, 0, 32) {
             ll& v = to[u][(x >> i) & 1];
             u = v, --qnt[u];
-            if (!qnt[u]) v = 0, --n;
+            if (!qnt[u]) v = 0;
         }
         --qnt[0];
     }
@@ -4075,7 +3950,7 @@ void rsort(vll& xs){
 
 > Distância de Chebyshev: $dist(P, Q) = max(P.x - Q.x, P.y - Q.y)$. $P, Q$ são dois pontos.
 
-> Manhattam para Chebyshev: Feita a transformação $(x, y) \to (x + y, x - y)$, temos uma
+> Manhattan para Chebyshev: Feita a transformação $(x, y) \to (x + y, x - y)$, temos uma
   equivalência entre as duas distâncias, podemos agora tratar $x$ e $y$ separadamente,
   fazer bounding boxes, entre outros...
   
@@ -4142,7 +4017,7 @@ void rsort(vll& xs){
 
 > Teorema de Euler: $a^{\varphi(m)} = 1 \bmod m$. Se $m$ é primo se reduz á $a^{m - 1} = 1 \bmod m$.
 
-> $a^{b^c} \bmod m = a^{b^c \bmod phi(m)} \bmod m$. Se $m$ é primo se reduz á $a^{b^c} \bmod m = a^{b^c \bmod (m - 1)} \bmod m$.
+> $a^{b^c} \bmod m = a^{b^c \bmod \varphi(m)} \bmod m$. Se $m$ é primo se reduz á $a^{b^c} \bmod m = a^{b^c \bmod (m - 1)} \bmod m$.
 
 > $a^{\varphi(m) - 1} = a^{-1} \bmod m$, mas precisa da condição que $gcd(a, m) = 1$.
 
