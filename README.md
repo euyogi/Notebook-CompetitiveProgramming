@@ -22,7 +22,134 @@ script:
 
 # Sumário
 
-
+* Template
+* Flags
+* Pragmas
+* Debug
+* Algoritmos
+  * Geometria
+    * Ângulo entre segmentos
+    * Distância entre pontos
+    * Envoltório convexo
+    * Orientação de ponto
+    * Verificar Quadrado
+    * Slope
+    * Mediatriz
+    * Rotação de ponto
+  * Árvores
+    * Binary Lifting
+    * Centróide
+    * Decomposição de Centróide
+    * Euler Tour
+    * Menor ancestral comum (LCA)
+  * Grafos
+    * Bellman-Ford
+    * BFS 0/1
+    * Caminho euleriano
+    * Detecção de ciclo
+    * Dijkstra
+    * Floyd Warshall
+    * Johnson
+    * Kosaraju
+    * Kruskal
+    * Ordenação topológica
+    * Fluxo Máximo (Dinic)
+    * Pontes e articulações
+  * Outros
+    * Algoritmo de Mo
+    * Busca ternária
+    * Intervalos com soma S
+    * Kadane
+    * Listar combinações
+    * Maior subsequência comum (LCS)
+    * Maior subsequência crescente (LIS)
+    * Mex
+    * Moda
+    * Pares com gcd x
+    * Próximo maior/menor elemento
+    * Soma de todos os intervalos
+  * Matemática
+    * Coeficiente binomial
+    * Coeficiente binomial mod
+    * Conversão de base
+    * Crivo de Eratóstenes
+    * Divisores
+    * Divisores rápido
+    * Divisores de vários números
+    * Equações diofantinas
+    * Exponenciação rápida
+    * Fatoração
+    * Fatoração com crivo
+    * Fatoração rápida
+    * Gauss
+    * Permutação com repetição
+    * Teorema chinês do resto
+    * Teste de primalidade
+    * Totiente de Euler
+    * Totiente de Euler rápido
+    * Transformada de Fourier
+  * Strings
+    * Autômato KMP
+    * Bordas
+    * Comparador de substring
+    * Distância de edição
+    * KMP
+    * Maior prefixo comum (LCP)
+    * Manacher (substrings palíndromas)
+    * Menor rotação
+    * Ocorrências de substring (FFT)
+    * Quantidade de ocorrências de substring
+    * Suffix array
+* Estruturas
+  * Árvores
+    * BIT 2D
+    * DSU
+    * Heavy-light decomposition
+    * Ordered Set
+    * Segment tree
+    * Primeiro maior
+    * SegTree Lazy (Affine)
+    * Treap
+    * Wavelet Tree
+  * Geometria
+    * Círculo
+    * Polígono
+    * Reta
+    * Segmento
+    * Triângulo
+  * Matemática
+    * Matriz
+  * Strings
+    * Aho-Corasick
+    * Hash
+    * Hash Inverso
+    * Suffix Automaton
+    * Trie
+    * Bit Trie
+  * Outros
+    * Compressão
+    * Delta encoding
+    * Fila agregada
+    * Mex
+    * RMQ
+    * Soma de prefixo 2D
+    * Soma de prefixo 3D
+* Utils
+    * Aritmética modular
+    * Bits
+    * Ceil division
+    * Comprimir par
+    * Counting sort
+    * Histograma
+    * Igualdade flutuante
+    * Overflow check
+    * Radix sort
+* Fatos
+  * Bitwise
+  * Geometria
+  * Matemática
+  * Strings
+  * Outros
 
 ### Template
 
