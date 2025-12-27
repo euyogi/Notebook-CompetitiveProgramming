@@ -132,6 +132,7 @@ script:
     * RMQ
     * Soma de prefixo 2D
     * Soma de prefixo 3D
+    * Venice set
 * Utils
     * Aritmética modular
     * Bits
