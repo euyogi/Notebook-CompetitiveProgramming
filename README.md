@@ -51,14 +51,13 @@ script:
     * Floyd Warshall
     * Johnson
     * Kosaraju
-    * Kruskal
+    * MST
     * Ordenação topológica
     * Fluxo Máximo (Dinic)
     * Pontes e articulações
   * Outros
     * Algoritmo de Mo
     * Busca ternária
-    * Intervalos com soma S
     * Kadane
     * Listar combinações
     * Maior subsequência comum (LCS)
@@ -67,7 +66,6 @@ script:
     * Moda
     * Pares com gcd x
     * Próximo maior/menor elemento
-    * Soma de todos os intervalos
   * Matemática
     * Coeficiente binomial
     * Coeficiente binomial mod
@@ -138,12 +136,10 @@ script:
     * Aritmética modular
     * Bits
     * Ceil division
-    * Comprimir par
     * Counting sort
     * Histograma
     * Igualdade flutuante
     * Overflow check
-    * Radix sort
 * Fatos
   * Bitwise
   * Geometria
