@@ -338,7 +338,7 @@ T D(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
 */
 template <typename T>
 bool ccw(pair<T, T> P, pair<T, T> Q, const pair<T, T>& O) {
-    static const char qo[2][2] = { { 2, 3 }, { 1, 4 } };
+    static const char qo[2][2] = { {2, 3}, {1, 4} };
     P.x -= O.x, P.y -= O.y, Q.x -= O.x, Q.y -= O.y, O.x = 0, O.y = 0;
     bool qqx = equals(P.x, 0) || P.x > 0, qqy = equals(P.y, 0) || P.y > 0;
     bool rqx = equals(Q.x, 0) || Q.x > 0, rqy = equals(Q.y, 0) || Q.y > 0;
@@ -374,14 +374,14 @@ bool is_square(const vpll& ps) {
 ```c++
 /**
  *  @param  P, Q  Points.
- *  @return       The irreductible fraction dy/dx, dy always positive.
+ *  @return       The irreducible fraction dy/dx, dy always positive.
  *  Time complexity: O(log(N))
 */
 pll slope(const pll& P, const pll& Q) {
     ll dy = P.y - Q.y, dx = P.x - Q.x;
     if (dy < 0 || (dy == 0 && dx < 0)) dy *= -1, dx *= -1;
-    ll g = abs(gcd(dy, dx));
-    return { dy / g, dx / g };
+    ll g = gcd(dy, dx);
+    return {dy / g, dx / g};
 }
 ```
 
@@ -397,7 +397,7 @@ template <typename T>
 Line<T> perpendicular_bisector(const pair<T, T>& P, const pair<T, T>& Q) {
     T a = 2 * (Q.x - P.x), b = 2 * (Q.y - P.y);
     T c = (P.x * P.x + P.y * P.y) - (Q.x * Q.x + Q.y * Q.y);
-    return { a, b, c };
+    return {a, b, c};
 }
 ```
 
@@ -414,7 +414,7 @@ template <typename T>
 pd rotate(const pair<T, T>& P, double a) {
     double x = cos(a) * P.x - sin(a) * P.y;
     double y = sin(a) * P.x + cos(a) * P.y;
-    return { x, y };
+    return {x, y};
 }
 ```
 
@@ -472,7 +472,7 @@ ll subtree_dfs(const vvll& g, ll u, ll p) {
 */
 ll centroid(const vvll& g, ll u, ll p = -1) {
     ll sz = g.size();
-    if (p == -1) { subtree = vll(sz, 1); subtree_dfs(g, u, p); }
+    if (p == -1) subtree = vll(sz, 1), subtree_dfs(g, u, p);
     for (ll v : g[u]) if (v != p && subtree[v] * 2 > sz)
         return centroid(g, v, u);
     return u;
@@ -520,7 +520,7 @@ vll st, et;
  *  Time complexity: O(N)
 */
 void euler_tour(const vvll& g, ll u, ll p = -1) {
-    if (p == -1) { timer = 0; st = et = vll(g.size()); }
+    if (p == -1) timer = 0, st = et = vll(g.size());
     st[u] = ++timer;
     for (ll v : g[u]) if (v != p)
         euler_tour(g, v, u);
@@ -590,7 +590,7 @@ pair<vll, vll> spfa(const vvpll& g, ll s) {
             }
         }
     }
-    return { ds, pre };
+    return {ds, pre};
 }
 ```
 
@@ -656,7 +656,7 @@ vll eulerian_path(const vvll& g, bool d, ll s, ll e = -1) {
 
     while (!st.empty()) {
         ll u = st.top();
-        if (h[u].empty()) { res.eb(u); st.pop(); }
+        if (h[u].empty()) res.eb(u), st.pop();
         else {
             ll v = *h[u].begin();
             h[u].erase(h[u].find(v));
@@ -684,8 +684,6 @@ vll eulerian_path(const vvll& g, bool d, ll s, ll e = -1) {
  *  @param  d      Directed flag (true if g is directed).
  *  @return        Vector with cycle vertices or edges.
  *  Empty if no cycle.
- *  https://judge.yosupo.jp/problem/cycle_detection
- *  https://judge.yosupo.jp/problem/cycle_detection_undirected
  *  Time complexity: O(V + E)
 */
 vll cycle(const vvpll& g, bool edges, bool d) {
@@ -728,15 +726,12 @@ vll cycle(const vvpll& g, bool edges, bool d) {
  *  @param  g  Graph (w, v).
  *  @param  s  Starting vertex.
  *  @return    Vectors with smallest distances from every vertex to s and the paths.
- *  If want to calculate amount of paths or size of path, notice that when the
- *  distance for a vertex is calculated it probably won't be the best, remember to reset
- *  calculations if a better is found.
+ *  The distance is final only on the first time the node is out of the queue.
  *  It doesn't work with negative weights, but if you can find a potential function
  *  we can turn all weights to positive.
  *  A potential function is such that:
  *  new  weight is w' = w + p(u) - p(v) >= 0.
  *  real dist will be dist(u, v) = dist'(u, v) - p(u) + p(v).
- *  https://judge.yosupo.jp/problem/shortest_path
  *  Time complexity: O(Elog(V))
 */
 pair<vll, vll> dijkstra(const vvpll& g, ll s) {
@@ -752,14 +747,13 @@ pair<vll, vll> dijkstra(const vvpll& g, ll s) {
                 pq.emplace(ds[v], v);
             }
     }
-    return { ds, pre };
+    return {ds, pre};
 }
 
 vll get_path(const vll& pre, ll u) {
     vll p;
-    while (u != LLONG_MAX) {
+    while (u != LLONG_MAX)
         p.eb(u), u = pre[u];
-    }
     reverse(all(p));
     return p;
 }
@@ -869,11 +863,11 @@ tuple<vvll, map<ll, vll>, vll> kosaraju(const vvll& g) {
     }
     rep(u, 0, n) for (ll v : g[u]) if (leader[u] != leader[v])
         cond[leader[u]].eb(leader[v]);
-    return { cond, scc, leader };
+    return {cond, scc, leader};
 }
 ```
 
-### Kruskal
+### MST
 
 ```c++
 /**
@@ -884,13 +878,12 @@ tuple<vvll, map<ll, vll>, vll> kosaraju(const vvll& g) {
  *  Time complexity: O(Nlog(N))
 */
 vtll kruskal(vtll& edges, ll n) {
-    DSU dsu(n);
+    DSU dsu(n + 1);
     vtll mst;
     sort(all(edges));  // change order if want maximum
-    for (auto [w, u, v] : edges) if (!dsu.same(u, v)) {
-        dsu.merge(u, v);
-        mst.eb(w, u, v);
-    }
+    for (auto [w, u, v] : edges)
+        if (dsu.merge(u, v))
+            mst.eb(w, u, v);
     return mst;
 }
 ```
@@ -980,7 +973,7 @@ pair<ll, vector<vtll>> max_flow(const vvpll& g, ll s, ll t) {
             }
             while (ll nf = dfs(dfs, s, LLONG_MAX)) f += nf;
         } while (lvl[t]);
-    return { f, h };
+    return {f, h};
 }
 ```
 
@@ -1057,7 +1050,7 @@ struct Mo {
         vector<Tans> answers(qs.size());
         sort(all(qs));
 
-        int cur_l = 0, cur_r = -1;
+        ll cur_l = 0, cur_r = -1;
         for (auto q : qs) {
             while (cur_l > q.l) add(--cur_l);
             while (cur_r < q.r) add(++cur_r);
@@ -1101,38 +1094,6 @@ double ternary_search(double lo, double hi, function<double(double)> f) {
 }
 ```
 
-### Intervalos com soma S
-
-```c++
-/**
- *  @param  xs   Target vector.
- *  @param  sum  Desired sum.
- *  @return      Amount of contiguous intervals with sum S.
- *  Can change to count odd/even sum intervals (hist of even and odd).
- *  Also could change to get contiguos intervals with sum less equal, using an
- *  ordered-set just uncomment and comment the ones with hist.
- *  If want the interval to have an index or value subtract the parts without it.
- *  Time complexity: O(Nlog(N))
-*/
-template <typename T>
-ll count_intervals(const vector<T>& xs, T sum) {
-    map<T, ll> hist;
-    hist[0] = 1;
-    // oset<ll> csums;
-    // csums.insert(0);
-    ll ans = 0;
-    T csum = 0;
-    for (T x : xs) {
-        csum += x;
-        ans += hist[csum - sum];
-        ++hist[csum];
-        // ans += csums.size() - csums.order_of_key(csum - sum);
-        // csums.insert(csum);
-    }
-    return ans;
-}
-```
-
 ### Kadane
 
 ```c++
@@ -1153,7 +1114,7 @@ tuple<T, ll, ll> kadane(const vector<T>& xs, bool mx = true) {
         else if (csum > res || (csum == res && i - j + 1 < r - l + 1))
             res = csum, l = j, r = i;
     }
-    return { res * (mx ? 1 : -1), l, r };
+    return {res * (mx ? 1 : -1), l, r};
 }
 ```
 
@@ -1196,10 +1157,10 @@ template <typename T>
 T lcs(const T& xs, const T& ys) {
     ll n = xs.size(), m = ys.size();
     vvll dp(n + 1, vll(m + 1));
-    vvpll pre(n + 1, vpll(m + 1, { -1, -1 }));
+    vvpll pre(n + 1, vpll(m + 1, {-1, -1}));
     rep(i, 1, n + 1) rep(j, 1, m + 1)
         if (xs[i - 1] == ys[j - 1])
-            dp[i][j] = 1 + dp[i - 1][j - 1], pre[i][j] = { i - 1, j - 1};
+            dp[i][j] = 1 + dp[i - 1][j - 1], pre[i][j] = {i - 1, j - 1};
         else {
             if (dp[i][j - 1] >= dp[i][j])
                 dp[i][j] = dp[i][j - 1], pre[i][j] = pre[i][j - 1];
@@ -1277,7 +1238,7 @@ pair<T, ll> mode(vector<T>& xs) {
         else cfreq = 1;
         if (cfreq > bfreq) bfreq = cfreq, best = xs[i];
     }
-    return { best, bfreq };
+    return {best, bfreq};
 }
 ```
 
@@ -1325,27 +1286,6 @@ vector<T> closests(const vector<T>& xs) {
         dp[i] = j;
     }
     return dp;
-}
-```
-
-### Soma de todos os intervalos
-
-```c++
-/**
- *  @param  xs  Vector.
- *  @return     Sum of all intervals.
- *  By counting in how many intervals the element appear.
- *  Time complexity: O(N)
-*/
-template <typename T>
-T sum_of_all_intervals(const vector<T>& xs) {
-    T sum = 0;
-    ll opens = 0;
-    rep(i, 0, xs.size()) {
-        opens += xs.size() - 2 * i;
-        sum += xs[i] * opens;
-    }
-    return sum;
 }
 ```
 
@@ -1407,7 +1347,7 @@ ll binom(ll n, ll k) {
 vll to_base(ll x, ll b) {
     assert(b > 1);
     vll res;
-    while (x) { res.eb(x % b); x /= b; }
+    while (x) res.eb(x % b), x /= b;
     reverse(all(res));
     return res;
 }
@@ -1428,7 +1368,7 @@ pair<vll, vll> sieve(ll n) {
         for (ll j = i * i; j <= n; j += i)
             if (!spf[j]) spf[j] = i;
     }
-    return { ps, spf };
+    return {ps, spf};
 }
 ```
 
@@ -1458,7 +1398,7 @@ vll divisors(ll x) {
  *  Requires pollard rho.
  *  Time complexity: O(faster than sqrt)
 */
-vll divisors(ll x) {  
+vll divisors(ll x) {
     vll fs = factors(x), ds{1};  // use fast factorization (and sort)
     ll prev = 1, sz_prev = 1;
     rep(i, 0, fs.size()) {
@@ -1509,11 +1449,11 @@ vvll divisors(const vll& xs) {
 tuple<ll, ll, ll> diophantine(ll a, ll b, ll c = 1) {
     if (b == 0) {
         if (c % a != 0) return {LLONG_MAX, LLONG_MAX, a}; 
-        return { c / a, 0, a };
+        return {c / a, 0, a};
     }
     auto [x, y, d] = diophantine(b, a % b, c);
     if (x == LLONG_MAX) return {x, y, a}; 
-    return { y, x - a / b * y, d };
+    return {y, x - a / b * y, d};
 }
 ```
 
@@ -1689,11 +1629,11 @@ pll crt(const vpll& congruences) {
     auto [s, l] = congruences[0];
     for (auto [a, m] : congruences) {
         auto [x, y, d] = diophantine(l, -m, a - s);
-        if (x == LLONG_MAX) return { x, y };
+        if (x == LLONG_MAX) return {x, y};
         s = (a + y % (l / d) * m + l * m / d) % (l * m / d);
         l = l * m / d;
     }
-    return { s, l };
+    return {s, l};
 }
 ```
 
@@ -1892,11 +1832,11 @@ vll borders(const T& s) {
  *  Requires suffix array.
  *  Time complexity: O(1)
 */
-ll compare(ll i, ll j, ll m, const vector<vector<int>>& cs) {
+ll compare(ll i, ll j, ll m, const vvll& cs) {
     ll k = 0;  // move outside
     while ((1 << (k + 1)) <= m) ++k;  // move outside
-    pll a = { cs[k][i], cs[k][i + m - (1 << k)] };
-    pll b = { cs[k][j], cs[k][j + m - (1 << k)] };
+    pll a = {cs[k][i], cs[k][i + m - (1 << k)]};
+    pll b = {cs[k][j], cs[k][j + m - (1 << k)]};
     return a == b ? 0 : (a < b ? -1 : 1);
 }
 ```
@@ -1944,7 +1884,7 @@ pair<ll, string> edit(const string& s,  string& t) {
     }
 
     reverse(all(ops));
-    return { dp[m][n], ops };
+    return {dp[m][n], ops};
 }
 ```
 
@@ -2078,13 +2018,13 @@ vll occur(const string& s, const string& t) {
     vector<T> a(n), b(m);
     rep(i, 0, n) {
         double ang = acos(-1) * (s[i] - 'a') / 13;
-        a[i] = { cos(ang), sin(ang) };
+        a[i] = {cos(ang), sin(ang)};
     }
     rep(i, 0, m) {
         if (t[m - i - 1] == '?') ++q;
         else {
             double ang = acos(-1) * (t[m - 1 - i] - 'a') / 13;
-            b[i] = { cos(ang), -sin(ang) };
+            b[i] = {cos(ang), -sin(ang)};
         }
     }
     auto c = convolution(a, b);
@@ -2228,7 +2168,7 @@ struct DSU {
     /**
      *  @param  sz  Size.
     */
-    DSU(ll sz) : parent(sz), size(sz, 1) { iota(all(parent), 0); }
+    DSU(ll n) : parent(n), size(n, 1) { iota(all(parent), 0); }
 
     /**
      *  @param  x  Element.
@@ -2466,7 +2406,7 @@ template <typename T>
 struct Affine {
     T mul = 1, add = 0;
     Affine operator*=(const Affine& other) {
-        return *this = { mul * other.mul, add * other.mul + other.add };
+        return *this = {mul * other.mul, add * other.mul + other.add};
     }
     operator bool() { return mul != 1 || add != 0; }
 };
@@ -2760,14 +2700,14 @@ struct Circle {
         double a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y);
         double x0 = -a * c / (a * a + b * b), y0 = -b * c / (a * a + b * b);
         if (c*c > r*r * (a*a + b*b) + 1e-9) return {};
-        if (equals(c*c, r*r * (a*a + b*b))) return { { x0, y0 } };
+        if (equals(c*c, r*r * (a*a + b*b))) return { {x0, y0} };
         double d = r * r - c * c / (a * a + b * b);
         double mult = sqrt(d / (a * a + b * b));
         double ax = x0 + b * mult + C.x;
         double bx = x0 - b * mult + C.x;
         double ay = y0 - a * mult + C.y;
         double by = y0 + a * mult + C.y;
-        return { { ax, ay }, { bx, by } };
+        return { {ax, ay}, {bx, by} };
     }
 
     /**
@@ -2793,13 +2733,13 @@ struct Circle {
         double det = a * d - b * c;
 
         // collinear points
-        if (equals(det, 0)) return { { 0, 0 }, 0 };
+        if (equals(det, 0)) return { {0, 0}, 0 };
 
         T k1 = (Q.x * Q.x + Q.y * Q.y) - (P.x * P.x + P.y * P.y);
         T k2 = (R.x * R.x + R.y * R.y) - (P.x * P.x + P.y * P.y);
         double cx = (k1 * d - k2 * b) / det;
         double cy = (a * k2 - c * k1) / det;
-        return { { cx, cy }, dist(P, { cx, cy }) };
+        return { {cx, cy}, dist(P, {cx, cy}) };
     }
 
     /**
@@ -2812,11 +2752,11 @@ struct Circle {
         Circle<double> c(PS[0], 0);
         rep(i, 0, PS.size()) {
             if (c.position(PS[i]) != OUT) continue;
-            c = { PS[i], 0 };
+            c = {PS[i], 0};
             rep(j, 0, i) {
                 if (c.position(PS[j]) != OUT) continue;
                 c = {
-                    { (PS[i].x + PS[j].x) / 2.0, (PS[i].y + PS[j].y) / 2.0 },
+                    {(PS[i].x + PS[j].x) / 2.0, (PS[i].y + PS[j].y) / 2.0},
                        dist(PS[i], PS[j]) / 2.0
                 };
                 rep(k, 0, j)
@@ -2855,7 +2795,7 @@ struct Polygon {
             d ? (d > 0 ? ++P : ++N) : ++Z;
         }
 
-        return P == n || N == n;
+        return P == 0 || N == 0;
     }
 
     /**
@@ -2903,7 +2843,7 @@ struct Polygon {
     */
     Polygon cut(const pair<T, T>& P, const pair<T, T>& Q) {
         vector<pair<T, T>> points;
-        double EPS { 1e-9 };
+        double EPS = 1e-9;
 
         rep(i, 0, n) {
             auto d1 = D(P, Q, vs[i]), d2 = D(P, Q, vs[i + 1]);
@@ -2941,7 +2881,7 @@ private:
                             const pair<T, T>& R, const pair<T, T>& S) {
         T a = S.y - R.y, b = R.x - S.x, c = S.x * R.y - R.x * S.y;
         T u = abs(a * P.x + b * P.y + c), v = abs(a * Q.x + b * Q.y + c);
-        return { (P.x * v + Q.x * u) / (u + v), (P.y * v + Q.y * u) / (u + v) };
+        return {(P.x * v + Q.x * u) / (u + v), (P.y * v + Q.y * u) / (u + v)};
     }
 };
 ```
@@ -2963,12 +2903,12 @@ struct Line {
     Line(const pair<T, T>& P, const pair<T, T>& Q)
             : a(P.y - Q.y), b(Q.x - P.x), c(P.x * Q.y - Q.x * P.y) {
         if constexpr (is_floating_point_v<T>) {
-            if (a != 0) b /= a, c /= a, a = 1;
+            if (abs(a) > abs(b)) b /= a, c /= a, a = 1;
             else a /= b, c /= b, b = 1;
         }
         else {
             if (a < 0 || (a == 0 && b < 0)) a *= -1, b *= -1, c *= -1;
-            T gcd_abc = abs(gcd(a, gcd(b, c)));
+            T gcd_abc = gcd(a, gcd(b, c));
             a /= gcd_abc, b /= gcd_abc, c /= gcd_abc;
         }
     }
@@ -3010,7 +2950,7 @@ struct Line {
 
         double x = (-r.c * b + c * r.b) / det;
         double y = (-c * r.a + r.c * a) / det;
-        return { x, y };
+        return {x, y};
     }
 
     /**
@@ -3031,7 +2971,7 @@ struct Line {
         double den = a * a + b * b;
         double x = (b * (b * P.x - a * P.y) - a * c) / den;
         double y = (a * (-b * P.x + a * P.y) - b * c) / den;
-        return { x, y };
+        return {x, y};
     }
 
     bool operator==(const Line& r) {
@@ -3236,7 +3176,6 @@ struct Matrix {
      *  @return        Product of matrices.
      *  It may happen that this needs to be custom.
      *  Think of it as a transition like on Floyd-Warshall.
-     *  https://judge.yosupo.jp/problem/matrix_product
      *  Time complexity: O(N^3)
     */
     Matrix operator*(Matrix& other) {
@@ -3266,6 +3205,10 @@ struct AhoCorasick {
     AhoCorasick() : n(0), m(0), to(MAXN, vll(52)), go(MAXN, vll(52, -1)), idx(MAXN), mark(MAXN),
                     qnt(MAXN), p(MAXN), pc(MAXN), link(MAXN, -1), exit(MAXN, -1) {}
     
+    /**
+    *  @param  s  String.
+    *  Time complexity: O(N)
+    */
     void insert(const string& s) {
         ll u = 0;
         for (char ch : s) {
@@ -3277,6 +3220,10 @@ struct AhoCorasick {
         ++mark[u], ++qnt[0], idx[u].eb(m++);
     }
     
+    /**
+    *  @param  s  String.
+    *  Time complexity: O(N + Matches)
+    */
     vpll occur(const string& s) {
         vll occ(n + 1);
         vpll res;
@@ -3325,9 +3272,9 @@ H P(
 );
 ll sum(ll a, ll b, ll m) { return (a += b) >= m ? a - m : a; };
 ll sub(ll a, ll b, ll m) { return (a -= b) < 0 ? a + m : a; };
-H operator*(H a, H b) { return { a.x * b.x % M1, a.y * b.y % M2 }; }
-H operator+(H a, H b) { return { sum(a.x, b.x, M1), sum(a.y, b.y, M2) }; }
-H operator-(H a, H b) { return { sub(a.x, b.x, M1), sub(a.y, b.y, M2) }; }
+H operator*(H a, H b) { return {a.x * b.x % M1, a.y * b.y % M2}; }
+H operator+(H a, H b) { return {sum(a.x, b.x, M1), sum(a.y, b.y, M2)}; }
+H operator-(H a, H b) { return {sub(a.x, b.x, M1), sub(a.y, b.y, M2)}; }
 template <typename T>
 struct Hash {
     ll n;
@@ -3341,7 +3288,7 @@ struct Hash {
      *  Time complexity: O(N)
     */
     Hash(const T& s) : n(s.size()), ps(n + 1), pw(n + 1) {
-        pw[0] = { 1, 1 };
+        pw[0] = {1, 1};
         rep(i, 0, n) {
             ps[i + 1] = ps[i] * P + H(s[i], s[i]);
             pw[i + 1] = pw[i] * P;
@@ -3926,7 +3873,7 @@ struct Mi {
 ### Bits
 
 ```c++
-ll msb(ll x) { return (x == 0 ? 0 : 64 - __builtin_clzll(x)); }
+ll msb(ll x) { return (x == 0 ? 0 : 63 - __builtin_clzll(x)); }
 ll lsb(ll x) { return __builtin_ffsll(x); }
 ```
 
@@ -3934,12 +3881,6 @@ ll lsb(ll x) { return __builtin_ffsll(x); }
 
 ```c++
 ll ceilDiv(ll a, ll b) { assert(b != 0); return a / b + ((a ^ b) > 0 && a % b != 0); }
-```
-
-### Comprimir par
-
-```c++
-ll pack(pll x) { return (x.first << 32) | (uint32_t)x.second; }
 ```
 
 ### Counting sort
@@ -4014,33 +3955,6 @@ ll sum(ll a, ll b) {
     if (abs(a) >= LLONG_MAX - abs(b))
         return LLONG_MAX;  // overflow
     return a + b;
-}
-```
-
-### Radix sort
-
-```c++
-ll key(ll x, ll p) { return (x >> (p * 16)) & 0xFFFF; }
-
-/**
- *  @brief         Sorts a vector with 64 bit integers.
- *  @param  xs     Target vector.
- *  Time complexity: O(N)
-*/
-void rsort(vll& xs){
-    ll n = xs.size();
-    if (n <= 1) return;
-    const ll ALPHA = 1 << 16, MASK = 1LL << 63;
-    vll tmp(n), hist(ALPHA);
-    rep(i, 0, n) xs[i] ^= MASK;
-    rep(p, 0, 4) {
-        fill(all(hist), 0);
-        rep(i, 0, n) ++hist[key(xs[i], p)];
-        rep(i, 1, ALPHA) hist[i] += hist[i - 1];
-        per(i, n - 1, 0) tmp[--hist[key(xs[i], p)]] = xs[i];
-        xs.swap(tmp);
-    }
-    rep(i, 0, n) xs[i] ^= MASK;
 }
 ```
 
