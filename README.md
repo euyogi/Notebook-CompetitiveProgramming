@@ -3843,6 +3843,31 @@ struct Psum3D {
 };
 ```
 
+### Venice set
+
+```c++
+template<typename T>
+struct VeniceSet {
+    map<T, ll> xs;
+    T delta = 0;
+
+    void emplace(T x) { xs[x + delta]++; }
+    void add_all(T x) { delta -= x; }
+    
+    ll count(T x) {
+        if (xs.find(x + delta) != xs.end())
+            return xs[x + delta];
+        return 0;
+    }
+
+    T pop() {
+        auto m = xs.begin()->first - delta;
+        if (--xs[m] == 0) xs.erase(m);
+        return m;
+    }
+};
+```
+
 # Utils
 
 ### Aritmética modular
