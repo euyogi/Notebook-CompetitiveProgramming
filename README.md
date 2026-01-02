@@ -247,14 +247,12 @@ void pr(T... a) {int f = 0; ((D(" | "), p(a)), ...); cerr << "\e[m\n";}
  *  @return             Smallest angle between segments PQ and RS in radians.
  *  Time complexity: O(1)
 */
-template <typename T>
-double angle(const pair<T, T>& P, const pair<T, T>& Q,
-             const pair<T, T>& R, const pair<T, T>& S) {
+double angle(pd P, pd Q, pd R, pd S) {
     assert(P != Q && R != S);
-    T ux = P.x - Q.x, uy = P.y - Q.y;
-    T vx = R.x - S.x, vy = R.y - S.y;
-    T cross = ux * vy - uy * vx;
-    T dot = ux * vx + uy * vy;
+    double ux = P.x - Q.x, uy = P.y - Q.y;
+    double vx = R.x - S.x, vy = R.y - S.y;
+    double cross = ux * vy - uy * vx;
+    double dot = ux * vx + uy * vy;
     return atan2(cross, dot);  // oriented
 }
 ```
@@ -267,10 +265,7 @@ double angle(const pair<T, T>& P, const pair<T, T>& Q,
  *  @return       Distance between points.
  *  Time complexity: O(1)
 */
-template <typename T, typename S>
-double dist(const pair<T, T>& P, const pair<S, S>& Q) {
-    return hypot(P.x - Q.x, P.y - Q.y);
-}
+double dist(pd P, pd Q) { return hypot(P.x - Q.x, P.y - Q.y); }
 ```
 
 ### Envoltório convexo
@@ -324,31 +319,12 @@ vector<pair<T, T>> monotone_chain(vector<pair<T, T>> PS) {
  * Time complexity: O(1)
 */
 template <typename T>
-T D(const pair<T, T>& A, const pair<T, T>& B, const pair<T, T>& P) {
+T D(pair<T, T> A, pair<T, T> B, pair<T, T> P) {
     return (B.x - A.x) * (P.y - A.y) - (B.y - A.y) * (P.x - A.x);
 }
 ```
 
-```c++
-/**
- *  @param  P, Q, O  Points.
- *  @return          True if P before Q in counter-clockwise order.
- *  O is the origin point.
- *  Time complexity: O(1)
-*/
-template <typename T>
-bool ccw(pair<T, T> P, pair<T, T> Q, const pair<T, T>& O) {
-    static const char qo[2][2] = { {2, 3}, {1, 4} };
-    P.x -= O.x, P.y -= O.y, Q.x -= O.x, Q.y -= O.y, O.x = 0, O.y = 0;
-    bool qqx = equals(P.x, 0) || P.x > 0, qqy = equals(P.y, 0) || P.y > 0;
-    bool rqx = equals(Q.x, 0) || Q.x > 0, rqy = equals(Q.y, 0) || Q.y > 0;
-    if (qqx != rqx || qqy != rqy) return qo[qqx][qqy] > qo[rqx][rqy];
-    return equals(D(O, P, Q), 0) ?
-           (P.x * P.x + P.y * P.y) < (Q.x * Q.x + Q.y * Q.y) : D(O, P, Q) > 0;
-}
-```
-
-### Quadrado?
+### Verificar Quadrado
 
 ```c++
 /**
@@ -377,7 +353,7 @@ bool is_square(const vpll& ps) {
  *  @return       The irreducible fraction dy/dx, dy always positive.
  *  Time complexity: O(log(N))
 */
-pll slope(const pll& P, const pll& Q) {
+pll slope(pll P, pll Q) {
     ll dy = P.y - Q.y, dx = P.x - Q.x;
     if (dy < 0 || (dy == 0 && dx < 0)) dy *= -1, dx *= -1;
     ll g = gcd(dy, dx);
@@ -394,7 +370,7 @@ pll slope(const pll& P, const pll& Q) {
  *  Time complexity: O(1)
 */
 template <typename T>
-Line<T> perpendicular_bisector(const pair<T, T>& P, const pair<T, T>& Q) {
+Line<T> perpendicular_bisector(pair<T, T> P, pair<T, T> Q) {
     T a = 2 * (Q.x - P.x), b = 2 * (Q.y - P.y);
     T c = (P.x * P.x + P.y * P.y) - (Q.x * Q.x + Q.y * Q.y);
     return {a, b, c};
@@ -410,8 +386,7 @@ Line<T> perpendicular_bisector(const pair<T, T>& P, const pair<T, T>& Q) {
  *  @return    Rotated point.
  *  Time complexity: O(1)
 */
-template <typename T>
-pd rotate(const pair<T, T>& P, double a) {
+pd rotate(pd P, double a) {
     double x = cos(a) * P.x - sin(a) * P.y;
     double y = sin(a) * P.x + cos(a) * P.y;
     return {x, y};
@@ -566,25 +541,21 @@ constexpr ll NC = LLONG_MIN;  // negative cycle
 pair<vll, vll> spfa(const vvpll& g, ll s) {
     ll n = g.size();
     vll ds(n, LLONG_MAX), cnt(n), pre(n);
-    vector<bool> in_queue(n);
+    vector<bool> inq(n);
     queue<ll> q;
     ds[s] = 0, q.emplace(s);
     while (!q.empty()) {
-        ll u = q.front(); q.pop();
-        in_queue[u] = false;
+        ll u = q.front(); q.pop(), inq[u] = false;
         for (auto [w, v] : g[u]) {
             if (ds[u] == NC) {
                 // spread negative cycle
-                if (ds[v] != NC) {
-                    q.emplace(v);
-                    in_queue[v] = true;
-                }
+                if (ds[v] != NC)
+                    q.emplace(v), inq[v] = true;
                 ds[v] = NC;
             } else if (ds[u] + w < ds[v]) {
                 ds[v] = ds[u] + w, pre[v] = u;
-                if (!in_queue[v]) {
-                    q.emplace(v);
-                    in_queue[v] = true;
+                if (!inq[v]) {
+                    q.emplace(v), inq[v] = true;
                     if (++cnt[v] > n) ds[v] = NC;
                 }
             }
@@ -752,8 +723,7 @@ pair<vll, vll> dijkstra(const vvpll& g, ll s) {
 
 vll get_path(const vll& pre, ll u) {
     vll p;
-    while (u != LLONG_MAX)
-        p.eb(u), u = pre[u];
+    while (u != LLONG_MAX) p.eb(u), u = pre[u];
     reverse(all(p));
     return p;
 }
@@ -766,26 +736,24 @@ vll get_path(const vll& pre, ll u) {
  *  @param  g  Graph (w, v).
  *  @return    Vector with smallest distances between every vertex.
  *  Weights can be negative.
- *  If ds[u][v] == LLONG_MAX, unreachable
- *  If ds[u][v] == LLONG_MIN, negative cycle.
- *  Time complexity: O(V^3)
+ *  If ds[u][v] == oo, unreachable
+ *  If ds[u][v] == -oo, negative cycle.
+ *  Time complexity: O(V³)
 */
+constexpr ll oo = 4e18; 
 vvll floyd_warshall(const vvpll& g) {
     ll n = g.size();
-    vvll ds(n, vll(n, LLONG_MAX));
+    vvll ds(n, vll(n, oo));
     rep(u, 0, n) {
         ds[u][u] = 0;
-        for (auto [w, v] : g[u]) {
-            ds[u][v] = min(ds[u][v], w);
-            if (ds[u][u] < 0) ds[u][u] = LLONG_MIN;  // negative cycle
-        }
+        for (auto [w, v] : g[u]) ds[u][v] = min(ds[u][v], w);
     }
-    rep(k, 0, n) rep(u, 0, n)
-        if (ds[u][k] != LLONG_MAX) rep(v, 0, n)
-            if (ds[k][v] != LLONG_MAX) {
-                ds[u][v] = min(ds[u][v], ds[u][k] + ds[k][v]);
-                if (ds[k][k] < 0) ds[u][v] = LLONG_MIN;  // negative cycle
-            }
+    rep(k, 0, n) rep(u, 0, n) rep(v, 0, n)
+        ds[u][v] = min(ds[u][v], ds[u][k] + ds[k][v]);
+    rep(k, 0, n) if (ds[k][k] < 0)
+        rep(u, 0, n) rep(v, 0, n)
+            if (ds[u][k] != oo && ds[k][v] != oo)
+                ds[u][v] = -oo; 
     return ds;
 }
 ```
@@ -923,58 +891,108 @@ vll toposort(const vvll& g) {
 }
 ```
 
-### Max flow/min cut (Dinic)
+### Fluxo
 
 ```c++
-/**
- *  @param  g  Graph (w, v).
- *  @param  s  Source.
- *  @param  t  Sink.
- *  @return    Max flow/min cut and graph with residuals.
- *  If want the cut edges do a dfs, after, for every visited vertex if it has edge to v
- *  but this is not visited then it was a cut.
- *  If want all the paths from source to sink, make a bfs, only traverse if there is
- *  a path from u to v and w is 0.
- *  When getting the path set each w in the path to 1.
- *  Capacities on edges, to limit a vertex create a new vertex and limit edge.
- *  Time complexity: O(EV^2) but there is cases where it's better (unit capacities).
-*/
-pair<ll, vector<vtll>> max_flow(const vvpll& g, ll s, ll t) {
-    ll n = g.size();
-    vector<vtll> h(n);  // (w, v, rev)
-    vll lvl(n), ptr(n), q(n);
-    rep(u, 0, n) for (auto [w, v] : g[u]) {
-        h[u].eb(w, v, h[v].size());
-        h[v].eb(0, u, h[u].size() - 1);
+// To get path from source to sink, do dfs, only go if edge is real and c is 0.
+// When getting the path set each w in the path to 1.
+struct Flow {
+    struct Edge { bool real; ll c, v, rev, w; };
+    ll n, s, t, l = 1;
+    vector<vector<Edge>> g;
+    vll ds, ptr;
+    
+    Flow(ll n, ll source, ll sink)
+        : n(n), s(source), t(sink), g(n + 1), ds(n + 1), ptr(n + 1) {}
+    
+    void add_edge(ll c, ll u, ll v, ll w = 0) {  // add w if mcmf
+        if (c > 1) l = 1 << 31;
+        g[u].eb(true, c, v, g[v].size(), w);
+        g[v].eb(false, 0, u, g[u].size() - 1, -w);
     }
-    auto dfs = [&](auto&& self, ll u, ll nf) -> ll {
-        if (u == t || nf == 0) return nf;
-        for (ll& i = ptr[u]; i < h[u].size(); i++) {
-            auto& [w, v, rev] = h[u][i];
-            if (lvl[v] == lvl[u] + 1)
-                if (ll p = self(self, v, min(nf, w))) {
-                    auto& [wv, _, __] = h[v][rev];
-                    w -= p, wv += p;
+
+    // Time complexity: O(E²logC), with unit capacities it's better.
+    ll max_flow() {
+        ll f = 0;
+        while (l >>= 1) while (bfs())
+            while (ll nf = dfs(s, LLONG_MAX)) f += nf;
+        return f;
+    }
+    
+    // If bipartite, instead check for each (u, v) if c is 0.
+    vpll min_cut() {
+        max_flow();
+        vpll res;
+        rep(u, 0, n + 1) if (ds[u] != 0)
+            for (auto e : g[u])
+                if (e.real && e.c == 0 && ds[e.v] == 0)
+                    res.eb(u, e.v);
+        return res;
+    }
+    
+    // Reuses ptr as parent_edge_idx
+    pll min_cost_max_flow(ll k) {
+        ll c = 0, f = 0;
+        vll pre(n + 1);
+        while (f < k && spfa(pre)) {
+            ll p = k - f;
+            for (ll v = t; v != s; v = pre[v]) 
+                p = min(p, g[pre[v]][ptr[v]].c);
+            f += p, c += p * ds[t];
+            for (ll v = t; v != s; v = pre[v]) {
+                auto& e = g[pre[v]][ptr[v]];
+                e.c -= p;
+                g[v][e.rev].c += p;
+            }
+        }
+        return {c, f};
+    }
+    
+private:
+    ll dfs(ll u, ll f) {
+        if (u == t || !f) return f;
+        for (ll& i = ptr[u]; i < (ll)g[u].size(); ++i) {
+            auto& e = g[u][i];
+            if (ds[e.v] == ds[u] + 1)
+                if (ll p = dfs(e.v, min(f, e.c))) {
+                    e.c -= p, g[e.v][e.rev].c += p;
                     return p;
                 }
         }
         return 0;
-    };
-    ll f = 0; q[0] = s;
-    rep(l, 0, 31)
-        do {
-            fill(all(lvl), 0), fill(all(ptr), 0);
-            ll qi = 0, qe = lvl[s] = 1;
-            while (qi < qe && !lvl[t]) {
-                ll u = q[qi++];
-                for (auto [w, v, rev] : h[u])
-                    if (!lvl[v] && w >> (30 - l))
-                        q[qe++] = v, lvl[v] = lvl[u] + 1;
+    }
+    
+    ll bfs() {
+        fill(all(ds), 0), fill(all(ptr), 0);
+        queue<ll> q;
+        ds[s] = 1, q.emplace(s);
+        while (!q.empty() && !ds[t]) {
+            ll u = q.front(); q.pop();
+            for (auto e : g[u]) if (!ds[e.v] && e.c >= l)
+                ds[e.v] = ds[u] + 1, q.emplace(e.v);
+        }
+        return ds[t];
+    }
+    
+    ll spfa(vll& pre) {
+        fill(all(ds), LLONG_MAX), fill(all(ptr), -1);
+        queue<ll> q;
+        vector<bool> inq(n + 1);
+        ds[s] = 0, q.emplace(s), inq[s] = true;
+        while (!q.empty()) {
+            ll u = q.front(); q.pop(), inq[u] = false;
+            rep(i, 0, g[u].size()) {
+                auto& e = g[u][i];
+                if (e.c > 0 && ds[u] + e.w < ds[e.v]) {
+                    ds[e.v] = ds[u] + e.w;
+                    ptr[e.v] = i, pre[e.v] = u;
+                    if (!inq[e.v]) q.emplace(e.v), inq[e.v] = true;
+                }
             }
-            while (ll nf = dfs(dfs, s, LLONG_MAX)) f += nf;
-        } while (lvl[t]);
-    return {f, h};
-}
+        }
+        return ds[t] != LLONG_MAX;
+    }
+};
 ```
 
 ### Pontes e articulações
@@ -1203,45 +1221,6 @@ vll lis(const vll& xs) {
 }
 ```
 
-### Mex
-
-```c++
-/**
- *  @param  xs  Target vector.
- *  @return     Mex.
- *  Time complexity: O(N)
-*/
-ll mex(const vll& xs) {
-    vector<bool> f(xs.size() + 1, 0);
-    for (ll x : xs) if (x <= xs.size()) f[x] = 1;
-    ll res = 0;
-    while (f[res]) ++res;
-    return res;
-}
-```
-
-### Moda
-
-```c++
-/**
- *  @param  xs  Target vector.
- *  @return     Mode element and frequency.
- *  Time complexity: O(Nlog(N))
-*/
-template <typename T>
-pair<T, ll> mode(vector<T>& xs) {
-    sort(all(xs));
-    T best = xs[0];
-    ll bfreq = 1, cfreq = 1;
-    rep(i, 1, xs.size()) {
-        if (xs[i] == xs[i - 1]) ++cfreq;
-        else cfreq = 1;
-        if (cfreq > bfreq) bfreq = cfreq, best = xs[i];
-    }
-    return {best, bfreq};
-}
-```
-
 ### Pares com gcd x
 
 ```c++
@@ -1296,7 +1275,7 @@ vector<T> closests(const vector<T>& xs) {
 ```c++
 /**
  *  @return  Binomial coefficient.
- *  Time complexity: O(N^2)/O(1)
+ *  Time complexity: O(N²)/O(1)
 */
 ll binom(ll n, ll k) {
     constexpr ll MAXN = 64;
@@ -1551,7 +1530,7 @@ const ll EPS = 0;  // mod
 /**
  *  @param  ls  Linear system matrix.
  *  @return     Vector with value of each variable.
- *  Time complexity: O(N^3)
+ *  Time complexity: O(N³)
 */
 template <typename T>
 vector<T> gauss(vector<vector<T>>& ls) {
@@ -1662,7 +1641,7 @@ ll pot(ll a, ll b, ll p) {
 /**
  *  @param  x  Number.
  *  @return    True if x is prime, false otherwise.
- *  Time complexity: O(log^2(N))
+ *  Time complexity: O(log²(N))
 */
 bool is_prime(ll x) {  // miller rabin
     if (x < 2)      return false;
@@ -2245,7 +2224,7 @@ struct HLD {
     *  @param  x     Value to add     (if it's an upd).
     *  @return       f of path [u, v] (if it's a qry).
     *  It's a query if x is specified.
-    *  Time complexity: O(log^2(N))
+    *  Time complexity: O(log²(N))
     */
     ll upd_qry_path(ll u, ll v, ll x = INT_MIN) {
         assert(1 <= u && u < idx.size() && 1 <= v && v < idx.size());
@@ -3176,7 +3155,7 @@ struct Matrix {
      *  @return        Product of matrices.
      *  It may happen that this needs to be custom.
      *  Think of it as a transition like on Floyd-Warshall.
-     *  Time complexity: O(N^3)
+     *  Time complexity: O(N³)
     */
     Matrix operator*(Matrix& other) {
         ll N = mat.size(), K = mat[0].size(), M = other[0].size();
@@ -3355,11 +3334,10 @@ struct SuffixAutomaton {
     }
     
     void finalize() {
-        // preprocessing for count (topologic order)
-        vpll order(sz - 1);
-        rep(i, 1, sz) order[i - 1] = {len[i], i};
-        sort(all(order), greater<>());
-        for (auto [_, i] : order) cnt[lnk[i]] += cnt[i];
+        vll order(sz - 1);
+        iota(all(order), 1);
+        sort(all(order), [&](ll a, ll b) { return len[a] > len[b]; });
+        for (ll i : order) cnt[lnk[i]] += cnt[i];
 
         // preprocessing for kth_sub and kth_dsub
         dfs(0);
@@ -3451,12 +3429,12 @@ private:
 
     void add(ll c) {
         ++n;
-        ll p = last;
+        ll p = last;  // if strings have weight cnt = 0, add it later
         ll u = make_node(len[p] + 1, len[p], 0, 1);
-    		last = u;
-    		for (; p != -1 && !to[p][c]; p = lnk[p]) to[p][c] = u;
-    		if (p == -1) lnk[u] = 0;
-    		else {
+        last = u;
+        for (; p != -1 && !to[p][c]; p = lnk[p]) to[p][c] = u;
+        if (p == -1) lnk[u] = 0;
+        else {
             ll v = to[p][c];
             if (len[p] + 1 == len[v]) lnk[u] = v;
             else {
@@ -3728,121 +3706,6 @@ struct Mex {
 };
 ```
 
-### RMQ
-
-```c++
-template <typename T>
-struct RMQ {
-    ll n, LOG = 25;
-    vector<vector<T>> st;
-    
-    /**
-    *  @param  xs  Target vector.
-    *  Time complexity: O(Nlog(N))
-    */
-    RMQ(const vector<T>& xs) : n(xs.size()), st(LOG, vector<T>(n)) {
-        st[0] = xs;
-        rep(i, 1, LOG)
-            for (ll j = 0; j + (1 << i) <= n; ++j)
-                st[i][j] = min(st[i - 1][j], st[i - 1][j + (1 << (i - 1))]);
-    }
-
-    /**
-    *  @param  i, j  Interval.
-    *  @return       Minimum value in interval [i, j].
-    *  Time complexity: O(1)
-    */
-    T query(ll l, ll r) {
-        assert(0 <= l && l <= r && r < n);
-        ll lg = (ll)log2(r - l + 1);
-        return min(st[lg][l], st[lg][r - (1 << lg) + 1]);
-    }
-};
-```
-
-### Soma de prefixo 2D
-
-```c++
-/**
- *  @brief Make rectangular interval sum queries.
-*/
-template <typename T>
-struct Psum2D {
-    ll n, m;
-    vector<vector<T>> psum;
-    
-    /**
-     *  @param  xs  Matrix.
-     *  Time complexity: O(N^2)
-    */
-    Psum2D(const vector<vector<T>>& xs)
-        : n(xs.size()), m(xs[0].size()), psum(n + 1, vector<T>(m + 1)) {
-        rep(i, 0, n) rep(j, 0, m)
-            psum[i + 1][j + 1] = psum[i + 1][j] + psum[i][j + 1] + xs[i][j] - psum[i][j];
-    }
-
-    /**
-     *  @param  ly, hy  Vertical   interval.
-     *  @param  lx, hx  Horizontal interval.
-     *  @return         Sum in that rectangle.
-     *  Time complexity: O(1)
-    */
-    T query(ll ly, ll lx, ll hy, ll hx) {
-        assert(0 <= ly && ly <= hy && hy < n && 0 <= lx && lx <= hx && hx < m);
-        ++ly, ++lx, ++hy, ++hx;
-        return psum[hy][hx] - psum[hy][lx - 1] - psum[ly - 1][hx] + psum[ly - 1][lx - 1];
-    }
-};
-```
-
-### Soma de prefixo 3D
-
-```c++
-/**
- *  @brief Make cuboid interval sum queries.
-*/
-template <typename T>
-struct Psum3D {
-    ll n, m, o;
-    vector<vector<vector<T>>> psum;
-    
-    /**
-     *  @param  xs  3D Matrix.
-     *  Time complexity: O(N^3)
-    */
-    Psum3D(const vector<vector<vector<T>>>& xs)
-            : n(xs.size()), m(xs[0].size()), o(xs[0][0].size()),
-              psum(n + 1, vector<vector<T>>(m + 1, vector<T>(o + 1))) {
-        rep(i, 1, n + 1) rep(j, 1, m + 1) rep(k, 1, o + 1) {
-            psum[i][j][k] = psum[i - 1][j][k] + psum[i][j - 1][k] + psum[i][j][k - 1];
-            psum[i][j][k] -= psum[i][j - 1][k - 1] + psum[i - 1][j][k - 1]
-                                                   + psum[i - 1][j - 1][k];
-            psum[i][j][k] += psum[i - 1][j - 1][k - 1] + xs[i - 1][j - 1][k - 1];
-        }
-    }
-
-    /**
-     *  @param  ly, hy  First interval.
-     *  @param  lx, hy  Second interval.
-     *  @param  lz, hz  Third interval
-     *  @return         Sum in that cuboid.
-     *  Time complexity: O(1)
-    */
-    T query(ll lx, ll ly, ll lz, ll hx, ll hy, ll hz) {
-        assert(0 <= lx && lx <= hx && hx < n);
-        assert(0 <= ly && ly <= hy && hy < m);
-        assert(0 <= lz && lz <= hz && hz < o);
-        ++lx, ++ly, ++lz, ++hx, ++hy, ++hz;
-        T res = psum[hx][hy][hz] - psum[lx - 1][hy][hz] - psum[hx][ly - 1][hz]
-                                                        - psum[hx][hy][lz - 1];
-        res += psum[hx][ly - 1][lz - 1] + psum[lx - 1][hy][lz - 1]
-                                        + psum[lx - 1][ly - 1][hz];
-        res -= psum[lx - 1][ly - 1][lz - 1];
-        return res;
-    }
-};
-```
-
 ### Venice set
 
 ```c++
@@ -3908,54 +3771,6 @@ ll lsb(ll x) { return __builtin_ffsll(x); }
 ll ceilDiv(ll a, ll b) { assert(b != 0); return a / b + ((a ^ b) > 0 && a % b != 0); }
 ```
 
-### Counting sort
-
-```c++
-/**
- *  @brief         Sorts a vector with integers up to a million or string.
- *  @param  xs     Target vector.
- *  @param  alpha  Size of alphabet (Max integer or character in xs).
- *  Time complexity: O(N)
-*/
-template <typename T>
-void csort(T& xs, ll alpha) {
-    vll hist(alpha + 1);
-    for (auto x : xs) ++hist[x];
-    ll j = 0;
-    rep(i, 0, alpha + 1) while (hist[i]--)
-        xs[j++] = i;
-}
-```
-
-### Histograma
-
-```c++
-/**
- *  @param  xs  Target vector/string.
- *  @return     Histogram of elements in xs.
- *  Keeps only the frequencies, elements can be retrivied
- *  by sorting xs and keeping only uniques.
- *  If xs is a 64 bit integer vector use radix sort for O(N) complexity.
- *  If it's string or vector with smaller integers use counting sort.
- *  Time complexity: O(Nlog(N))
-*/
-template <typename T>
-vll histogram(T& xs) {
-    sort(all(xs));
-    vll hist;
-    ll n = xs.size(), qnt = 1;
-    rep(i, 1, n) {
-        if (xs[i] != xs[i - 1]) {
-            hist.eb(qnt);
-            qnt = 0;
-        }
-        ++qnt;
-    }
-    hist.eb(qnt);
-    return hist;
-}
-```
-
 ### Igualdade flutuante
 
 ```c++
@@ -3965,22 +3780,6 @@ vll histogram(T& xs) {
 */
 template <typename T, typename S>
 bool equals(T a, S b) { return abs(a - b) < 1e-7; }
-```
-
-### Overflow check
-
-```c++
-ll mult(ll a, ll b) {
-    if (b && abs(a) >= LLONG_MAX / abs(b))
-        return LLONG_MAX;  // overflow
-    return a * b;
-}
-
-ll sum(ll a, ll b) {
-    if (abs(a) >= LLONG_MAX - abs(b))
-        return LLONG_MAX;  // overflow
-    return a + b;
-}
 ```
 
 # Fatos
