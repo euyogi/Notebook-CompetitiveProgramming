@@ -1,0 +1,24 @@
+{
+  "name": "notebook-competitiveprogramming",
+  "version": "1.0.0",
+  "description": "Competitive Programming Notebook PDF Generator",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/euyogi/Notebook-CompetitiveProgramming.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/euyogi/Notebook-CompetitiveProgramming/issues"
+  },
+  "homepage": "https://github.com/euyogi/Notebook-CompetitiveProgramming#readme",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "md-to-pdf": "^5.2.5"
+  }
+}

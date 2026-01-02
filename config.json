@@ -1,0 +1,17 @@
+{
+  "body_class": "markdown-body",
+  "pdf_options": {
+    "margin": "2mm",
+    "landscape": true,
+    "outline": true
+  },
+  "css": ".markdown-body { font-size: 8px; font-weight: bold; column-count: 2; }\nh1, h2, h3 { break-after: avoid; }\npre { break-inside: avoid; }\nh1 + ul { column-count: 2; }",
+  "script": [
+    {
+      "path": "mathjax-config.js"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    }
+  ]
+}

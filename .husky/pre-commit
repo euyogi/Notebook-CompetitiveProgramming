@@ -1,0 +1,7 @@
+#!/bin/sh
+
+echo "🔄 Updating TOC and PDF..."
+python3 update_toc.py
+npx md-to-pdf README.md --config-file config.json
+mv README.pdf notebook.pdf
+git add notebook.pdf README.md

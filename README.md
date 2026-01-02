@@ -1,20 +1,3 @@
----
-body_class: markdown-body
-highlight_style: default
-pdf_options:
-  margin: 2mm
-  landscape: true
-  outline: true
-css: |-
-  .markdown-body { font-size: 8px; font-weight: bold; column-count: 2; }
-  h1, h2, h3 { break-after: avoid; }
-  pre { break-inside: avoid; }
-  h1 + ul { column-count: 2; }
-script:
-  - path: mathjax-config.js
-  - url: https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js
----
-
 <figure style="break-after: always; display: flex; flex-direction: column; justify-content: center; height: 100vh; text-align: center;">
   <img src="title.png">
   <figcaption style="font-size: 14px;">As complexidades temporais são estimadas e simplificadas!</figcaption>
@@ -27,60 +10,62 @@ script:
 * Pragmas
 * Debug
 * Algoritmos
-  * Árvores
-    * Binary lifting
-    * Centróide
-    * Centróide decomposition
-    * Euler tour
-    * Menor ancestral comum (LCA)
   * Geometria
     * Ângulo entre segmentos
     * Distância entre pontos
     * Envoltório convexo
-    * Mediatriz
     * Orientação de ponto
-    * Quadrado?
+    * Verificar Quadrado
     * Slope
+    * Mediatriz
     * Rotação de ponto
+  * Árvores
+    * Binary Lifting
+    * Centróide
+    * Decomposição de Centróide
+    * Euler Tour
+    * Menor ancestral comum (LCA)
   * Grafos
     * Bellman-Ford
     * BFS 0/1
     * Caminho euleriano
     * Detecção de ciclo
     * Dijkstra
-    * Floyd-Warshall
+    * Floyd Warshall
     * Johnson
     * Kosaraju
-    * Kruskal (Árvore geradora mínima)
+    * MST
     * Ordenação topológica
-    * Max flow/min cut (Dinic)
+    * Fluxo
     * Pontes e articulações
   * Outros
     * Algoritmo de Mo
     * Busca ternária
-    * Intervalos com soma S
     * Kadane
     * Listar combinações
     * Maior subsequência comum (LCS)
     * Maior subsequência crescente (LIS)
-    * Mex
-    * Moda
     * Pares com gcd x
     * Próximo maior/menor elemento
-    * Soma de todos os intervalos
   * Matemática
     * Coeficiente binomial
+    * Coeficiente binomial mod
     * Conversão de base
     * Crivo de Eratóstenes
     * Divisores
+    * Divisores rápido
+    * Divisores de vários números
     * Equações diofantinas
     * Exponenciação rápida
     * Fatoração
+    * Fatoração com crivo
+    * Fatoração rápida
     * Gauss
     * Permutação com repetição
     * Teorema chinês do resto
     * Teste de primalidade
     * Totiente de Euler
+    * Totiente de Euler rápido
     * Transformada de Fourier
   * Strings
     * Autômato KMP
@@ -96,44 +81,41 @@ script:
     * Suffix array
 * Estruturas
   * Árvores
-    * BIT tree 2D
-    * Disjoint set union
+    * BIT 2D
+    * DSU
     * Heavy-light decomposition
-    * Ordered-set
+    * Ordered Set
     * Segment tree
+    * Primeiro maior
+    * SegTree Lazy (Affine)
     * Treap
-    * Wavelet tree
+    * Wavelet Tree
   * Geometria
     * Círculo
+    * Polígono
     * Reta
     * Segmento
     * Triângulo
-    * Polígono
   * Matemática
     * Matriz
   * Strings
     * Aho-Corasick
     * Hash
+    * Hash Inverso
     * Suffix Automaton
     * Trie
+    * Bit Trie
   * Outros
     * Compressão
     * Delta encoding
     * Fila agregada
     * Mex
-    * RMQ
-    * Soma de prefixo 2D
-    * Soma de prefixo 3D
+    * Venice set
 * Utils
     * Aritmética modular
     * Bits
     * Ceil division
-    * Comprimir par
-    * Counting sort
-    * Histograma
     * Igualdade flutuante
-    * Overflow check
-    * Radix sort
 * Fatos
   * Bitwise
   * Geometria
@@ -395,7 +377,7 @@ pd rotate(pd P, double a) {
 
 ## Árvores
 
-### Binary lifting
+### Binary Lifting
 
 ```c++
 constexpr ll LOG = 22;
@@ -454,7 +436,7 @@ ll centroid(const vvll& g, ll u, ll p = -1) {
 }
 ```
 
-### Centróide decomposition
+### Decomposição de Centróide
 
 ```c++
 vll parent, subtree;
@@ -2090,7 +2072,7 @@ vll suffix_array(string s, ll k = LLONG_MAX) {
 
 ## Árvores
 
-### BIT tree 2D
+### BIT 2D
 
 ```c++
 template <typename T>
@@ -2138,7 +2120,7 @@ struct BIT2D {
 };
 ```
 
-### Disjoint set union
+### DSU
 
 ```c++
 struct DSU {
@@ -2160,13 +2142,16 @@ struct DSU {
 
     /**
      *  @param  x, y  Elements.
+     *  @return       True if merged, false if already same set.
      *  Time complexity: ~O(1)
     */
-    void merge(ll x, ll y) {
-        ll a = find(x), b = find(y);
-        if (size[a] > size[b]) swap(a, b);
-        parent[a] = b;
-        if (a != b) size[b] += size[a], size[a] = 0;
+    bool merge(ll x, ll y) {
+        x = find(x), y = find(y);
+        if (x == y) return false;
+        if (size[x] > size[y]) swap(x, y);
+        parent[x] = y;
+        size[y] += size[x], size[x] = 0;
+        return true;
     }
 
     /**
@@ -2259,7 +2244,7 @@ struct HLD {
 };
 ```
 
-### Ordered-set
+### Ordered Set
 
 ```c++
 #include <ext/pb_ds/assoc_container.hpp>
@@ -2377,7 +2362,7 @@ ll first_greater(ll i, ll j, T x, ll l = 0, ll r = -1, ll no = 1) {
 }
 ```
 
-### Lazy Segment Tree de multiplicar e somar
+### SegTree Lazy (Affine)
 
 ```c++
 // fora da seg
@@ -3148,7 +3133,7 @@ struct Matrix {
         if (n == m) rep(i, 0, n) mat[i][i] = x;
     }
     vector<T>& operator[](ll i) { return mat[i]; }
-    ll size() { return mat.size(); }
+    ll size() const { return mat.size(); }
     
     /**
      *  @param  other  Other matrix.
@@ -3157,7 +3142,7 @@ struct Matrix {
      *  Think of it as a transition like on Floyd-Warshall.
      *  Time complexity: O(N³)
     */
-    Matrix operator*(Matrix& other) {
+    Matrix operator*(const Matrix& other) const {
         ll N = mat.size(), K = mat[0].size(), M = other[0].size();
         assert(other.size() == K);
         Matrix res(N, M);
@@ -3181,7 +3166,7 @@ struct AhoCorasick {
     vvll to, go, idx;
     vll mark, qnt, p, pc, link, exit;
 
-    AhoCorasick() : n(0), m(0), to(MAXN, vll(52)), go(MAXN, vll(52, -1)), idx(MAXN), mark(MAXN),
+    AhoCorasick() : n(0), m(0), to(MAXN, vll(26)), go(MAXN, vll(26, -1)), idx(MAXN), mark(MAXN),
                     qnt(MAXN), p(MAXN), pc(MAXN), link(MAXN, -1), exit(MAXN, -1) {}
     
     /**
@@ -3497,7 +3482,7 @@ struct Trie {
         for (char c : s) {
             ll& v = to[u][c - 'a'];
             u = v, --qnt[u];
-            if (!qnt[u]) v = 0, --n;
+            if (!qnt[u]) v = 0;
         }
         --term[u], --qnt[0];
     }
@@ -3551,7 +3536,7 @@ struct BitTrie {
         rep(i, 0, 32) {
             ll& v = to[u][(x >> i) & 1];
             u = v, --qnt[u];
-            if (!qnt[u]) v = 0, --n;
+            if (!qnt[u]) v = 0;
         }
         --qnt[0];
     }
@@ -3786,11 +3771,11 @@ bool equals(T a, S b) { return abs(a - b) < 1e-7; }
 
 ## Bitwise
 
-> $a + b = (a \text{&} b) + (a | b)$.
+> `a + b = (a & b) + (a | b)`.
 
-> $a + b = a \text{^} b + 2 * (a \text{&} b)$.
+> `a + b = a ^ b + 2 * (a & b)`.
 
-> $a \text{^} b = \text{~}(a \text{&} b) \text{&} (a | b)$.
+> `a ^ b = ~(a & b) & (a | b)`.
 
 ## Geometria
 
@@ -3803,7 +3788,7 @@ bool equals(T a, S b) { return abs(a - b) < 1e-7; }
 
 > Distância de Chebyshev: $dist(P, Q) = max(P.x - Q.x, P.y - Q.y)$. $P, Q$ são dois pontos.
 
-> Manhattam para Chebyshev: Feita a transformação $(x, y) \to (x + y, x - y)$, temos uma
+> Manhattan para Chebyshev: Feita a transformação $(x, y) \to (x + y, x - y)$, temos uma
   equivalência entre as duas distâncias, podemos agora tratar $x$ e $y$ separadamente,
   fazer bounding boxes, entre outros...
   
@@ -3870,13 +3855,11 @@ bool equals(T a, S b) { return abs(a - b) < 1e-7; }
 
 > Teorema de Euler: $a^{\varphi(m)} = 1 \bmod m$. Se $m$ é primo se reduz á $a^{m - 1} = 1 \bmod m$.
 
-> $a^{b^c} \bmod m = a^{b^c \bmod phi(m)} \bmod m$. Se $m$ é primo se reduz á $a^{b^c} \bmod m = a^{b^c \bmod (m - 1)} \bmod m$.
+> $a^{b^c} \bmod m = a^{b^c \bmod \varphi(m)} \bmod m$. Se $m$ é primo se reduz á $a^{b^c} \bmod m = a^{b^c \bmod (m - 1)} \bmod m$.
 
 > $a^{\varphi(m) - 1} = a^{-1} \bmod m$, mas precisa da condição que $gcd(a, m) = 1$.
 
-> $x! = 0 \bmod m$, se $x \geq m$.
-
-> Teoream de Wilson: $(n - 1)! = -1 \bmod n$. Dá para calcular $x! \bmod n$ se $n - x \leq 10^6$ pois $x! = -[(x+1)...(m-1)]^{-1} \bmod n$.
+> Teorema de Wilson: $(n - 1)! = -1 \bmod n$. Dá para calcular $x! \bmod n$ se $n - x \leq 10^6$ pois $x! = -[(x+1)...(m-1)]^{-1} \bmod n$.
 
 > $(a+b)^n = \binom{n}{0} a^n + \binom{n}{1} a^{n-1} b + \binom{n}{2} a^{n-2} b^2 + \cdots +
   \binom{n}{k} a^{n-k} b^k + \cdots + \binom{n}{n} b^n$
