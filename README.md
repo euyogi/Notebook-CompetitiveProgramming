@@ -125,16 +125,21 @@ script:
     * Soma de prefixo 2D
     * Soma de prefixo 3D
 * Utils
-  * Aritmética modular
-  * Bits
-  * Ceil division
-  * Comprimir par
-  * Counting sort
-  * Fatos
-  * Histograma
-  * Igualdade flutuante
-  * Overflow check
-  * Radix sort
+    * Aritmética modular
+    * Bits
+    * Ceil division
+    * Comprimir par
+    * Counting sort
+    * Histograma
+    * Igualdade flutuante
+    * Overflow check
+    * Radix sort
+* Fatos
+  * Bitwise
+  * Geometria
+  * Matemática
+  * Strings
+  * Outros
 
 ### Template
 
@@ -3956,9 +3961,92 @@ void csort(T& xs, ll alpha) {
 }
 ```
 
-### Fatos
+### Histograma
 
-Bitwise
+```c++
+/**
+ *  @param  xs  Target vector/string.
+ *  @return     Histogram of elements in xs.
+ *  Keeps only the frequencies, elements can be retrivied
+ *  by sorting xs and keeping only uniques.
+ *  If xs is a 64 bit integer vector use radix sort for O(N) complexity.
+ *  If it's string or vector with smaller integers use counting sort.
+ *  Time complexity: O(Nlog(N))
+*/
+template <typename T>
+vll histogram(T& xs) {
+    sort(all(xs));
+    vll hist;
+    ll n = xs.size(), qnt = 1;
+    rep(i, 1, n) {
+        if (xs[i] != xs[i - 1]) {
+            hist.eb(qnt);
+            qnt = 0;
+        }
+        ++qnt;
+    }
+    hist.eb(qnt);
+    return hist;
+}
+```
+
+### Igualdade flutuante
+
+```c++
+/**
+ *  @param  a, b  Floats.
+ *  @return       True if they are equal.
+*/
+template <typename T, typename S>
+bool equals(T a, S b) { return abs(a - b) < 1e-7; }
+```
+
+### Overflow check
+
+```c++
+ll mult(ll a, ll b) {
+    if (b && abs(a) >= LLONG_MAX / abs(b))
+        return LLONG_MAX;  // overflow
+    return a * b;
+}
+
+ll sum(ll a, ll b) {
+    if (abs(a) >= LLONG_MAX - abs(b))
+        return LLONG_MAX;  // overflow
+    return a + b;
+}
+```
+
+### Radix sort
+
+```c++
+ll key(ll x, ll p) { return (x >> (p * 16)) & 0xFFFF; }
+
+/**
+ *  @brief         Sorts a vector with 64 bit integers.
+ *  @param  xs     Target vector.
+ *  Time complexity: O(N)
+*/
+void rsort(vll& xs){
+    ll n = xs.size();
+    if (n <= 1) return;
+    const ll ALPHA = 1 << 16, MASK = 1LL << 63;
+    vll tmp(n), hist(ALPHA);
+    rep(i, 0, n) xs[i] ^= MASK;
+    rep(p, 0, 4) {
+        fill(all(hist), 0);
+        rep(i, 0, n) ++hist[key(xs[i], p)];
+        rep(i, 1, ALPHA) hist[i] += hist[i - 1];
+        per(i, n - 1, 0) tmp[--hist[key(xs[i], p)]] = xs[i];
+        xs.swap(tmp);
+    }
+    rep(i, 0, n) xs[i] ^= MASK;
+}
+```
+
+# Fatos
+
+## Bitwise
 
 > $a + b = (a \text{&} b) + (a | b)$.
 
@@ -3966,7 +4054,7 @@ Bitwise
 
 > $a \text{^} b = \text{~}(a \text{&} b) \text{&} (a | b)$.
 
-Geometria
+## Geometria
 
 > Quantidade de pontos inteiros num segmento: $gcd(abs(P.x - Q.x), abs(P.y - Q.y)) + 1$.
   $P, Q$ são os pontos extremos do segmento.
@@ -3984,7 +4072,7 @@ Geometria
 > Para contar paralelogramos em um conjunto de pontos podemos marcar o centro de cada segmento,
   coincidências entre dois centros formam um paralelogramo.
 
-Matemática
+## Matemática
 
 > Quantidade de divisores de um número: $\prod (a_i + 1)$. $a_i$ é o expoente do
   $i$-ésimo fator primo.
@@ -4077,7 +4165,7 @@ Matemática
   lidar com o módulo, se temos $f$ fixo, tentamos lidar com os $g$ maiores que $f$ e com os
   menores que $f$ separadamente.
 
-Strings
+## Strings
 
 > Sejam $p$ e $q$ dois períodos de uma string $s$. Se $p + q − mdc(p, q) \leq |s|$,
   então $mdc(p, q)$ também é período de $s$.
@@ -4086,7 +4174,7 @@ Strings
   $|s| − |border(s)|, |s| − |border^2(s)|, ..., |s| − |border^k(s)|$ é a sequência
   crescente de todos os possíveis períodos de $s$.
 
-Outros
+## Outros
 
 > Princípio da inclusão e exclusão: a união de $n$ conjuntos é a soma de todas as
   interseções de um número ímpar de conjuntos menos a soma de todas as interseções de um
@@ -4103,86 +4191,3 @@ Outros
   sys.set_int_max_str_digits(1000001)`
   
 > Dado um grafo a quantidade de vértices pesados é $\sqrt{N}$, vértices leves são aqueles com degrau $\leq \sqrt{N}$. 
-
-### Histograma
-
-```c++
-/**
- *  @param  xs  Target vector/string.
- *  @return     Histogram of elements in xs.
- *  Keeps only the frequencies, elements can be retrivied
- *  by sorting xs and keeping only uniques.
- *  If xs is a 64 bit integer vector use radix sort for O(N) complexity.
- *  If it's string or vector with smaller integers use counting sort.
- *  Time complexity: O(Nlog(N))
-*/
-template <typename T>
-vll histogram(T& xs) {
-    sort(all(xs));
-    vll hist;
-    ll n = xs.size(), qnt = 1;
-    rep(i, 1, n) {
-        if (xs[i] != xs[i - 1]) {
-            hist.eb(qnt);
-            qnt = 0;
-        }
-        ++qnt;
-    }
-    hist.eb(qnt);
-    return hist;
-}
-```
-
-### Igualdade flutuante
-
-```c++
-/**
- *  @param  a, b  Floats.
- *  @return       True if they are equal.
-*/
-template <typename T, typename S>
-bool equals(T a, S b) { return abs(a - b) < 1e-7; }
-```
-
-### Overflow check
-
-```c++
-ll mult(ll a, ll b) {
-    if (b && abs(a) >= LLONG_MAX / abs(b))
-        return LLONG_MAX;  // overflow
-    return a * b;
-}
-
-ll sum(ll a, ll b) {
-    if (abs(a) >= LLONG_MAX - abs(b))
-        return LLONG_MAX;  // overflow
-    return a + b;
-}
-```
-
-### Radix sort
-
-```c++
-ll key(ll x, ll p) { return (x >> (p * 16)) & 0xFFFF; }
-
-/**
- *  @brief         Sorts a vector with 64 bit integers.
- *  @param  xs     Target vector.
- *  Time complexity: O(N)
-*/
-void rsort(vll& xs){
-    ll n = xs.size();
-    if (n <= 1) return;
-    const ll ALPHA = 1 << 16, MASK = 1LL << 63;
-    vll tmp(n), hist(ALPHA);
-    rep(i, 0, n) xs[i] ^= MASK;
-    rep(p, 0, 4) {
-        fill(all(hist), 0);
-        rep(i, 0, n) ++hist[key(xs[i], p)];
-        rep(i, 1, ALPHA) hist[i] += hist[i - 1];
-        per(i, n - 1, 0) tmp[--hist[key(xs[i], p)]] = xs[i];
-        xs.swap(tmp);
-    }
-    rep(i, 0, n) xs[i] ^= MASK;
-}
-```
